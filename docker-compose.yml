@@ -1,0 +1,40 @@
+# GymLog Dev-Umgebung
+#   Starten:  docker compose up -d --build
+#   Shell:    docker compose exec dev bash
+#   Stoppen:  docker compose down        (NICHT "down -v": das löscht Caches und den Claude-Login)
+
+services:
+  dev:
+    build:
+      context: ./docker
+      args:
+        HOST_UID: ${HOST_UID:-1001}
+        HOST_GID: ${HOST_GID:-1001}
+    image: gymlog-dev:3.47.9
+    container_name: gymlog-dev
+    init: true
+    command: ["sleep", "infinity"]
+    working_dir: /workspace
+    volumes:
+      # Projektordner (Code, .secrets/ mit dem Signaturschlüssel)
+      - ./:/workspace
+      # Claude-Code-Login, Einstellungen und Verlauf (überlebt Neubau des Containers)
+      - claude-config:/home/flutter/.claude
+      # Dart/Flutter-Pakete und Gradle-Abhängigkeiten (sonst bei jedem Neubau neu geladen)
+      - pub-cache:/home/flutter/.pub-cache
+      - gradle-cache:/home/flutter/.gradle
+      # adb-Schlüssel (Handy bleibt gekoppelt) und Debug-Keystore der DEV-App
+      - android-home:/home/flutter/.android
+    environment:
+      CLAUDE_CONFIG_DIR: /home/flutter/.claude
+      TZ: Europe/Berlin
+    # Nur Linux, optional: Handy per USB-Kabel statt WLAN.
+    # Vorher auf dem Host keinen eigenen adb-Server laufen lassen ("adb kill-server").
+    # devices:
+    #   - /dev/bus/usb:/dev/bus/usb
+
+volumes:
+  claude-config:
+  pub-cache:
+  gradle-cache:
+  android-home:

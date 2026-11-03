@@ -1,0 +1,2 @@
+# Shell-Skripte immer mit LF, sonst laufen sie im Container nicht (Windows-Checkouts)
+*.sh text eol=lf

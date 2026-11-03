@@ -1,0 +1,11 @@
+# Geheimnisse und lokale Einstellungen – niemals committen
+.secrets/
+.env
+
+# Build-Ausgaben
+build/
+
+# Claude Code: persönliche Freigaben
+.claude/settings.local.json
+
+# (Flutter-Einträge ergänzt Claude Code in M0)

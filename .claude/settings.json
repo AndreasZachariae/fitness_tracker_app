@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub *)",
+      "Bash(flutter analyze *)",
+      "Bash(flutter test *)",
+      "Bash(flutter build apk *)",
+      "Bash(flutter create *)",
+      "Bash(flutter doctor *)",
+      "Bash(flutter --version)",
+      "Bash(dart *)",
+      "Bash(./scripts/check.sh)",
+      "Bash(./scripts/dev-install.sh)",
+      "Bash(./scripts/screenshot.sh *)",
+      "Bash(adb devices *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)"
+    ],
+    "deny": [
+      "Bash(adb uninstall *)",
+      "Bash(adb install *)",
+      "Bash(adb shell pm *)",
+      "Bash(adb shell cmd package *)",
+      "Bash(flutter install *)",
+      "Bash(flutter run *)",
+      "Bash(./scripts/install-release.sh *)",
+      "Bash(./scripts/create-keystore.sh *)",
+      "Bash(git push *)",
+      "Read(./.secrets/**)",
+      "Edit(./.secrets/**)"
+    ]
+  }
+}
