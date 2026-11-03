@@ -40,31 +40,96 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
   Future<int> insertSessionExercise(SessionExercisesCompanion row) =>
       into(sessionExercises).insert(row);
 
+  /// Exercises of a session in order.
+  Future<List<SessionExercise>> getSessionExercises(int sessionId) =>
+      (select(sessionExercises)
+            ..where((e) => e.sessionId.equals(sessionId))
+            ..orderBy([
+              (e) => OrderingTerm.asc(e.position),
+              (e) => OrderingTerm.asc(e.id),
+            ]))
+          .get();
+
+  Future<void> updateSessionExercise(SessionExercise e) =>
+      update(sessionExercises).replace(e.toInsertable());
+
+  Future<int> nextSessionExercisePosition(int sessionId) async {
+    final max = sessionExercises.position.max();
+    final row =
+        await (selectOnly(sessionExercises)
+              ..addColumns([max])
+              ..where(sessionExercises.sessionId.equals(sessionId)))
+            .getSingle();
+    return (row.read(max) ?? -1) + 1;
+  }
+
+  /// Sets of one session exercise, ordered by index.
+  Future<List<SetEntry>> getSets(int sessionExerciseId) =>
+      (select(setEntries)
+            ..where((s) => s.sessionExerciseId.equals(sessionExerciseId))
+            ..orderBy([(s) => OrderingTerm.asc(s.setIndex)]))
+          .get();
+
+  Future<void> updateSet(SetEntry set) =>
+      update(setEntries).replace(set.toInsertable());
+
+  /// Time of the latest set of a session, if any.
+  Future<DateTime?> lastSetTime(int sessionId) async {
+    final max = setEntries.completedAt.max();
+    final query =
+        selectOnly(setEntries).join([
+            innerJoin(
+              sessionExercises,
+              sessionExercises.id.equalsExp(setEntries.sessionExerciseId),
+              useColumns: false,
+            ),
+          ])
+          ..addColumns([max])
+          ..where(sessionExercises.sessionId.equals(sessionId));
+    return (await query.getSingle()).read(max);
+  }
+
+  /// The finished session of [planId] started right before [before].
+  Future<Session?> previousPlanSession(int planId, DateTime before) =>
+      (select(sessions)
+            ..where(
+              (s) =>
+                  s.planId.equals(planId) &
+                  s.endedAt.isNotNull() &
+                  s.startedAt.isSmallerThanValue(before),
+            )
+            ..orderBy([(s) => OrderingTerm.desc(s.startedAt)])
+            ..limit(1))
+          .getSingleOrNull();
+
   Future<SessionExercise?> findSessionExercise(int id) => (select(
     sessionExercises,
   )..where((e) => e.id.equals(id))).getSingleOrNull();
 
+  JoinedSelectStatement<HasResultSet, dynamic> _detailsQuery(int sessionId) =>
+      select(sessionExercises).join([
+          innerJoin(
+            exercises,
+            exercises.id.equalsExp(sessionExercises.exerciseId),
+          ),
+          leftOuterJoin(
+            setEntries,
+            setEntries.sessionExerciseId.equalsExp(sessionExercises.id),
+          ),
+        ])
+        ..where(sessionExercises.sessionId.equals(sessionId))
+        ..orderBy([
+          OrderingTerm.asc(sessionExercises.position),
+          OrderingTerm.asc(sessionExercises.id),
+          OrderingTerm.asc(setEntries.setIndex),
+        ]);
+
   /// Exercises of a session in order, each with its exercise and sets.
-  Stream<List<SessionExerciseDetail>> watchDetails(int sessionId) {
-    final query =
-        select(sessionExercises).join([
-            innerJoin(
-              exercises,
-              exercises.id.equalsExp(sessionExercises.exerciseId),
-            ),
-            leftOuterJoin(
-              setEntries,
-              setEntries.sessionExerciseId.equalsExp(sessionExercises.id),
-            ),
-          ])
-          ..where(sessionExercises.sessionId.equals(sessionId))
-          ..orderBy([
-            OrderingTerm.asc(sessionExercises.position),
-            OrderingTerm.asc(sessionExercises.id),
-            OrderingTerm.asc(setEntries.setIndex),
-          ]);
-    return query.watch().map(_groupDetails);
-  }
+  Stream<List<SessionExerciseDetail>> watchDetails(int sessionId) =>
+      _detailsQuery(sessionId).watch().map(_groupDetails);
+
+  Future<List<SessionExerciseDetail>> getDetails(int sessionId) async =>
+      _groupDetails(await _detailsQuery(sessionId).get());
 
   List<SessionExerciseDetail> _groupDetails(List<TypedResult> rows) {
     final result = <SessionExerciseDetail>[];

@@ -28,6 +28,32 @@ String formatMinSec(Duration duration) {
   return '${total ~/ 60}:${_two(total % 60)}';
 }
 
+/// Running time: `42:13` below one hour, `1:05:00` from one hour on.
+String formatElapsed(Duration duration) =>
+    duration.inHours >= 1 ? formatHms(duration) : formatMinSec(duration);
+
+/// Short date without year: `3.11.`
+String formatShortDate(DateTime time) =>
+    DateFormat('d.M.', appLocale).format(time.toLocal());
+
+/// Training duration: `52 min`, `1:05 h`.
+String formatTrainingDuration(Duration duration) {
+  final minutes = duration.inMinutes;
+  if (minutes < 60) return '$minutes min';
+  return '${minutes ~/ 60}:${_two(minutes % 60)} h';
+}
+
+/// Parses a duration typed by the user: seconds (`90`) or `m:ss` (`1:30`).
+/// Returns `null` for empty, invalid or non-positive input.
+int? parseDurationInput(String input) {
+  final text = input.trim();
+  final match = RegExp(r'^(\d+):([0-5]\d)$').firstMatch(text);
+  final seconds = match != null
+      ? int.parse(match.group(1)!) * 60 + int.parse(match.group(2)!)
+      : int.tryParse(text);
+  return seconds != null && seconds > 0 ? seconds : null;
+}
+
 String _two(int value) => value.toString().padLeft(2, '0');
 
 /// Parses a decimal number typed by the user. Accepts comma and point as

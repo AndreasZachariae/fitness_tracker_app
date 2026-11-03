@@ -183,6 +183,63 @@ class PlanRepository {
         }
       });
 
+  /// Takes over the order of a finished session and the exercises added
+  /// during it (SPEC §6.3). Plan exercises not in the session stay at the end.
+  Future<void> adoptSession(int planId, List<SessionExerciseDetail> details) =>
+      _db.transaction(() async {
+        await _require(planId);
+        final byExercise = {
+          for (final e in await _db.plansDao.getEntries(planId))
+            e.exercise.id: e.planExercise,
+        };
+        var position = 0;
+        for (final d in details) {
+          final entry = byExercise.remove(d.exercise.id);
+          if (entry != null) {
+            await _db.plansDao.setEntryPosition(entry.id, position++);
+          } else {
+            await _db.plansDao.insertEntry(
+              _entryFromSession(planId, d, position++),
+            );
+          }
+        }
+        for (final rest
+            in byExercise.values.toList()
+              ..sort((a, b) => a.position.compareTo(b.position))) {
+          await _db.plansDao.setEntryPosition(rest.id, position++);
+        }
+      });
+
+  /// "Als Plan speichern": a new plan with the session's exercises and
+  /// targets in session order. Returns the plan id.
+  Future<int> createFromSession(
+    String name,
+    List<SessionExerciseDetail> details,
+  ) => _db.transaction(() async {
+    final planId = await create(name);
+    for (final (i, d) in details.indexed) {
+      await _db.plansDao.insertEntry(_entryFromSession(planId, d, i));
+    }
+    return planId;
+  });
+
+  static PlanExercisesCompanion _entryFromSession(
+    int planId,
+    SessionExerciseDetail d,
+    int position,
+  ) {
+    final se = d.sessionExercise;
+    return PlanExercisesCompanion.insert(
+      planId: planId,
+      exerciseId: d.exercise.id,
+      position: position,
+      targetSets: se.targetSets.clamp(minTargetSets, maxTargetSets),
+      targetReps: Value(se.targetReps),
+      targetDurationSec: Value(se.targetDurationSec),
+      restSec: Value(se.restSec),
+    );
+  }
+
   Future<Plan> _require(int id) async {
     final plan = await _db.plansDao.findById(id);
     if (plan == null) throw NotFoundException('plan', id);

@@ -67,3 +67,31 @@ String formatSetsSummary(ExerciseType type, List<SetEntry> sets) {
           '${S.minutesUnit}';
   }
 }
+
+/// One set: `60 kg × 10`, `10 Wdh`, `+10 kg × 8`, `45 s`, `1:30 min · +5 kg`.
+String formatSingleSet(ExerciseType type, SetEntry set) {
+  final w = set.weightKg ?? 0;
+  return switch (type) {
+    ExerciseType.weightReps => '${formatKg(w)} × ${set.reps ?? 0}',
+    ExerciseType.bodyweight =>
+      w == 0
+          ? '${set.reps ?? 0} ${S.repsUnit}'
+          : '${formatSignedKg(w)} × ${set.reps ?? 0}',
+    ExerciseType.timed =>
+      formatDuration(set.durationSec ?? 0) +
+          (w > 0 ? ' · ${formatSignedKg(w)}' : ''),
+  };
+}
+
+/// Sets for "Letztes Mal (28.10.): 60 × 10, 60 × 10, 60 × 8".
+String formatSetsDetailed(ExerciseType type, List<SetEntry> sets) {
+  switch (type) {
+    case ExerciseType.weightReps:
+      return sets
+          .map((s) => '${formatWeight(s.weightKg ?? 0)} × ${s.reps ?? 0}')
+          .join(', ');
+    case ExerciseType.bodyweight:
+    case ExerciseType.timed:
+      return formatSetsSummary(type, sets);
+  }
+}

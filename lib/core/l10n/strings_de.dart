@@ -193,15 +193,69 @@ abstract final class S {
   static const createExercise = 'Neue Übung anlegen';
   static const pickerEmpty = 'Noch keine Übungen in der Bibliothek.';
 
-  // Active session placeholder (until M3)
-  static String trainingRunningSince(String time) => 'Läuft seit $time Uhr';
-  static const sessionViewComingSoon =
-      'Die Session-Ansicht mit Satz-Erfassung folgt mit Meilenstein M3.';
+  // Active session (SPEC §6.2)
   static const finishTraining = 'Beenden';
+  static String setOf(int n, int total) => 'Satz $n von $total';
+  static String progress(int n, int total) => '$n/$total';
+  static String lastTimeOn(String date, String summary) =>
+      'Letztes Mal ($date): $summary';
+  static const saveSet = 'Satz speichern';
+  static const setSaved = 'Satz gespeichert';
+  static const addOneSet = '+1 Satz';
+  static const skip = 'Überspringen';
+  static const finishExercise = 'Übung beenden';
+  static const reopen = 'Wieder öffnen';
+  static const skippedLabel = 'übersprungen';
+  static String doneSummary(int sets, String best) =>
+      '${S.sets(sets)}, bestes $best';
+  static const nextUp = 'Als Nächstes';
+  static const weight = 'Gewicht';
+  static const addedWeight = 'Zusatzgewicht';
+  static const reps = 'Wiederholungen';
+  static const duration = 'Dauer';
+  static const addWeight = 'Gewicht hinzufügen';
+  static const stopwatchStart = 'Start';
+  static const stopwatchStop = 'Stopp';
+  static const enterWeight = 'Gewicht in kg';
+  static const enterReps = 'Wiederholungen';
+  static const enterDuration = 'Dauer (Sekunden oder m:ss)';
+  static const errorNumber = 'Gib eine gültige Zahl ein.';
+  static String editSet(int n) => 'Satz $n ändern';
+  static const setDeleted = 'Satz gelöscht.';
+  static const ok = 'OK';
+  static String openExercisesTitle(int n) => n == 1
+      ? '1 Übung ist nicht abgeschlossen. Training trotzdem beenden?'
+      : '$n Übungen sind nicht abgeschlossen. Training trotzdem beenden?';
   static const discardNoSetsTitle = 'Keine Sätze erfasst. Training verwerfen?';
   static const keepTraining = 'Weiter trainieren';
   static const discard = 'Verwerfen';
   static const trainingDiscarded = 'Training verworfen.';
+  static String trainingRunning(String time) => 'Training läuft – $time';
+  static const trainingRunningA11y = 'Laufendes Training öffnen';
+
+  // Forgotten session
+  static String forgottenTitle(String date) =>
+      'Das Training vom $date läuft noch.';
+  static const forgottenBody =
+      '„Beenden“ setzt das Ende auf 5 Minuten nach dem letzten Satz.';
+  static const resume = 'Fortsetzen';
+  static const discardConfirmTitle = 'Training wirklich verwerfen?';
+  static const discardConfirmBody =
+      'Das Training und alle seine Sätze werden gelöscht.';
+
+  // Summary (SPEC §6.3)
+  static const summaryTitle = 'Training beendet';
+  static const statDuration = 'Dauer';
+  static const statExercises = 'Übungen';
+  static const statSets = 'Sätze';
+  static const statVolume = 'Volumen';
+  static String compareLast(String percent) => '$percent zum letzten Mal';
+  static String adoptIntoPlan(String plan) =>
+      'Reihenfolge und neue Übungen in Plan „$plan“ übernehmen';
+  static const saveAsPlan = 'Als Plan speichern';
+  static String savedAsPlan(String name) => 'Als Plan „$name“ gespeichert.';
+  static const summaryNotesHint = 'Wie lief das Training?';
+  static const finished = 'Fertig';
 
   // Errors
   static const errorInvalidValue =

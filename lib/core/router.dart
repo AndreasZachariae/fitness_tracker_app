@@ -9,6 +9,7 @@ import '../features/settings/exercises/exercise_list_page.dart';
 import '../features/settings/plans/plan_list_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/stats/stats_page.dart';
+import '../features/training/summary/summary_page.dart';
 import '../features/training/training_page.dart';
 import '../widgets/home_shell.dart';
 
@@ -24,6 +25,9 @@ abstract final class AppRoutes {
   static const exercises = '/settings/exercises';
   static const exerciseArchive = '/settings/exercises/archive';
   static const plans = '/settings/plans';
+
+  /// Full-screen summary after a session (SPEC §6.3).
+  static String summary(int sessionId) => '/summary/$sessionId';
 }
 
 /// Builds the app router: a [StatefulShellRoute] with one branch per tab and
@@ -72,6 +76,12 @@ GoRouter createRouter({String initialLocation = AppRoutes.training}) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/summary/:id',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) =>
+            SummaryPage(sessionId: int.parse(state.pathParameters['id']!)),
       ),
       GoRoute(
         path: AppRoutes.settings,

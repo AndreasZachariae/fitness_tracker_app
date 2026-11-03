@@ -9,4 +9,5 @@ export 'exercise.dart';
 export 'local_date.dart';
 export 'plan.dart';
 export 'session.dart';
+export 'set_values.dart';
 export 'targets.dart';

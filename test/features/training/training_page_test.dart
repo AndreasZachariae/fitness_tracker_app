@@ -73,7 +73,7 @@ void main() {
     final session = await dbWork(tester, r.sessions.getActive);
     expect(session!.isFreeTraining, isTrue);
     expect(find.text(S.freeTrainingTitle), findsOneWidget);
-    expect(find.text(S.sessionViewComingSoon), findsOneWidget);
+    expect(find.text(S.finishTraining), findsOneWidget);
     await disposeApp(tester, db);
   });
 

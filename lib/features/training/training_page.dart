@@ -8,11 +8,11 @@ import '../../widgets/settings_action.dart';
 import '../../widgets/snackbars.dart';
 import '../settings/exercises/exercise_form_page.dart';
 import '../settings/plans/plan_actions.dart';
-import 'active_session_placeholder.dart';
 import 'exercise_picker_sheet.dart';
 import 'free_training.dart';
 import 'plan_chip_bar.dart';
 import 'plan_entry_sheet.dart';
+import 'session/session_view.dart';
 import 'training_item.dart';
 import 'training_list.dart';
 
@@ -24,7 +24,8 @@ class TrainingPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final active = ref.watch(activeSessionProvider);
     return switch (active) {
-      AsyncData(value: final session?) => ActiveSessionPlaceholder(
+      AsyncData(value: final session?) => SessionView(
+        key: ValueKey(session.id),
         session: session,
       ),
       AsyncData() => const _PlanningView(),

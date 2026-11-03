@@ -9,13 +9,17 @@ import 'package:gymlog/data/providers.dart';
 import 'test_db.dart';
 
 /// Pumps the whole app on an in-memory database with a fixed clock.
-Future<AppDatabase> pumpApp(WidgetTester tester, {AppDatabase? db}) async {
+Future<AppDatabase> pumpApp(
+  WidgetTester tester, {
+  AppDatabase? db,
+  Clock? clock,
+}) async {
   final database = db ?? newTestDatabase();
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(database),
-        clockProvider.overrideWithValue(newTestClock()),
+        clockProvider.overrideWithValue(clock ?? newTestClock()),
       ],
       child: const GymLogApp(),
     ),
