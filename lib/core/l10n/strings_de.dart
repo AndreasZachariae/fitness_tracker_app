@@ -285,6 +285,30 @@ abstract final class S {
   static const summaryNotesHint = 'Wie lief das Training?';
   static const finished = 'Fertig';
 
+  // History (SPEC §6.4)
+  static String historyEntry(String duration, int sets, String volume) =>
+      '$duration · ${S.sets(sets)} · $volume';
+  static const recordsInSession = 'Neue Rekorde in diesem Training';
+  static const editTimes = 'Zeiten ändern';
+  static const start = 'Start';
+  static const end = 'Ende';
+  static const errorEndBeforeStart = 'Das Ende muss nach dem Start liegen.';
+  static const errorEndInFuture = 'Das Ende darf nicht in der Zukunft liegen.';
+  static const deleteSession = 'Training löschen';
+  static String deleteSessionTitle(String date, String plan) =>
+      'Training vom $date („$plan“) löschen?';
+  static const deleteSessionBody =
+      'Alle Übungen und Sätze dieses Trainings werden gelöscht. Das lässt '
+      'sich nicht rückgängig machen.';
+  static const sessionDeleted = 'Training gelöscht.';
+  static const removeFromSession = 'Aus Training entfernen';
+  static String removeFromSessionTitle(String name) =>
+      '„$name“ aus diesem Training entfernen?';
+  static const removeFromSessionBody =
+      'Die Übung und ihre Sätze werden aus diesem Training gelöscht.';
+  static String removedFromSession(String name) => '„$name“ entfernt.';
+  static const noSetsRecorded = 'Keine Sätze erfasst.';
+
   // Errors
   static const errorInvalidValue =
       'Ein Wert liegt außerhalb des erlaubten Bereichs.';

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/body/body_page.dart';
 import '../features/history/history_page.dart';
+import '../features/history/session_detail_page.dart';
 import '../features/settings/exercises/exercise_archive_page.dart';
 import '../features/settings/exercises/exercise_list_page.dart';
 import '../features/settings/plans/plan_list_page.dart';
@@ -17,6 +18,7 @@ import '../widgets/home_shell.dart';
 abstract final class AppRoutes {
   static const training = '/training';
   static const history = '/history';
+  static String historyDetail(int sessionId) => '/history/$sessionId';
   static const stats = '/stats';
   static const body = '/body';
 
@@ -56,6 +58,14 @@ GoRouter createRouter({String initialLocation = AppRoutes.training}) {
               GoRoute(
                 path: AppRoutes.history,
                 builder: (context, state) => const HistoryPage(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) => SessionDetailPage(
+                      sessionId: int.parse(state.pathParameters['id']!),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

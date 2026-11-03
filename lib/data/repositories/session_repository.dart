@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../core/clock.dart';
+import '../../domain/history.dart';
 import '../../domain/models/models.dart';
 import '../../domain/records.dart';
 import '../../domain/session_rules.dart';
@@ -423,6 +424,80 @@ class SessionRepository {
     );
     return previous == null ? null : getDetails(previous.id);
   }
+
+  Stream<Session?> watchSession(int sessionId) =>
+      _db.sessionsDao.watchById(sessionId);
+
+  /// Finished sessions, newest first, with their key figures (SPEC §6.4).
+  Stream<List<SessionSummary>> watchHistory() =>
+      _db.sessionsDao.watchSetChanges().asyncMap((_) => _history());
+
+  Future<List<SessionSummary>> _history() async {
+    final sessions = await _db.sessionsDao.finishedSessions();
+    final all = await _db.sessionsDao.allSetsWithContext();
+    final count = <int, int>{};
+    final volume = <int, double>{};
+    final byExercise = <int, List<HistorySet>>{};
+    final types = <int, ExerciseType>{};
+    for (final x in all) {
+      if (x.set.isWarmup) continue;
+      count[x.sessionId] = (count[x.sessionId] ?? 0) + 1;
+      if (x.type == ExerciseType.weightReps) {
+        volume[x.sessionId] =
+            (volume[x.sessionId] ?? 0) +
+            (x.set.weightKg ?? 0) * (x.set.reps ?? 0);
+      }
+      byExercise.putIfAbsent(x.exerciseId, () => []).add((
+        set: x.set,
+        sessionId: x.sessionId,
+      ));
+      types[x.exerciseId] = x.type;
+    }
+    final withRecords = <int>{};
+    for (final MapEntry(key: exerciseId, value: sets) in byExercise.entries) {
+      final flagged = detectRecords(types[exerciseId]!, sets).keys.toSet();
+      for (final h in sets) {
+        if (flagged.contains(h.set.id)) withRecords.add(h.sessionId);
+      }
+    }
+    return [
+      for (final s in sessions)
+        SessionSummary(
+          session: s,
+          setCount: count[s.id] ?? 0,
+          volume: volume[s.id] ?? 0,
+          hasRecords: withRecords.contains(s.id),
+        ),
+    ];
+  }
+
+  /// Changes start and end of a finished session (SPEC §6.4).
+  Future<void> updateSessionTimes(
+    int sessionId, {
+    required DateTime start,
+    required DateTime end,
+  }) => _db.transaction(() async {
+    final session = await _db.sessionsDao.findById(sessionId);
+    if (session == null) throw NotFoundException('session', sessionId);
+    if (session.isActive) throw const InvalidValueException('endedAt', null);
+    final s = storageTime(start);
+    final e = storageTime(end);
+    final error = validateSessionTimes(start: s, end: e, now: _clock.now());
+    if (error != null) throw InvalidValueException(error.name, (s, e));
+    await _db.sessionsDao.updateSession(
+      session.copyWith(startedAt: s, endedAt: e),
+    );
+  });
+
+  /// Removes an exercise with all its sets from a session.
+  Future<void> removeSessionExercise(int sessionExerciseId) =>
+      _db.transaction(() async {
+        final se = await _db.sessionsDao.findSessionExercise(sessionExerciseId);
+        if (se == null) {
+          throw NotFoundException('sessionExercise', sessionExerciseId);
+        }
+        await _db.sessionsDao.deleteSessionExercise(sessionExerciseId);
+      });
 
   /// Record sets of a session by set id, updated live (label "Rekord").
   Stream<Map<int, List<RecordKind>>> watchSessionRecords(int sessionId) => _db

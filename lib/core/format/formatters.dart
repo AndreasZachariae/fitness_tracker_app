@@ -67,3 +67,21 @@ double? parseDecimal(String input) {
   if (!RegExp(r'^[+-]?(\d+\.?\d*|\.\d+)$').hasMatch(normalized)) return null;
   return double.tryParse(normalized);
 }
+
+/// Weekday and short date: `Di, 3.11.`
+String formatWeekdayDate(DateTime time) =>
+    '${DateFormat.E(appLocale).format(time.toLocal())}, '
+    '${formatShortDate(time)}';
+
+/// Full date: `Di, 3.11.2026`
+String formatWeekdayDateYear(DateTime time) =>
+    '${DateFormat.E(appLocale).format(time.toLocal())}, '
+    '${DateFormat('d.M.yyyy', appLocale).format(time.toLocal())}';
+
+/// Clock time: `18:20`
+String formatClockTime(DateTime time) =>
+    DateFormat.Hm(appLocale).format(time.toLocal());
+
+/// Month heading: `November 2026`
+String formatMonth(DateTime time) =>
+    DateFormat('MMMM yyyy', appLocale).format(time.toLocal());

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/clock.dart';
+import '../domain/history.dart';
 import '../domain/models/models.dart';
 import '../domain/records.dart';
 import 'db/database.dart';
@@ -117,3 +118,11 @@ final sessionRecordsProvider =
       (ref, sessionId) =>
           ref.watch(sessionRepositoryProvider).watchSessionRecords(sessionId),
     );
+
+final historyProvider = StreamProvider<List<SessionSummary>>(
+  (ref) => ref.watch(sessionRepositoryProvider).watchHistory(),
+);
+
+final sessionProvider = StreamProvider.family<Session?, int>(
+  (ref, id) => ref.watch(sessionRepositoryProvider).watchSession(id),
+);

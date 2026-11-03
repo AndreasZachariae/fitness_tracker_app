@@ -59,7 +59,14 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Vorschlags-Chip in Satz 1, Rekord: rotes Aufleuchten + Label + mittlere Haptik, Rekorde in der Zusammenfassung
   - [x] Übungsnotiz in der aktiven Kachel (Tap → bearbeiten)
   - [x] Tests (Tabellen für Domain, Repository, Widgets)
-- [ ] M5 Verlauf
+- [x] M5 Verlauf (0.6.0+6)
+  - [x] Repository: Verlaufsliste als Stream (Dauer, Sätze, Volumen, Rekord-Markierung), Session beobachten, Zeiten ändern
+        (validiert), Übung aus Session entfernen
+  - [x] Domain: Prüfung Start/Ende, Monatsgruppen
+  - [x] Verlauf-Tab: nach Monat gruppiert, Einträge „Di, 3.11.“, Plan/Freies Training, Dauer, Sätze, Volumen, Rekord
+  - [x] Detail: Datum, Start–Ende ändern, Notiz, Sätze je Übung (ändern/löschen, Rekord-Label), Übung entfernen, Session
+        löschen mit Bestätigung (Datum + Planname)
+  - [x] Tests
 - [ ] M6 Körper
 - [ ] M7 Statistik
 - [ ] M8 Daten und Einstellungen
@@ -217,6 +224,18 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 - **Übungsnotiz** in der aktiven Kachel: einzeilig; Tippen öffnet einen Dialog; gespeichert wird an der Übung (gilt überall).
 - Geräte-Dienste (`lib/core/device.dart`) sind injizierbar; Tests nutzen Fakes und prüfen Vibration/Haptik/Display-an.
 
+**M5**
+- **Verlaufsliste:** nur beendete Sessions, neueste zuerst, Monatsgruppen nach lokalem Startdatum. Sätze = Arbeitssätze
+  aller Übungstypen; Volumen nach §7.6 (nur `weight_reps`). Rekord-Pokal, wenn mindestens ein Satz der Session nach §7.7
+  ein Rekord war (gleiche chronologische Berechnung wie live; die Markierung kann sich ändern, wenn ältere Sätze
+  bearbeitet werden – sie wird immer aus den aktuellen Daten berechnet).
+- **Datumsformat** „Di, 3.11.“ wie in §6.4 (intl liefert den Wochentag ohne Punkt).
+- **Zeiten ändern:** Start und Ende per Datums- und Uhrzeitauswahl; Ende muss nach dem Start und nicht in der Zukunft
+  liegen (Dialog und Repository prüfen). Sätze außerhalb der neuen Zeitspanne bleiben unverändert.
+- **Detail:** Sätze antippen → derselbe Ändern/Löschen-Dialog wie in der Session; Löschen nummeriert die folgenden Sätze
+  neu. „Aus Training entfernen“ (⋮ je Übung) löscht die Übung samt Sätzen aus dieser Session, mit Rückfrage.
+  Notiz wird beim Tippen (0,6 s verzögert) und beim Verlassen gespeichert. Session löschen fragt mit Datum und Planname.
+
 ## Datenbank-Migrationen (ab Schema 2)
 
 1. Tabellen in `lib/data/db/tables.dart` ändern, `AppDatabase.currentSchemaVersion` + 1.
@@ -326,4 +345,14 @@ Vorher: `./scripts/dev-install.sh`, in den Einstellungen „Demo-Daten erzeugen�
 - [ ] Ein Satz über dem bisherigen Bestwert (z. B. Vorschlag übernehmen): Kachel leuchtet kurz rot, mittlere Vibration,
   Satzzeile mit rotem „Rekord“; Zusammenfassung listet „Neue Rekorde“. Beim allerersten Training einer neuen Übung keine Rekorde.
 - [ ] Aktive Kachel: „Notiz hinzufügen“ → Text → erscheint einzeilig; Tippen bearbeitet.
+
+### M5 Verlauf
+- [ ] Verlauf ohne Trainings: „Noch keine Trainings. Starte dein erstes im Tab Training.“
+- [ ] Mit Demo-Daten: Monatsüberschriften („Oktober 2026“), Einträge „Fr, 30.10. · Unterkörper“ mit Dauer, Sätzen,
+  Volumen; Pokal bei Trainings mit Rekord.
+- [ ] Eintrag antippen → Datum, Plan, „18:04 – 19:09 · 1:05 h“, Notiz, Übungen mit Sätzen und „Rekord“-Labels.
+- [ ] Zeiten antippen → Start/Ende ändern; Ende vor Start wird abgelehnt.
+- [ ] Satz antippen → ändern/löschen; Werte in der Liste aktualisieren sich.
+- [ ] ⋮ an einer Übung → „Aus Training entfernen“ mit Rückfrage.
+- [ ] Papierkorb → „Training vom Di, 3.11. („Oberkörper“) löschen?“ → Eintrag verschwindet aus dem Verlauf.
 

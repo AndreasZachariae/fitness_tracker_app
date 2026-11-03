@@ -98,6 +98,48 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
     ];
   }
 
+  Stream<Session?> watchById(int id) =>
+      (select(sessions)..where((s) => s.id.equals(id))).watchSingleOrNull();
+
+  /// Every set with its session and exercise type, chronologically.
+  Future<
+    List<({SetEntry set, int sessionId, int exerciseId, ExerciseType type})>
+  >
+  allSetsWithContext() async {
+    final query =
+        select(setEntries).join([
+          innerJoin(
+            sessionExercises,
+            sessionExercises.id.equalsExp(setEntries.sessionExerciseId),
+          ),
+          innerJoin(
+            exercises,
+            exercises.id.equalsExp(sessionExercises.exerciseId),
+          ),
+        ])..orderBy([
+          OrderingTerm.asc(setEntries.completedAt),
+          OrderingTerm.asc(setEntries.id),
+        ]);
+    return [
+      for (final row in await query.get())
+        (
+          set: row.readTable(setEntries),
+          sessionId: row.readTable(sessionExercises).sessionId,
+          exerciseId: row.readTable(sessionExercises).exerciseId,
+          type: row.readTable(exercises).type,
+        ),
+    ];
+  }
+
+  Future<List<Session>> finishedSessions() =>
+      (select(sessions)
+            ..where((s) => s.endedAt.isNotNull())
+            ..orderBy([(s) => OrderingTerm.desc(s.startedAt)]))
+          .get();
+
+  Future<int> deleteSessionExercise(int id) =>
+      (delete(sessionExercises)..where((e) => e.id.equals(id))).go();
+
   /// Emits whenever sets, session exercises or sessions change.
   Stream<void> watchSetChanges() => customSelect(
     'SELECT 1',
