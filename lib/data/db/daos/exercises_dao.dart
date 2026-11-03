@@ -16,6 +16,20 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
 
   Future<List<Exercise>> getAll() => select(exercises).get();
 
+  /// All exercises including archived ones.
+  Stream<List<Exercise>> watchAll() => select(exercises).watch();
+
+  /// Number of plans containing the exercise.
+  Future<int> planCount(int id) async {
+    final count = planExercises.id.count();
+    final row =
+        await (selectOnly(planExercises)
+              ..addColumns([count])
+              ..where(planExercises.exerciseId.equals(id)))
+            .getSingle();
+    return row.read(count) ?? 0;
+  }
+
   Future<Exercise?> findById(int id) =>
       (select(exercises)..where((e) => e.id.equals(id))).getSingleOrNull();
 

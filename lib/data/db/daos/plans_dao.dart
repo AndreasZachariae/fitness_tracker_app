@@ -75,6 +75,24 @@ class PlansDao extends DatabaseAccessor<AppDatabase> with _$PlansDaoMixin {
   Future<int> insertEntry(PlanExercisesCompanion row) =>
       into(planExercises).insert(row);
 
+  /// Inserts an entry with its original id and position (undo).
+  Future<int> insertEntryWithId(PlanExercise entry) =>
+      into(planExercises).insert(entry.toInsertable());
+
+  /// Number of exercises per plan id (plans without exercises are missing).
+  Stream<Map<int, int>> watchEntryCounts() {
+    final count = planExercises.id.count();
+    final query = selectOnly(planExercises)
+      ..addColumns([planExercises.planId, count])
+      ..groupBy([planExercises.planId]);
+    return query.watch().map(
+      (rows) => {
+        for (final row in rows)
+          row.read(planExercises.planId)!: row.read(count)!,
+      },
+    );
+  }
+
   Future<void> updateEntry(PlanExercise entry) =>
       update(planExercises).replace(entry.toInsertable());
 

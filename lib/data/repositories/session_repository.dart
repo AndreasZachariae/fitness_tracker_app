@@ -26,6 +26,10 @@ class SessionRepository {
   /// Finished sessions, newest first.
   Stream<List<Session>> watchFinished() => _db.sessionsDao.watchFinished();
 
+  /// Last finished performance per exercise id ("Zuletzt: …").
+  Stream<Map<int, LastPerformance>> watchLastPerformances() =>
+      _db.sessionsDao.watchLastPerformances();
+
   /// Exercises of a session in order, with their sets.
   Stream<List<SessionExerciseDetail>> watchDetails(int sessionId) =>
       _db.sessionsDao.watchDetails(sessionId);

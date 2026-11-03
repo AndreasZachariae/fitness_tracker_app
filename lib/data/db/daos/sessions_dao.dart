@@ -93,6 +93,68 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
     ];
   }
 
+  /// For every exercise: its working sets in the latest finished session
+  /// in which it has at least one working set.
+  Stream<Map<int, LastPerformance>> watchLastPerformances() {
+    final query = customSelect(
+      'SELECT se.exercise_id AS exercise_id, s.started_at AS started_at, '
+      'x.id AS set_id '
+      'FROM set_entries x '
+      'JOIN session_exercises se ON se.id = x.session_exercise_id '
+      'JOIN sessions s ON s.id = se.session_id '
+      'WHERE s.ended_at IS NOT NULL AND x.is_warmup = 0 '
+      'ORDER BY s.started_at DESC, se.id, x.set_index',
+      readsFrom: {sessions, sessionExercises, setEntries},
+    );
+    return query.watch().asyncMap((rows) async {
+      // Latest session per exercise; collect only that session's sets.
+      final latest = <int, String>{};
+      final setIds = <int>[];
+      for (final row in rows) {
+        final exerciseId = row.read<int>('exercise_id');
+        final startedAt = row.read<String>('started_at');
+        final known = latest.putIfAbsent(exerciseId, () => startedAt);
+        if (known == startedAt) setIds.add(row.read<int>('set_id'));
+      }
+      if (setIds.isEmpty) return <int, LastPerformance>{};
+      final sets = await (select(
+        setEntries,
+      )..where((x) => x.id.isIn(setIds))).get();
+      final seIds = {for (final s in sets) s.sessionExerciseId};
+      final ses = await (select(
+        sessionExercises,
+      )..where((e) => e.id.isIn(seIds))).get();
+      final exerciseOf = {for (final e in ses) e.id: e.exerciseId};
+      final byExercise = <int, List<SetEntry>>{};
+      for (final s in sets) {
+        byExercise
+            .putIfAbsent(exerciseOf[s.sessionExerciseId]!, () => [])
+            .add(s);
+      }
+      return {
+        for (final MapEntry(key: exerciseId, value: list) in byExercise.entries)
+          exerciseId: LastPerformance(
+            exerciseId: exerciseId,
+            sessionStartedAt: DateTime.parse(latest[exerciseId]!),
+            sets: List.unmodifiable(
+              list..sort((a, b) => a.setIndex.compareTo(b.setIndex)),
+            ),
+          ),
+      };
+    });
+  }
+
+  /// Exercise ids ordered by their most recent session, newest first.
+  Stream<List<int>> watchRecentExerciseIds({int limit = 6}) {
+    return customSelect(
+      'SELECT se.exercise_id AS exercise_id, MAX(s.started_at) AS last '
+      'FROM session_exercises se JOIN sessions s ON s.id = se.session_id '
+      'GROUP BY se.exercise_id ORDER BY last DESC LIMIT ?',
+      variables: [Variable.withInt(limit)],
+      readsFrom: {sessions, sessionExercises},
+    ).watch().map((rows) => [for (final r in rows) r.read<int>('exercise_id')]);
+  }
+
   Future<int> nextSetIndex(int sessionExerciseId) async {
     final max = setEntries.setIndex.max();
     final row =

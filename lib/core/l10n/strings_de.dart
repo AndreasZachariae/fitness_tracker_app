@@ -1,3 +1,5 @@
+import '../../domain/models/enums.dart';
+
 /// All user-facing German texts of the app.
 ///
 /// UI code never contains string literals for visible texts; it references
@@ -16,14 +18,15 @@ abstract final class S {
   static const openSettings = 'Einstellungen öffnen';
 
   // Placeholders until the tabs are implemented
-  static const trainingEmpty =
-      'Hier planst und startest du bald dein Training.';
   static const historyEmpty =
       'Noch keine Trainings. Starte dein erstes im Tab Training.';
   static const statsEmpty =
       'Sobald du trainierst, siehst du hier deine Fortschritte.';
   static const bodyEmpty = 'Hier trägst du bald dein Körpergewicht ein.';
-  static const settingsEmpty = 'Die Einstellungen folgen in Kürze.';
+  static const settingsExercises = 'Übungen';
+  static const settingsExercisesSubtitle = 'Bibliothek, Archiv';
+  static const settingsPlans = 'Pläne';
+  static const settingsPlansSubtitle = 'Reihenfolge, umbenennen, duplizieren';
 
   // Settings – dev build only
   static const devSection = 'Entwicklung (nur GymLog DEV)';
@@ -54,6 +57,165 @@ abstract final class S {
 
   // Common actions
   static const cancel = 'Abbrechen';
+  static const save = 'Speichern';
+  static const create = 'Anlegen';
+  static const undo = 'Rückgängig';
+  static const rename = 'Umbenennen';
+  static const duplicate = 'Duplizieren';
+  static const delete = 'Löschen';
+  static const archive = 'Archivieren';
+  static const restore = 'Wiederherstellen';
+  static const search = 'Suchen';
+  static const decrease = 'Weniger';
+  static const increase = 'Mehr';
+  static const dragToReorder = 'Ziehen zum Verschieben';
+  static const moreActions = 'Weitere Aktionen';
+
+  // Exercise types and categories
+  static String exerciseType(ExerciseType type) => switch (type) {
+    ExerciseType.weightReps => 'Gewicht × Wdh',
+    ExerciseType.bodyweight => 'Körpergewicht',
+    ExerciseType.timed => 'Zeit',
+  };
+
+  static String category(ExerciseCategory? category) => switch (category) {
+    ExerciseCategory.chest => 'Brust',
+    ExerciseCategory.back => 'Rücken',
+    ExerciseCategory.legs => 'Beine',
+    ExerciseCategory.shoulders => 'Schultern',
+    ExerciseCategory.arms => 'Arme',
+    ExerciseCategory.core => 'Rumpf',
+    ExerciseCategory.fullBody => 'Ganzkörper',
+    ExerciseCategory.other => 'Sonstiges',
+    null => 'Ohne Kategorie',
+  };
+
+  // Formats
+  static String sets(int n) => n == 1 ? '1 Satz' : '$n Sätze';
+  static const repsUnit = 'Wdh';
+  static const secondsUnit = 's';
+  static const minutesUnit = 'min';
+  static String lastTime(String summary) => 'Zuletzt: $summary';
+
+  // Exercises (settings)
+  static const exercisesTitle = 'Übungen';
+  static const exercisesEmpty = 'Noch keine Übungen. Lege deine erste an.';
+  static const exercisesNoMatch = 'Keine Übung passt zur Suche.';
+  static const allCategories = 'Alle';
+  static const newExercise = 'Neue Übung';
+  static const archiveTitle = 'Archiv';
+  static const archiveEmpty = 'Keine archivierten Übungen.';
+  static const openArchive = 'Archiv öffnen';
+  static String exerciseRestored(String name) => '„$name“ wiederhergestellt.';
+  static String exerciseDeleted(String name) => '„$name“ gelöscht.';
+  static String exerciseArchived(String name) =>
+      '„$name“ archiviert. Der Verlauf bleibt erhalten.';
+  static String deleteExerciseTitle(String name) => '„$name“ löschen?';
+  static String archiveExerciseTitle(String name) => '„$name“ archivieren?';
+  static const deleteExerciseBody = 'Die Übung wurde noch nie trainiert.';
+  static const archiveExerciseBody =
+      'Die Übung kommt in deinen Trainings vor. Sie wird archiviert, der '
+      'Verlauf bleibt erhalten. Im Archiv kannst du sie wiederherstellen.';
+  static String removedFromPlans(int n) => n == 0
+      ? ''
+      : n == 1
+      ? ' Sie wird aus 1 Plan entfernt.'
+      : ' Sie wird aus $n Plänen entfernt.';
+
+  // Exercise form
+  static const editExercise = 'Übung bearbeiten';
+  static const fieldName = 'Name';
+  static const fieldType = 'Typ';
+  static const fieldCategory = 'Kategorie';
+  static const fieldTargetSets = 'Ziel-Sätze';
+  static const fieldTargetReps = 'Ziel-Wdh';
+  static const fieldTargetDuration = 'Ziel-Dauer';
+  static const fieldIncrement = 'Steigerung in kg';
+  static const fieldRest = 'Pause in Sekunden';
+  static String fieldRestHint(int defaultSec) => 'Standard: $defaultSec s';
+  static const fieldNotes = 'Notiz';
+  static const fieldNotesHint = 'z. B. Sitzhöhe 4, Griff eng';
+  static const fieldStrengthIndex = 'Im Kraftindex berücksichtigen';
+  static const optional = 'optional';
+  static const noTarget = 'ohne Ziel';
+  static const typeLocked =
+      'Der Typ lässt sich nicht mehr ändern, weil es schon Trainings mit '
+      'dieser Übung gibt.';
+  static const errorNameRequired = 'Gib einen Namen ein.';
+  static const errorNameTooLong = 'Höchstens 60 Zeichen.';
+  static const errorExerciseNameTaken =
+      'Es gibt schon eine Übung mit diesem Namen (auch im Archiv).';
+  static const errorPlanNameTaken =
+      'Es gibt schon einen Plan mit diesem Namen.';
+  static const errorIncrement = 'Gib eine Zahl größer als 0 ein, z. B. 2,5.';
+  static const errorRest = 'Gib eine ganze Zahl von 0 bis 3600 ein.';
+  static const errorPositiveNumber = 'Gib eine ganze Zahl größer als 0 ein.';
+
+  // Plans
+  static const plansTitle = 'Pläne';
+  static const plansEmpty = 'Noch keine Pläne. Lege deinen ersten an.';
+  static const newPlan = 'Neuer Plan';
+  static const addPlanChip = 'Plan';
+  static const renamePlan = 'Plan umbenennen';
+  static const duplicatePlan = 'Plan duplizieren';
+  static String copyName(String name) => '$name (Kopie)';
+  static String exerciseCount(int n) => n == 1 ? '1 Übung' : '$n Übungen';
+  static String deletePlanTitle(String name) => 'Plan „$name“ löschen?';
+  static const deletePlanBody =
+      'Der Plan und seine Übungsliste werden gelöscht. Deine Trainings im '
+      'Verlauf bleiben erhalten.';
+  static String planDeleted(String name) => 'Plan „$name“ gelöscht.';
+
+  // Training tab (no active session)
+  static const freeTraining = 'Frei';
+  static const freeTrainingTitle = 'Freies Training';
+  static const freeEmpty = 'Füge Übungen hinzu oder starte direkt.';
+  static const planEmpty = 'Dieser Plan hat noch keine Übungen.';
+  static const noPlansHint = 'Lege mit „+ Plan“ deinen ersten Plan an.';
+  static const addExercise = 'Übung hinzufügen';
+  static const startTraining = 'Training starten';
+  static String removedFromList(String name) => '„$name“ entfernt.';
+  static const remove = 'Entfernen';
+
+  // Plan entry sheet
+  static const editInPlan = 'Im Plan bearbeiten';
+  static const editInFreeList = 'Im Training bearbeiten';
+  static const fieldSets = 'Sätze';
+  static const fieldRestShort = 'Pause';
+  static String restDefault(String value) => 'Standard ($value)';
+  static const resetToDefault = 'Standard verwenden';
+
+  // Exercise picker
+  static const pickerTitle = 'Übung hinzufügen';
+  static const pickerSearchHint = 'Übung suchen';
+  static const recentlyUsed = 'Zuletzt verwendet';
+  static const alreadyAdded = 'Bereits enthalten';
+  static const createExercise = 'Neue Übung anlegen';
+  static const pickerEmpty = 'Noch keine Übungen in der Bibliothek.';
+
+  // Active session placeholder (until M3)
+  static String trainingRunningSince(String time) => 'Läuft seit $time Uhr';
+  static const sessionViewComingSoon =
+      'Die Session-Ansicht mit Satz-Erfassung folgt mit Meilenstein M3.';
+  static const finishTraining = 'Beenden';
+  static const discardNoSetsTitle = 'Keine Sätze erfasst. Training verwerfen?';
+  static const keepTraining = 'Weiter trainieren';
+  static const discard = 'Verwerfen';
+  static const trainingDiscarded = 'Training verworfen.';
+
+  // Errors
+  static const errorInvalidValue =
+      'Ein Wert liegt außerhalb des erlaubten Bereichs.';
+  static const errorNotFound =
+      'Der Eintrag existiert nicht mehr. Die Ansicht wurde aktualisiert.';
+  static const errorDuplicateExercise = 'Diese Übung ist schon enthalten.';
+  static const errorActiveSession =
+      'Es läuft schon ein Training. Beende es zuerst.';
+  static const errorSessionNotActive = 'Dieses Training ist schon beendet.';
+  static const errorInvalidSet = 'Die Werte des Satzes sind ungültig.';
+  static const errorUnexpected =
+      'Das hat nicht geklappt. Deine Daten sind unverändert – bitte versuche '
+      'es noch einmal.';
 
   // Units
   static const unitKg = 'kg';

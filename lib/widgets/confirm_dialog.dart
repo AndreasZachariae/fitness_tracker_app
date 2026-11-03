@@ -8,8 +8,9 @@ import '../core/l10n/strings_de.dart';
 Future<bool> showConfirmDialog(
   BuildContext context, {
   required String title,
-  required String body,
   required String confirmLabel,
+  String? body,
+  String cancelLabel = S.cancel,
   bool destructive = false,
 }) async {
   final result = await showDialog<bool>(
@@ -18,11 +19,11 @@ Future<bool> showConfirmDialog(
       final scheme = Theme.of(context).colorScheme;
       return AlertDialog(
         title: Text(title),
-        content: Text(body),
+        content: body == null ? null : Text(body),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text(S.cancel),
+            child: Text(cancelLabel),
           ),
           TextButton(
             style: destructive

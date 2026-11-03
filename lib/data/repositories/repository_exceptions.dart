@@ -57,6 +57,17 @@ final class DuplicateExerciseException extends RepositoryException {
   String toString() => 'DuplicateExerciseException($exerciseId)';
 }
 
+/// The type of an exercise with training history cannot change: its sets
+/// would no longer fit the type.
+final class TypeChangeNotAllowedException extends RepositoryException {
+  const TypeChangeNotAllowedException(this.exerciseId);
+
+  final int exerciseId;
+
+  @override
+  String toString() => 'TypeChangeNotAllowedException($exerciseId)';
+}
+
 /// A session is already running; at most one may be active.
 final class ActiveSessionExistsException extends RepositoryException {
   const ActiveSessionExistsException(this.activeSessionId);

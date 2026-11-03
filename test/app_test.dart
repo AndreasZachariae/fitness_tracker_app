@@ -27,7 +27,7 @@ void main() {
       );
     }
     expect(_appBarTitle(S.tabTraining), findsOneWidget);
-    expect(find.text(S.trainingEmpty), findsOneWidget);
+    expect(find.text(S.freeEmpty), findsOneWidget);
     await disposeApp(tester, db);
   });
 
@@ -38,7 +38,7 @@ void main() {
       S.tabHistory: S.historyEmpty,
       S.tabStats: S.statsEmpty,
       S.tabBody: S.bodyEmpty,
-      S.tabTraining: S.trainingEmpty,
+      S.tabTraining: S.freeEmpty,
     };
     for (final MapEntry(key: label, value: empty) in tabs.entries) {
       await tester.tap(

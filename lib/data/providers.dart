@@ -60,3 +60,52 @@ final devToolsProvider = Provider<DevTools>(
     ref.watch(clockProvider),
   ),
 );
+
+// Live data streams for the UI.
+
+final plansProvider = StreamProvider<List<Plan>>(
+  (ref) => ref.watch(planRepositoryProvider).watchPlans(),
+);
+
+final planEntriesProvider = StreamProvider.family<List<PlanEntry>, int>(
+  (ref, planId) => ref.watch(planRepositoryProvider).watchEntries(planId),
+);
+
+final planEntryCountsProvider = StreamProvider<Map<int, int>>(
+  (ref) => ref.watch(planRepositoryProvider).watchEntryCounts(),
+);
+
+/// Non-archived exercises, sorted by name.
+final activeExercisesProvider = StreamProvider<List<Exercise>>(
+  (ref) => ref.watch(exerciseRepositoryProvider).watchActive(),
+);
+
+final archivedExercisesProvider = StreamProvider<List<Exercise>>(
+  (ref) => ref.watch(exerciseRepositoryProvider).watchArchived(),
+);
+
+/// All exercises including archived ones, by id.
+final exercisesByIdProvider = StreamProvider<Map<int, Exercise>>(
+  (ref) => ref
+      .watch(exerciseRepositoryProvider)
+      .watchAll()
+      .map((list) => {for (final e in list) e.id: e}),
+);
+
+final recentExercisesProvider = StreamProvider<List<Exercise>>(
+  (ref) => ref.watch(exerciseRepositoryProvider).watchRecentlyUsed(),
+);
+
+final lastPerformancesProvider = StreamProvider<Map<int, LastPerformance>>(
+  (ref) => ref.watch(sessionRepositoryProvider).watchLastPerformances(),
+);
+
+final activeSessionProvider = StreamProvider<Session?>(
+  (ref) => ref.watch(sessionRepositoryProvider).watchActive(),
+);
+
+final sessionDetailsProvider =
+    StreamProvider.family<List<SessionExerciseDetail>, int>(
+      (ref, sessionId) =>
+          ref.watch(sessionRepositoryProvider).watchDetails(sessionId),
+    );

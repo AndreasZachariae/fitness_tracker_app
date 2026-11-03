@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../features/body/body_page.dart';
 import '../features/history/history_page.dart';
+import '../features/settings/exercises/exercise_archive_page.dart';
+import '../features/settings/exercises/exercise_list_page.dart';
+import '../features/settings/plans/plan_list_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/stats/stats_page.dart';
 import '../features/training/training_page.dart';
@@ -18,6 +21,9 @@ abstract final class AppRoutes {
 
   /// Settings live above the shell (no navigation bar).
   static const settings = '/settings';
+  static const exercises = '/settings/exercises';
+  static const exerciseArchive = '/settings/exercises/archive';
+  static const plans = '/settings/plans';
 }
 
 /// Builds the app router: a [StatefulShellRoute] with one branch per tab and
@@ -71,6 +77,22 @@ GoRouter createRouter({String initialLocation = AppRoutes.training}) {
         path: AppRoutes.settings,
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const SettingsPage(),
+        routes: [
+          GoRoute(
+            path: 'exercises',
+            builder: (context, state) => const ExerciseListPage(),
+            routes: [
+              GoRoute(
+                path: 'archive',
+                builder: (context, state) => const ExerciseArchivePage(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'plans',
+            builder: (context, state) => const PlanListPage(),
+          ),
+        ],
       ),
     ],
   );

@@ -31,7 +31,29 @@ class ExerciseRepository {
   Stream<List<Exercise>> watchArchived() =>
       _db.exercisesDao.watchByArchived(archived: true).map(_sortedByName);
 
+  /// All exercises including archived ones (for lookups by id).
+  Stream<List<Exercise>> watchAll() =>
+      _db.exercisesDao.watchAll().map(_sortedByName);
+
+  /// Non-archived exercises of the most recent sessions, newest first.
+  Stream<List<Exercise>> watchRecentlyUsed({int limit = 6}) {
+    return _db.sessionsDao.watchRecentExerciseIds(limit: limit * 2).asyncMap((
+      ids,
+    ) async {
+      final result = <Exercise>[];
+      for (final id in ids) {
+        final e = await _db.exercisesDao.findById(id);
+        if (e != null && !e.archived) result.add(e);
+        if (result.length == limit) break;
+      }
+      return result;
+    });
+  }
+
   Future<Exercise?> findById(int id) => _db.exercisesDao.findById(id);
+
+  /// Number of plans that contain the exercise.
+  Future<int> planCount(int id) => _db.exercisesDao.planCount(id);
 
   /// Creates an exercise and returns its id.
   Future<int> create(ExerciseDraft draft) => _db.transaction(() async {
@@ -57,6 +79,10 @@ class ExerciseRepository {
     if (existing == null) throw NotFoundException('exercise', exercise.id);
     final name = await _checkName(exercise.name, excludeId: exercise.id);
     _checkValues(incrementKg: exercise.incrementKg, restSec: exercise.restSec);
+    if (exercise.type != existing.type &&
+        await _db.exercisesDao.hasSessionHistory(exercise.id)) {
+      throw TypeChangeNotAllowedException(exercise.id);
+    }
     await _db.exercisesDao.updateExercise(
       exercise.copyWith(name: name, notes: exercise.notes.trim()),
     );

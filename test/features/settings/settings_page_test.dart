@@ -44,7 +44,8 @@ void main() {
     await pumpSettings(tester, dev: false);
     expect(find.text(S.devDemoData), findsNothing);
     expect(find.text(S.devDeleteAll), findsNothing);
-    expect(find.text(S.settingsEmpty), findsOneWidget);
+    expect(find.text(S.settingsExercises), findsOneWidget);
+    expect(find.text(S.settingsPlans), findsOneWidget);
     await dispose(tester);
   });
 

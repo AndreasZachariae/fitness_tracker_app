@@ -225,6 +225,24 @@ final class SessionExerciseDraft {
   final int? restSec;
 }
 
+/// The working sets of an exercise in the last finished session that
+/// contains it (reference "Zuletzt: …", SPEC §6.1).
+final class LastPerformance {
+  const LastPerformance({
+    required this.exerciseId,
+    required this.sessionStartedAt,
+    required this.sets,
+  });
+
+  final int exerciseId;
+
+  /// UTC.
+  final DateTime sessionStartedAt;
+
+  /// Ordered by set index; never empty.
+  final List<SetEntry> sets;
+}
+
 /// A session exercise with its exercise and its sets (ordered by index).
 final class SessionExerciseDetail {
   const SessionExerciseDetail({

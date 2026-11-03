@@ -1,0 +1,81 @@
+import 'package:flutter/material.dart';
+
+import '../core/l10n/strings_de.dart';
+import '../core/theme/typography.dart';
+
+/// `[−] value [+]` with 48 dp buttons. The caller owns the value; pass
+/// `null` callbacks to disable a direction at its limit.
+class NumberStepper extends StatelessWidget {
+  const NumberStepper({
+    required this.label,
+    required this.valueText,
+    required this.onDecrement,
+    required this.onIncrement,
+    this.helper,
+    super.key,
+  });
+
+  final String label;
+  final String valueText;
+  final VoidCallback? onDecrement;
+  final VoidCallback? onIncrement;
+
+  /// Small text below the label, e.g. "Standard (90 s)".
+  final String? helper;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: theme.textTheme.titleMedium),
+                if (helper != null)
+                  Text(
+                    helper!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          IconButton.filledTonal(
+            tooltip: '$label: ${S.decrease}',
+            onPressed: onDecrement,
+            icon: const Icon(Icons.remove),
+          ),
+          // Fixed width so the buttons never move; long values shrink.
+          SizedBox(
+            width: 96,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  valueText,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  style: NumberStyles.small.copyWith(
+                    fontSize: 24,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          IconButton.filledTonal(
+            tooltip: '$label: ${S.increase}',
+            onPressed: onIncrement,
+            icon: const Icon(Icons.add),
+          ),
+        ],
+      ),
+    );
+  }
+}

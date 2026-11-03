@@ -32,6 +32,9 @@ class PlanRepository {
   Future<List<PlanEntry>> getEntries(int planId) =>
       _db.plansDao.getEntries(planId);
 
+  /// Number of exercises per plan id.
+  Stream<Map<int, int>> watchEntryCounts() => _db.plansDao.watchEntryCounts();
+
   /// Creates an empty plan at the end and returns its id.
   Future<int> create(String name) => _db.transaction(() async {
     final cleaned = await _checkName(name);
@@ -151,6 +154,18 @@ class PlanRepository {
     if (existing == null) throw NotFoundException('planExercise', entryId);
     await _db.plansDao.deleteEntry(entryId);
     return existing;
+  });
+
+  /// Puts a removed entry back with its id, targets and position (undo).
+  Future<void> restoreEntry(PlanExercise entry) => _db.transaction(() async {
+    await _require(entry.planId);
+    if (await _db.exercisesDao.findById(entry.exerciseId) == null) {
+      throw NotFoundException('exercise', entry.exerciseId);
+    }
+    if (await _db.plansDao.containsExercise(entry.planId, entry.exerciseId)) {
+      throw DuplicateExerciseException(entry.exerciseId);
+    }
+    await _db.plansDao.insertEntryWithId(entry);
   });
 
   /// Sets the order of a plan's exercises; [entryIds] must contain every
