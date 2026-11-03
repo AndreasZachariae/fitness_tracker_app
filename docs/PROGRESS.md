@@ -67,7 +67,14 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Detail: Datum, Start–Ende ändern, Notiz, Sätze je Übung (ändern/löschen, Rekord-Label), Übung entfernen, Session
         löschen mit Bestätigung (Datum + Planname)
   - [x] Tests
-- [ ] M6 Körper
+- [x] M6 Körper (0.7.0+7)
+  - [x] Domain: Zeiträume 4 W/3 M/1 J/Alles, gleitender 7-Tage-Durchschnitt (§7.8), Kennzahlen (aktuell Ø 7 Tage,
+        Veränderung 30 Tage, Min/Max im Zeitraum)
+  - [x] Eingabekarte: kg (eine Nachkommastelle, letzter Wert vorbefüllt), Datum-Chip „Heute“ (keine Zukunft), Speichern,
+        Überschreiben-Rückfrage
+  - [x] Diagramm (Messpunkte + Ø-7-Linie) mit Zeitraum-Auswahl, Kennzahlen
+  - [x] Liste neueste zuerst, Wischen → löschen mit „Rückgängig“, Tippen → bearbeiten
+  - [x] Tests
 - [ ] M7 Statistik
 - [ ] M8 Daten und Einstellungen
 - [ ] M9 Feinschliff, Version 1.0.0
@@ -236,6 +243,20 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   neu. „Aus Training entfernen“ (⋮ je Übung) löscht die Übung samt Sätzen aus dieser Session, mit Rückfrage.
   Notiz wird beim Tippen (0,6 s verzögert) und beim Verlassen gespeichert. Session löschen fragt mit Datum und Planname.
 
+**M6**
+- **Zeiträume:** 4 W = heute und die 27 Tage davor; 3 M / 1 J = gleicher Kalendertag 3 bzw. 12 Monate zurück + 1 Tag
+  (am Monatsende begrenzt); „Alles“ ohne Grenze. Standard 3 M; die Auswahl wird nicht gespeichert.
+- **Kennzahlen:** „Aktuell (Ø 7 Tage)“ = gleitender Durchschnitt am neuesten Eintrag (§7.8); „30 Tage“ = dieser Wert minus
+  der Durchschnitt am letzten Eintrag, der mindestens 30 Tage vor dem neuesten liegt (fehlt sonst); Min/Max über die
+  Messwerte im gewählten Zeitraum. Der Durchschnitt nutzt immer die ganze Historie.
+- **Eingabe:** vorbefüllt mit dem neuesten Wert (eine Nachkommastelle, Komma oder Punkt), 20–400 kg, gerundet auf 0,1.
+  Der Datum-Chip zeigt „Heute“ oder das gewählte Datum; die Auswahl erlaubt keine Zukunft und springt nach dem Speichern
+  auf „Heute“ zurück. Gibt es für den Tag schon einen Eintrag: „Eintrag vom 3.11. überschreiben?“.
+- **Liste:** neueste zuerst; Wischen löscht sofort mit „Rückgängig“ (Eintrag kommt mit gleicher id zurück); Tippen öffnet
+  die Zahleneingabe für das Gewicht dieses Tages (das Datum bleibt).
+- **Diagramm:** Messpunkte als Punkte, Ø 7 Tage als Linie (Scheibe Blau); mindestens zwei Einträge im Zeitraum, sonst ein
+  Hinweis. Achsenbeschriftung nur an Intervallpunkten. Tooltip mit Datum und Wert.
+
 ## Datenbank-Migrationen (ab Schema 2)
 
 1. Tabellen in `lib/data/db/tables.dart` ändern, `AppDatabase.currentSchemaVersion` + 1.
@@ -355,4 +376,13 @@ Vorher: `./scripts/dev-install.sh`, in den Einstellungen „Demo-Daten erzeugen�
 - [ ] Satz antippen → ändern/löschen; Werte in der Liste aktualisieren sich.
 - [ ] ⋮ an einer Übung → „Aus Training entfernen“ mit Rückfrage.
 - [ ] Papierkorb → „Training vom Di, 3.11. („Oberkörper“) löschen?“ → Eintrag verschwindet aus dem Verlauf.
+
+### M6 Körper
+- [ ] Ohne Einträge: „Trage dein Gewicht ein, um den Verlauf zu sehen.“; Gewicht eingeben (Komma oder Punkt) → „Speichern“.
+- [ ] Gleicher Tag erneut → „Eintrag vom … überschreiben?“.
+- [ ] Datum-Chip „Heute“ → Kalender ohne Zukunft; anderer Tag speichern.
+- [ ] Mit Demo-Daten: Punkte + blaue Ø-7-Linie, Achsen gut lesbar; 4 W / 3 M / 1 J / Alles ändern Diagramm und Min/Max.
+- [ ] Kennzahlen „Aktuell (Ø 7 Tage)“, „30 Tage“ (mit Vorzeichen), „Min / Max“.
+- [ ] Eintrag nach links wischen → gelöscht, „Rückgängig“ holt ihn zurück; Eintrag antippen → Gewicht ändern.
+- [ ] Diagramm antippen/ziehen → Tooltip mit Datum und Wert.
 

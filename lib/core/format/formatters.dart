@@ -85,3 +85,18 @@ String formatClockTime(DateTime time) =>
 /// Month heading: `November 2026`
 String formatMonth(DateTime time) =>
     DateFormat('MMMM yyyy', appLocale).format(time.toLocal());
+
+final NumberFormat _oneDecimal = NumberFormat('#,##0.0', appLocale);
+
+/// Body weight with one decimal: `81,5 kg`.
+String formatKg1(double kg) => '${_oneDecimal.format(kg)} kg';
+
+/// Number with one decimal without unit: `81,5`.
+String formatDecimal1(double value) => _oneDecimal.format(value);
+
+/// Signed change with one decimal: `+0,4 kg`, `−1,2 kg`, `±0,0 kg`.
+String formatSignedKg1(double kg) {
+  final rounded = (kg * 10).round() / 10;
+  final sign = rounded > 0 ? '+' : (rounded < 0 ? '−' : '±');
+  return '$sign${_oneDecimal.format(rounded.abs())} kg';
+}

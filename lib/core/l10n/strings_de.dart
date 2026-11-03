@@ -23,7 +23,6 @@ abstract final class S {
       'Noch keine Trainings. Starte dein erstes im Tab Training.';
   static const statsEmpty =
       'Sobald du trainierst, siehst du hier deine Fortschritte.';
-  static const bodyEmpty = 'Hier trägst du bald dein Körpergewicht ein.';
   static const settingsExercises = 'Übungen';
   static const settingsExercisesSubtitle = 'Bibliothek, Archiv';
   static const settingsPlans = 'Pläne';
@@ -308,6 +307,33 @@ abstract final class S {
       'Die Übung und ihre Sätze werden aus diesem Training gelöscht.';
   static String removedFromSession(String name) => '„$name“ entfernt.';
   static const noSetsRecorded = 'Keine Sätze erfasst.';
+
+  // Body weight (SPEC §6.6)
+  static const today = 'Heute';
+  static const weightKgLabel = 'Gewicht in kg';
+  static const saved = 'Gespeichert.';
+  static String overwriteEntry(String date) =>
+      'Eintrag vom $date überschreiben?';
+  static const overwrite = 'Überschreiben';
+  static const errorBodyWeight = 'Gib ein Gewicht zwischen 20 und 400 kg ein.';
+  static const bodyEntries = 'Einträge';
+  static const bodyCurrent = 'Aktuell (Ø 7 Tage)';
+  static const bodyChange30 = '30 Tage';
+  static const bodyMinMax = 'Min / Max';
+  static const bodyChartEmpty =
+      'Für einen Verlauf brauchst du mindestens zwei Einträge im Zeitraum.';
+  static const bodyFirstHint =
+      'Trage dein Gewicht ein, um den Verlauf zu sehen.';
+  static String entryDeleted(String date) => 'Eintrag vom $date gelöscht.';
+  static const editEntry = 'Eintrag ändern';
+  static const average7 = 'Ø 7 Tage';
+  static const measurement = 'Messung';
+
+  // Periods (SPEC §6.5)
+  static const period4w = '4 W';
+  static const period3m = '3 M';
+  static const period1y = '1 J';
+  static const periodAll = 'Alles';
 
   // Errors
   static const errorInvalidValue =

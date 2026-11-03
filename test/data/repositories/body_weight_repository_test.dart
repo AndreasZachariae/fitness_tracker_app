@@ -58,4 +58,12 @@ void main() {
     expect(await repo.findByDate(today), isNull);
     await expectLater(repo.delete(e.id), throwsA(isA<NotFoundException>()));
   });
+
+  test('restore puts a deleted entry back with its id', () async {
+    final e = await repo.save(today, 80.4);
+    await repo.delete(e.id);
+    await repo.restore(e);
+    expect(await repo.findByDate(today), e);
+    await expectLater(repo.restore(e), throwsA(isA<InvalidValueException>()));
+  });
 }

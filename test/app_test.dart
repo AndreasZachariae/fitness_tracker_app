@@ -37,7 +37,7 @@ void main() {
     final tabs = {
       S.tabHistory: S.historyEmpty,
       S.tabStats: S.statsEmpty,
-      S.tabBody: S.bodyEmpty,
+      S.tabBody: S.bodyFirstHint,
       S.tabTraining: S.freeEmpty,
     };
     for (final MapEntry(key: label, value: empty) in tabs.entries) {

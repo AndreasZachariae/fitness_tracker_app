@@ -126,3 +126,7 @@ final historyProvider = StreamProvider<List<SessionSummary>>(
 final sessionProvider = StreamProvider.family<Session?, int>(
   (ref, id) => ref.watch(sessionRepositoryProvider).watchSession(id),
 );
+
+final bodyWeightsProvider = StreamProvider<List<BodyWeightEntry>>(
+  (ref) => ref.watch(bodyWeightRepositoryProvider).watchAll(),
+);

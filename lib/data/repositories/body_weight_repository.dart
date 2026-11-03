@@ -53,6 +53,14 @@ class BodyWeightRepository {
         return (await _db.bodyWeightDao.findById(id))!;
       });
 
+  /// Puts a deleted entry back with its id ("Rückgängig").
+  Future<void> restore(BodyWeightEntry entry) => _db.transaction(() async {
+    if (await _db.bodyWeightDao.findByDate(entry.date) != null) {
+      throw InvalidValueException('date', entry.date);
+    }
+    await _db.into(_db.bodyWeightEntries).insert(entry.toInsertable());
+  });
+
   Future<void> delete(int id) => _db.transaction(() async {
     if (await _db.bodyWeightDao.findById(id) == null) {
       throw NotFoundException('bodyWeight', id);
