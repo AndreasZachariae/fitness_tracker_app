@@ -85,7 +85,16 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         Kennzahlen, letzte 10 Trainings) · Gesamt (Kraftindex + 100-%-Linie, Körpergewicht einblendbar, Wochenvolumen,
         Kalender-Heatmap mit Ø/Woche und Serie, Dauer, Sätze pro Kategorie) · Rekorde (Tippen → Übung)
   - [x] Leerzustände je Diagramm; Performance-Messung mit 1 Jahr Demo-Daten (`compute`, falls > ~50 ms)
-- [ ] M8 Daten und Einstellungen
+- [x] M8 Daten und Einstellungen (0.9.0+9)
+  - [x] Domain `serialization/`: CSV nach RFC 4180 (4 Dateien, Spalten §8.1), JSON-Backup (§8.2) mit Validierung
+        (Format, Version, Pflichtfelder, Typen, referentielle Integrität) und Vorschau
+  - [x] Export/Import-Dienst: ZIP, Backup, Sicherheitskopie vor Import (letzte 3), Import in einer Transaktion, gesperrt
+        während einer Session; Teilen/„Speichern unter …“/Datei wählen hinter injizierbarer Schnittstelle
+  - [x] Pflicht-Test Export → Import → identischer Datenbankinhalt
+  - [x] Einstellungen §6.7: Training, Darstellung, Daten (CSV, Backup erstellen/wiederherstellen, letztes Backup,
+        Erinnerung), Über (Version, Build, Schemaversion)
+  - [x] Backup-Hinweis in der Zusammenfassung (§6.3)
+  - [x] Tests
 - [ ] M9 Feinschliff, Version 1.0.0
 
 ## Annahmen
@@ -287,6 +296,29 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   (absteigend, inkl. „Ohne Kategorie“).
 - Achsen zeigen nur Intervallbeschriftungen (keine zusätzlichen Min/Max-Labels, die sich sonst überlappen).
 
+**M8**
+- **CSV (§8.1):** UTF-8 ohne BOM, CRLF-Zeilenenden, Komma, Punkt als Dezimalzeichen (max. 2 Nachkommastellen, ganze Zahlen
+  ohne „.0“), Booleans als `true`/`false`, Enum-Codes aus §5. `exercise_position` 1-basiert; `e1rm_kg` nur für
+  `weight_reps` (Epley). `sessions.csv`: `n_exercises` = Übungen mit mindestens einem Arbeitssatz, `n_sets` = Arbeitssätze,
+  `volume_kg` nach §7.6. Nur beendete Sessions. Dateiname mit lokalem Datum.
+- **JSON-Backup (§8.2):** Feldnamen wie die Modellfelder (camelCase), Zeitpunkte als UTC-ISO-8601 („…Z“), `exportedAt`
+  lokal mit Offset wie im Beispiel. Einstellungen werden mit gesichert **und beim Import wiederhergestellt**.
+- **Validierung beim Import:** JSON-Objekt, `format`, `formatVersion` 1…unterstützt, alle Felder mit richtigem Typ,
+  Enum-Codes, Datumsangaben, eindeutige ids, Namen (Groß-/Kleinschreibung inkl. Umlaute), Körpergewicht-Daten und
+  Übung-je-Plan/Session, alle Verweise, höchstens eine laufende Session. Weitere Regeln (z. B. Ziel-Sätze 1–10) prüfen die
+  CHECK-Constraints der Datenbank; dann wird die Transaktion vollständig zurückgerollt.
+- **Import:** gesperrt während einer Session (auch im Dienst geprüft); vorher Sicherheitskopie des aktuellen Stands als
+  Backup-JSON in `Dokumente/safety-copies/` (die 3 neuesten bleiben); danach `replaceAll` in **einer** Transaktion.
+  Dateiauswahl ohne Typfilter (manche Android-Dateimanager kennen `.json` nicht); der Inhalt wird geprüft.
+- **„Letztes Backup“** wird gesetzt, wenn das Teilen-Menü nicht abgebrochen wurde (Android meldet oft nur „unbekannt“)
+  bzw. „Speichern unter …“ eine Datei geschrieben hat. CSV-Export zählt nicht.
+- **Backup-Hinweis** in der Zusammenfassung, wenn die Erinnerung > 0 ist und das letzte Backup mehr als so viele Tage
+  zurückliegt oder es noch keins gibt („Noch kein Backup erstellt“).
+- **Einstellungen:** Standard-Pause in 15-s-Schritten (0–10 min), Backup-Erinnerung 0–365 Tage (0 = aus). Unter „Über“
+  zusätzlich „Lizenzen“ (Flutter-Lizenzseite inkl. OFL der Schriften).
+- Teilen/Speichern/Datei wählen/Dokumentenordner liegen hinter `FileGateway` (Fake in Tests). Das zusammengeführte
+  Release-Manifest enthält weiterhin nur `VIBRATE` (+ interne AndroidX-Berechtigung), geprüft nach Aufnahme der Plugins.
+
 ## Datenbank-Migrationen (ab Schema 2)
 
 1. Tabellen in `lib/data/db/tables.dart` ändern, `AppDatabase.currentSchemaVersion` + 1.
@@ -301,6 +333,7 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 
 | Paket | Zweck | Begründung | seit |
 |---|---|---|---|
+| `package_info_plus` | App-Version und Build-Nummer für „Über“ und das Backup-Feld `appVersion` | Version steht nur im Manifest; Flutter Community Plus, aktiv gepflegt, war bereits indirekt über `share_plus` enthalten | M8 |
 | `flutter_localizations` (SDK) | Deutsche Material-Texte (DatePicker, Tooltips wie „Zurück“) | Für Locale `de_DE` in `MaterialApp` nötig, Teil des Flutter-SDK | M0 |
 
 ## Manuelle Tests am Handy
@@ -430,4 +463,18 @@ Vorher: „Demo-Daten erzeugen“.
   Woche“, „Serie: … Wochen in Folge“, Trainingsdauer, Sätze pro Kategorie.
 - [ ] Rekorde: alle Übungen mit Bestwerten und Datum; Tippen springt in „Übung“ mit dieser Übung.
 - [ ] Statistik-Tab öffnet ohne spürbare Verzögerung, auch nach „Demo-Daten erzeugen“.
+
+### M8 Daten und Einstellungen
+- [ ] Einstellungen → Training: Standard-Satzanzahl/-Pause ändern (neue Übungen/Pläne übernehmen sie), Pausentimer,
+  Vibration, Display anlassen, Nächste Übung automatisch aktivieren – jeweils im Training ausprobieren.
+- [ ] Darstellung System/Hell/Dunkel wirkt sofort.
+- [ ] „CSV exportieren“ → „Teilen“ (z. B. an dich selbst mailen) und „Speichern unter …“; ZIP enthält vier CSV-Dateien,
+  die sich in einer Tabellenkalkulation öffnen lassen (Komma als Trenner, Punkt als Dezimalzeichen).
+- [ ] „Backup erstellen“ → „Speichern unter …“ in „Downloads“; danach steht „Letztes Backup: …“ mit Datum und Uhrzeit.
+- [ ] „Alle Daten löschen“ (Dev) → „Backup wiederherstellen“ → die gespeicherte Datei wählen → Vorschau mit Anzahl
+  Trainings, Zeitraum und Körpergewicht-Einträgen → „Wiederherstellen“ → alles ist wieder da (Verlauf, Statistik, Pläne).
+- [ ] Eine beliebige andere Datei wählen → verständliche Meldung, nichts ändert sich.
+- [ ] Während eines Trainings ist „Backup wiederherstellen“ ausgegraut.
+- [ ] Backup-Erinnerung auf 1 Tag, Training beenden → Zusammenfassung zeigt den gelben Hinweis mit „Backup erstellen“.
+- [ ] „Über“: App-Version, Build-Nummer, Schemaversion 1, Lizenzen.
 

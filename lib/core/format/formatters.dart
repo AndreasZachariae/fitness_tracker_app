@@ -100,3 +100,11 @@ String formatSignedKg1(double kg) {
   final sign = rounded > 0 ? '+' : (rounded < 0 ? '−' : '±');
   return '$sign${_oneDecimal.format(rounded.abs())} kg';
 }
+
+/// Date with year: `3.11.2026`
+String formatDateLong(DateTime time) =>
+    DateFormat('d.M.yyyy', appLocale).format(time.toLocal());
+
+/// Date and time: `3.11.2026, 18:20`
+String formatDateTime(DateTime time) =>
+    '${formatDateLong(time)}, ${formatClockTime(time)}';

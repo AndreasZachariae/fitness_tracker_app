@@ -40,12 +40,26 @@ class MaintenanceRepository {
     await _db.settingsDao.write(AppSettings.defaults);
   });
 
-  /// Replaces all user data by [data] (ids are kept). Settings are kept
-  /// except references to plans that no longer exist.
-  Future<void> replaceAll(Dataset data) {
+  /// All user data with ids (for backups and exports).
+  Future<Dataset> loadDataset() => _db.transaction(
+    () async => Dataset(
+      exercises: await _db.select(_db.exercises).get(),
+      plans: await _db.select(_db.plans).get(),
+      planExercises: await _db.select(_db.planExercises).get(),
+      sessions: await _db.select(_db.sessions).get(),
+      sessionExercises: await _db.select(_db.sessionExercises).get(),
+      sets: await _db.select(_db.setEntries).get(),
+      bodyWeights: await _db.select(_db.bodyWeightEntries).get(),
+    ),
+  );
+
+  /// Replaces all user data by [data] (ids are kept). With [settings] the
+  /// settings are replaced too; otherwise they are kept except references
+  /// to plans that no longer exist.
+  Future<void> replaceAll(Dataset data, {AppSettings? settings}) {
     _checkTimes(data);
     return _db.transaction(() async {
-      final settings = await _db.settingsDao.get();
+      final current = settings ?? await _db.settingsDao.get();
       await _deleteAllRows();
       await _db.batch((b) {
         b.insertAll(_db.exercises, [
@@ -68,10 +82,10 @@ class MaintenanceRepository {
           for (final w in data.bodyWeights) w.toInsertable(),
         ]);
       });
-      final planId = settings.lastSelectedPlanId;
+      final planId = current.lastSelectedPlanId;
       final keepPlan = planId != null && data.plans.any((p) => p.id == planId);
       await _db.settingsDao.write(
-        settings.copyWith(lastSelectedPlanId: keepPlan ? planId : null),
+        current.copyWith(lastSelectedPlanId: keepPlan ? planId : null),
       );
     });
   }

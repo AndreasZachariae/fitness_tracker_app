@@ -32,6 +32,15 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> scrollToDev(WidgetTester tester) async {
+    await tester.dragUntilVisible(
+      find.text(S.devDeleteAll),
+      find.byType(ListView),
+      const Offset(0, -300),
+    );
+    await tester.pumpAndSettle();
+  }
+
   Future<void> dispose(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox.shrink());
     await db.close();
@@ -53,6 +62,7 @@ void main() {
     tester,
   ) async {
     await pumpSettings(tester);
+    await scrollToDev(tester);
     expect(find.text(S.devSection), findsOneWidget);
 
     await tester.tap(find.text(S.devDemoData));
@@ -85,6 +95,7 @@ void main() {
       ),
     );
     await pumpSettings(tester);
+    await scrollToDev(tester);
 
     await tester.tap(find.text(S.devDeleteAll));
     await tester.pumpAndSettle();

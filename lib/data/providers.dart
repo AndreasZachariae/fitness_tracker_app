@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../core/clock.dart';
 import '../domain/history.dart';
@@ -7,6 +8,8 @@ import '../domain/records.dart';
 import '../domain/statistics.dart';
 import 'db/database.dart';
 import 'demo/dev_tools.dart';
+import 'io/data_transfer_service.dart';
+import 'io/file_gateway.dart';
 import 'repositories/body_weight_repository.dart';
 import 'repositories/exercise_repository.dart';
 import 'repositories/maintenance_repository.dart';
@@ -140,4 +143,28 @@ final statsRepositoryProvider = Provider<StatsRepository>(
 /// All data of the statistics tab, updated live.
 final statsDataProvider = StreamProvider<StatsData>(
   (ref) => ref.watch(statsRepositoryProvider).watch(),
+);
+
+/// Version info of the installed app.
+typedef AppInfo = ({String version, String buildNumber});
+
+final appInfoProvider = FutureProvider<AppInfo>((ref) async {
+  final info = await PackageInfo.fromPlatform();
+  return (version: info.version, buildNumber: info.buildNumber);
+});
+
+final fileGatewayProvider = Provider<FileGateway>(
+  (ref) => const PlatformFileGateway(),
+);
+
+final dataTransferProvider = Provider<DataTransferService>(
+  (ref) => DataTransferService(
+    db: ref.watch(databaseProvider),
+    clock: ref.watch(clockProvider),
+    files: ref.watch(fileGatewayProvider),
+    appVersion: () async {
+      final info = await ref.read(appInfoProvider.future);
+      return '${info.version}+${info.buildNumber}';
+    },
+  ),
 );

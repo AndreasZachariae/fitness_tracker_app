@@ -383,6 +383,71 @@ abstract final class S {
   static const recordsEmpty = 'Noch keine Rekorde.';
   static String minutes(int n) => '$n min';
 
+  // Settings sections (SPEC §6.7)
+  static const sectionTraining = 'Training';
+  static const sectionAppearance = 'Darstellung';
+  static const sectionData = 'Daten';
+  static const sectionAbout = 'Über';
+  static const settingDefaultSets = 'Standard-Satzanzahl';
+  static const settingDefaultRest = 'Standard-Pause';
+  static const settingRestTimer = 'Pausentimer';
+  static const settingVibration = 'Vibration';
+  static const settingKeepScreenOn = 'Display anlassen';
+  static const settingKeepScreenOnSubtitle = 'Während eines Trainings';
+  static const settingAutoActivate = 'Nächste Übung automatisch aktivieren';
+  static const themeSystem = 'System';
+  static const themeLight = 'Hell';
+  static const themeDark = 'Dunkel';
+  static const exportCsv = 'CSV exportieren';
+  static const exportCsvSubtitle =
+      'ZIP mit Sätzen, Trainings, Körpergewicht, Übungen';
+  static const createBackup = 'Backup erstellen';
+  static const restoreBackup = 'Backup wiederherstellen';
+  static const restoreBlocked = 'Während eines Trainings nicht möglich.';
+  static String lastBackup(String when) => 'Letztes Backup: $when';
+  static const noBackupYet = 'Noch kein Backup erstellt';
+  static const backupReminder = 'Backup-Erinnerung';
+  static const backupReminderOff = 'aus';
+  static String days(int n) => n == 1 ? '1 Tag' : '$n Tage';
+  static const shareAction = 'Teilen';
+  static const saveAsAction = 'Speichern unter …';
+  static const backupCreated = 'Backup erstellt.';
+  static const exportCreated = 'Export erstellt.';
+  static const exportFailed =
+      'Export fehlgeschlagen. Deine Daten sind unverändert – bitte versuche es '
+      'noch einmal.';
+  static const appVersion = 'App-Version';
+  static const buildNumber = 'Build-Nummer';
+  static const schemaVersion = 'Datenbank-Schemaversion';
+  static const licenses = 'Lizenzen';
+
+  // Import (SPEC §8.3)
+  static const restoreTitle = 'Backup wiederherstellen?';
+  static String restorePreview(int trainings, String period, int weights) =>
+      '$trainings Trainings$period, $weights Körpergewicht-Einträge.';
+  static String restorePeriod(String from, String to) => ' vom $from bis $to';
+  static const restoreWarning =
+      'Alle aktuellen Daten werden ersetzt. Vorher wird automatisch eine '
+      'Sicherheitskopie deines aktuellen Stands angelegt.';
+  static const restoreConfirm = 'Wiederherstellen';
+  static const restoreDone = 'Backup wiederhergestellt.';
+  static const restoreFailed =
+      'Wiederherstellen fehlgeschlagen. Deine bisherigen Daten sind unverändert.';
+  static const importErrorTitle = 'Datei kann nicht importiert werden';
+  static const importNotJson =
+      'Die Datei ist kein GymLog-Backup (kein lesbares JSON). Wähle eine Datei '
+      '„gymlog-backup-….json“.';
+  static const importWrongFormat =
+      'Die Datei ist kein GymLog-Backup. Wähle eine Datei „gymlog-backup-….json“.';
+  static const importNewerVersion =
+      'Das Backup stammt von einer neueren GymLog-Version. Aktualisiere die App '
+      'und versuche es erneut.';
+  static const importInvalid =
+      'Das Backup ist beschädigt oder unvollständig. Nichts wurde geändert.';
+
+  // Backup reminder in the summary (SPEC §6.3)
+  static String backupAgo(int days) => 'Letztes Backup vor $days Tagen';
+
   // Errors
   static const errorInvalidValue =
       'Ein Wert liegt außerhalb des erlaubten Bereichs.';

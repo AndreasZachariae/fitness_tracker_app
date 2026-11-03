@@ -1,0 +1,522 @@
+import 'dart:convert';
+
+import '../models/models.dart';
+import '../names.dart';
+import 'csv.dart' show isoWithOffset;
+
+/// JSON backup (SPEC §8.2). All columns of all tables, ids are kept.
+const backupFormat = 'gymlog-backup';
+const backupFormatVersion = 1;
+
+final class BackupData {
+  const BackupData({
+    required this.dataset,
+    required this.settings,
+    required this.schemaVersion,
+    required this.appVersion,
+    required this.exportedAt,
+  });
+
+  final Dataset dataset;
+  final AppSettings settings;
+  final int schemaVersion;
+  final String appVersion;
+  final DateTime exportedAt;
+}
+
+/// Why a backup file cannot be imported.
+enum BackupError {
+  /// Not JSON or not an object.
+  notJson,
+
+  /// `format` is not "gymlog-backup".
+  wrongFormat,
+
+  /// Written by a newer app version (`formatVersion` too high).
+  newerVersion,
+
+  /// A required field is missing or has the wrong type.
+  invalidField,
+
+  /// A reference points to a missing row.
+  brokenReference,
+
+  /// The same id appears twice, or names collide.
+  duplicate,
+
+  /// More than one running session.
+  severalActiveSessions,
+}
+
+final class BackupFormatException implements Exception {
+  const BackupFormatException(this.error, [this.detail]);
+
+  final BackupError error;
+  final String? detail;
+
+  @override
+  String toString() => 'BackupFormatException(${error.name}, $detail)';
+}
+
+/// Contents of a backup for the confirmation dialog (SPEC §8.3).
+final class ImportPreview {
+  const ImportPreview({
+    required this.trainings,
+    required this.first,
+    required this.last,
+    required this.bodyWeights,
+  });
+
+  /// Finished sessions.
+  final int trainings;
+  final DateTime? first;
+  final DateTime? last;
+  final int bodyWeights;
+}
+
+ImportPreview previewOf(Dataset data) {
+  final finished = data.sessions.where((s) => !s.isActive).toList()
+    ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
+  return ImportPreview(
+    trainings: finished.length,
+    first: finished.isEmpty ? null : finished.first.startedAt,
+    last: finished.isEmpty ? null : finished.last.startedAt,
+    bodyWeights: data.bodyWeights.length,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Encoding
+
+String _t(DateTime t) => t.toUtc().toIso8601String();
+String? _tn(DateTime? t) => t == null ? null : _t(t);
+
+String encodeBackup(BackupData b) {
+  final d = b.dataset;
+  final s = b.settings;
+  return const JsonEncoder.withIndent('  ').convert({
+    'format': backupFormat,
+    'formatVersion': backupFormatVersion,
+    'schemaVersion': b.schemaVersion,
+    'appVersion': b.appVersion,
+    'exportedAt': isoWithOffset(b.exportedAt),
+    'data': {
+      'exercises': [
+        for (final e in d.exercises)
+          {
+            'id': e.id,
+            'name': e.name,
+            'type': e.type.code,
+            'category': e.category?.code,
+            'incrementKg': e.incrementKg,
+            'restSec': e.restSec,
+            'includeInStrengthIndex': e.includeInStrengthIndex,
+            'notes': e.notes,
+            'archived': e.archived,
+            'createdAt': _t(e.createdAt),
+          },
+      ],
+      'plans': [
+        for (final p in d.plans)
+          {
+            'id': p.id,
+            'name': p.name,
+            'position': p.position,
+            'createdAt': _t(p.createdAt),
+          },
+      ],
+      'planExercises': [
+        for (final p in d.planExercises)
+          {
+            'id': p.id,
+            'planId': p.planId,
+            'exerciseId': p.exerciseId,
+            'position': p.position,
+            'targetSets': p.targetSets,
+            'targetReps': p.targetReps,
+            'targetDurationSec': p.targetDurationSec,
+            'restSec': p.restSec,
+          },
+      ],
+      'sessions': [
+        for (final x in d.sessions)
+          {
+            'id': x.id,
+            'planId': x.planId,
+            'planNameSnapshot': x.planNameSnapshot,
+            'startedAt': _t(x.startedAt),
+            'endedAt': _tn(x.endedAt),
+            'notes': x.notes,
+          },
+      ],
+      'sessionExercises': [
+        for (final x in d.sessionExercises)
+          {
+            'id': x.id,
+            'sessionId': x.sessionId,
+            'exerciseId': x.exerciseId,
+            'position': x.position,
+            'targetSets': x.targetSets,
+            'targetReps': x.targetReps,
+            'targetDurationSec': x.targetDurationSec,
+            'restSec': x.restSec,
+            'status': x.status.code,
+            'completedAt': _tn(x.completedAt),
+          },
+      ],
+      'sets': [
+        for (final x in d.sets)
+          {
+            'id': x.id,
+            'sessionExerciseId': x.sessionExerciseId,
+            'setIndex': x.setIndex,
+            'weightKg': x.weightKg,
+            'reps': x.reps,
+            'durationSec': x.durationSec,
+            'isWarmup': x.isWarmup,
+            'completedAt': _t(x.completedAt),
+          },
+      ],
+      'bodyWeights': [
+        for (final w in d.bodyWeights)
+          {
+            'id': w.id,
+            'date': w.date.toIsoString(),
+            'weightKg': w.weightKg,
+            'createdAt': _t(w.createdAt),
+          },
+      ],
+      'settings': {
+        'defaultSets': s.defaultSets,
+        'defaultRestSec': s.defaultRestSec,
+        'restTimerEnabled': s.restTimerEnabled,
+        'vibrationEnabled': s.vibrationEnabled,
+        'keepScreenOn': s.keepScreenOn,
+        'autoActivateNext': s.autoActivateNext,
+        'themeMode': s.themeMode.code,
+        'lastSelectedPlanId': s.lastSelectedPlanId,
+        'lastBackupAt': _tn(s.lastBackupAt),
+        'backupReminderDays': s.backupReminderDays,
+      },
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Decoding (strict)
+
+typedef _Json = Map<String, Object?>;
+
+Never _invalid(String where) =>
+    throw BackupFormatException(BackupError.invalidField, where);
+
+final class _Reader {
+  _Reader(this.json, this.where);
+
+  final _Json json;
+  final String where;
+
+  Object? _raw(String key) {
+    if (!json.containsKey(key)) _invalid('$where.$key');
+    return json[key];
+  }
+
+  int integer(String key) =>
+      _raw(key) is int ? _raw(key)! as int : _invalid('$where.$key');
+
+  int? intOrNull(String key) {
+    final v = _raw(key);
+    return v == null ? null : (v is int ? v : _invalid('$where.$key'));
+  }
+
+  double number(String key) => _raw(key) is num
+      ? (_raw(key)! as num).toDouble()
+      : _invalid('$where.$key');
+
+  double? numberOrNull(String key) {
+    final v = _raw(key);
+    return v == null
+        ? null
+        : (v is num ? v.toDouble() : _invalid('$where.$key'));
+  }
+
+  String string(String key) =>
+      _raw(key) is String ? _raw(key)! as String : _invalid('$where.$key');
+
+  String? stringOrNull(String key) {
+    final v = _raw(key);
+    return v == null ? null : (v is String ? v : _invalid('$where.$key'));
+  }
+
+  bool boolean(String key) =>
+      _raw(key) is bool ? _raw(key)! as bool : _invalid('$where.$key');
+
+  /// UTC with millisecond precision, as stored in the database.
+  DateTime time(String key) => _normalize(string(key), key);
+
+  DateTime? timeOrNull(String key) {
+    final v = stringOrNull(key);
+    return v == null ? null : _normalize(v, key);
+  }
+
+  DateTime _normalize(String text, String key) {
+    final t = DateTime.tryParse(text);
+    if (t == null) _invalid('$where.$key');
+    return DateTime.fromMillisecondsSinceEpoch(
+      t.millisecondsSinceEpoch,
+      isUtc: true,
+    );
+  }
+
+  LocalDate date(String key) {
+    try {
+      return LocalDate.parse(string(key));
+    } on FormatException {
+      _invalid('$where.$key');
+    }
+  }
+
+  T coded<T extends Coded>(String key, List<T> values) {
+    try {
+      return byCode(values, string(key));
+    } on FormatException {
+      _invalid('$where.$key');
+    }
+  }
+
+  T? codedOrNull<T extends Coded>(String key, List<T> values) {
+    final v = stringOrNull(key);
+    if (v == null) return null;
+    try {
+      return byCode(values, v);
+    } on FormatException {
+      _invalid('$where.$key');
+    }
+  }
+}
+
+List<T> _list<T>(_Json data, String key, T Function(_Reader) read) {
+  final raw = data[key];
+  if (raw is! List) _invalid('data.$key');
+  return [
+    for (final (i, item) in raw.indexed)
+      if (item is Map<String, Object?>)
+        read(_Reader(item, '$key[$i]'))
+      else
+        _invalid('$key[$i]'),
+  ];
+}
+
+/// Parses and validates a backup file (SPEC §8.3, step 1).
+BackupData decodeBackup(String text) {
+  final Object? root;
+  try {
+    root = jsonDecode(text);
+  } on FormatException {
+    throw const BackupFormatException(BackupError.notJson);
+  }
+  if (root is! Map<String, Object?>) {
+    throw const BackupFormatException(BackupError.notJson);
+  }
+  if (root['format'] != backupFormat) {
+    throw const BackupFormatException(BackupError.wrongFormat);
+  }
+  final version = root['formatVersion'];
+  if (version is! int || version < 1) _invalid('formatVersion');
+  if (version > backupFormatVersion) {
+    throw const BackupFormatException(BackupError.newerVersion);
+  }
+  final head = _Reader(root, 'backup');
+  final schemaVersion = head.integer('schemaVersion');
+  final appVersion = head.string('appVersion');
+  final exportedAt = head.time('exportedAt');
+  final data = root['data'];
+  if (data is! Map<String, Object?>) _invalid('data');
+
+  final dataset = Dataset(
+    exercises: _list(
+      data,
+      'exercises',
+      (r) => Exercise(
+        id: r.integer('id'),
+        name: r.string('name'),
+        type: r.coded('type', ExerciseType.values),
+        category: r.codedOrNull('category', ExerciseCategory.values),
+        incrementKg: r.number('incrementKg'),
+        restSec: r.intOrNull('restSec'),
+        includeInStrengthIndex: r.boolean('includeInStrengthIndex'),
+        notes: r.string('notes'),
+        archived: r.boolean('archived'),
+        createdAt: r.time('createdAt'),
+      ),
+    ),
+    plans: _list(
+      data,
+      'plans',
+      (r) => Plan(
+        id: r.integer('id'),
+        name: r.string('name'),
+        position: r.integer('position'),
+        createdAt: r.time('createdAt'),
+      ),
+    ),
+    planExercises: _list(
+      data,
+      'planExercises',
+      (r) => PlanExercise(
+        id: r.integer('id'),
+        planId: r.integer('planId'),
+        exerciseId: r.integer('exerciseId'),
+        position: r.integer('position'),
+        targetSets: r.integer('targetSets'),
+        targetReps: r.intOrNull('targetReps'),
+        targetDurationSec: r.intOrNull('targetDurationSec'),
+        restSec: r.intOrNull('restSec'),
+      ),
+    ),
+    sessions: _list(
+      data,
+      'sessions',
+      (r) => Session(
+        id: r.integer('id'),
+        planId: r.intOrNull('planId'),
+        planNameSnapshot: r.stringOrNull('planNameSnapshot'),
+        startedAt: r.time('startedAt'),
+        endedAt: r.timeOrNull('endedAt'),
+        notes: r.string('notes'),
+      ),
+    ),
+    sessionExercises: _list(
+      data,
+      'sessionExercises',
+      (r) => SessionExercise(
+        id: r.integer('id'),
+        sessionId: r.integer('sessionId'),
+        exerciseId: r.integer('exerciseId'),
+        position: r.integer('position'),
+        targetSets: r.integer('targetSets'),
+        targetReps: r.intOrNull('targetReps'),
+        targetDurationSec: r.intOrNull('targetDurationSec'),
+        restSec: r.intOrNull('restSec'),
+        status: r.coded('status', SessionExerciseStatus.values),
+        completedAt: r.timeOrNull('completedAt'),
+      ),
+    ),
+    sets: _list(
+      data,
+      'sets',
+      (r) => SetEntry(
+        id: r.integer('id'),
+        sessionExerciseId: r.integer('sessionExerciseId'),
+        setIndex: r.integer('setIndex'),
+        weightKg: r.numberOrNull('weightKg'),
+        reps: r.intOrNull('reps'),
+        durationSec: r.intOrNull('durationSec'),
+        isWarmup: r.boolean('isWarmup'),
+        completedAt: r.time('completedAt'),
+      ),
+    ),
+    bodyWeights: _list(
+      data,
+      'bodyWeights',
+      (r) => BodyWeightEntry(
+        id: r.integer('id'),
+        date: r.date('date'),
+        weightKg: r.number('weightKg'),
+        createdAt: r.time('createdAt'),
+      ),
+    ),
+  );
+
+  final rawSettings = data['settings'];
+  if (rawSettings is! Map<String, Object?>) _invalid('data.settings');
+  final r = _Reader(rawSettings, 'settings');
+  final settings = AppSettings(
+    defaultSets: r.integer('defaultSets'),
+    defaultRestSec: r.integer('defaultRestSec'),
+    restTimerEnabled: r.boolean('restTimerEnabled'),
+    vibrationEnabled: r.boolean('vibrationEnabled'),
+    keepScreenOn: r.boolean('keepScreenOn'),
+    autoActivateNext: r.boolean('autoActivateNext'),
+    themeMode: r.coded('themeMode', ThemePreference.values),
+    lastSelectedPlanId: r.intOrNull('lastSelectedPlanId'),
+    lastBackupAt: r.timeOrNull('lastBackupAt'),
+    backupReminderDays: r.integer('backupReminderDays'),
+  );
+
+  validateDataset(dataset, settings);
+  return BackupData(
+    dataset: dataset,
+    settings: settings,
+    schemaVersion: schemaVersion,
+    appVersion: appVersion,
+    exportedAt: exportedAt,
+  );
+}
+
+/// Referential integrity and uniqueness (SPEC §8.3).
+void validateDataset(Dataset d, AppSettings settings) {
+  Set<int> ids<T>(List<T> rows, int Function(T) id, String what) {
+    final result = <int>{};
+    for (final row in rows) {
+      if (!result.add(id(row))) {
+        throw BackupFormatException(BackupError.duplicate, '$what ${id(row)}');
+      }
+    }
+    return result;
+  }
+
+  void unique(Iterable<Object> keys, String what) {
+    final seen = <Object>{};
+    for (final k in keys) {
+      if (!seen.add(k)) {
+        throw BackupFormatException(BackupError.duplicate, '$what $k');
+      }
+    }
+  }
+
+  void ref(Set<int> ids, int? id, String what) {
+    if (id != null && !ids.contains(id)) {
+      throw BackupFormatException(BackupError.brokenReference, '$what $id');
+    }
+  }
+
+  final exercises = ids(d.exercises, (e) => e.id, 'exercise');
+  final plans = ids(d.plans, (p) => p.id, 'plan');
+  ids(d.planExercises, (p) => p.id, 'planExercise');
+  final sessions = ids(d.sessions, (s) => s.id, 'session');
+  final sessionExercises = ids(
+    d.sessionExercises,
+    (s) => s.id,
+    'sessionExercise',
+  );
+  ids(d.sets, (s) => s.id, 'set');
+  ids(d.bodyWeights, (b) => b.id, 'bodyWeight');
+  unique(d.exercises.map((e) => nameKey(e.name)), 'exercise name');
+  unique(d.plans.map((p) => nameKey(p.name)), 'plan name');
+  unique(d.bodyWeights.map((b) => b.date), 'body weight date');
+
+  for (final p in d.planExercises) {
+    ref(plans, p.planId, 'planExercise.planId');
+    ref(exercises, p.exerciseId, 'planExercise.exerciseId');
+  }
+  unique(d.planExercises.map((p) => (p.planId, p.exerciseId)), 'plan exercise');
+  for (final s in d.sessions) {
+    ref(plans, s.planId, 'session.planId');
+  }
+  for (final s in d.sessionExercises) {
+    ref(sessions, s.sessionId, 'sessionExercise.sessionId');
+    ref(exercises, s.exerciseId, 'sessionExercise.exerciseId');
+  }
+  unique(
+    d.sessionExercises.map((s) => (s.sessionId, s.exerciseId)),
+    'session exercise',
+  );
+  for (final s in d.sets) {
+    ref(sessionExercises, s.sessionExerciseId, 'set.sessionExerciseId');
+  }
+  ref(plans, settings.lastSelectedPlanId, 'settings.lastSelectedPlanId');
+  if (d.sessions.where((s) => s.isActive).length > 1) {
+    throw const BackupFormatException(BackupError.severalActiveSessions);
+  }
+}
