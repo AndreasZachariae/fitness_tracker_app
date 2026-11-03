@@ -75,7 +75,16 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Diagramm (Messpunkte + Ø-7-Linie) mit Zeitraum-Auswahl, Kennzahlen
   - [x] Liste neueste zuerst, Wischen → löschen mit „Rückgängig“, Tippen → bearbeiten
   - [x] Tests
-- [ ] M7 Statistik
+- [x] M7 Statistik (0.8.0+8)
+  - [x] Domain `calendar.dart`: ISO-Wochen (Jahreswechsel), Wochenanfang
+  - [x] Domain `statistics.dart`: effektive Last (§7.3), Leistungswert P (§7.4), Kraftindex mit Fortschreiben ≤ 8 Wochen
+        (§7.5), Wochenvolumen (§7.6), Metriken je Übungstyp, Rekordpunkte, Heatmap 26 Wochen, Ø Trainings/Woche, Serie,
+        Trainingsdauer, Sätze pro Kategorie, Rekord-Übersicht – alles Tabellentests
+  - [x] Repository: alle beendeten Trainings + Körpergewicht als ein Stream
+  - [x] Statistik-Tab: Zeitraum, Tabs Übung (Auswahl mit Suche, Metrik-Chips, Liniendiagramm mit Tooltip und Rekordpunkten,
+        Kennzahlen, letzte 10 Trainings) · Gesamt (Kraftindex + 100-%-Linie, Körpergewicht einblendbar, Wochenvolumen,
+        Kalender-Heatmap mit Ø/Woche und Serie, Dauer, Sätze pro Kategorie) · Rekorde (Tippen → Übung)
+  - [x] Leerzustände je Diagramm; Performance-Messung mit 1 Jahr Demo-Daten (`compute`, falls > ~50 ms)
 - [ ] M8 Daten und Einstellungen
 - [ ] M9 Feinschliff, Version 1.0.0
 
@@ -257,6 +266,27 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 - **Diagramm:** Messpunkte als Punkte, Ø 7 Tage als Linie (Scheibe Blau); mindestens zwei Einträge im Zeitraum, sonst ein
   Hinweis. Achsenbeschriftung nur an Intervallpunkten. Tooltip mit Datum und Wert.
 
+**M7**
+- **Performance:** Alle Statistiken zusammen (Kraftindex, Wochenvolumen, Heatmap, Serie, Kategorien, Rekorde und jede
+  Übung × Metrik) brauchen mit 1 Jahr Demo-Daten **8,6 ms** pro Durchlauf (Debug/JIT im Test gemessen,
+  `test/data/repositories/stats_repository_test.dart` prüft < 50 ms). Daher kein Isolate (`compute`) nötig.
+- **Effektive Last (§7.3):** nächstgelegener Körpergewicht-Eintrag zum lokalen Session-Datum, davor oder danach; bei
+  gleichem Abstand der frühere. Effektives 1RM ist nur definiert, wenn Körpergewicht + Zusatzgewicht > 0.
+- **Kraftindex (§7.5):** Baseline = P der ersten Session (mit definiertem P > 0) der Übung; je ISO-Woche der beste P;
+  Fortschreiben bis einschließlich 8 Wochen nach dem letzten Wert, danach fällt die Übung heraus, bis sie wieder trainiert
+  wird. Wochen ohne einbezogene Übung werden ausgelassen. Der Zeitraum schneidet nur die Anzeige zu.
+- **Übung-Tab:** Auswahl nur aus Übungen mit Daten, vorausgewählt die zuletzt trainierte. Kennzahlen beziehen sich auf den
+  gewählten Zeitraum: Bestwert = höchster Punkt, Veränderung = letzter − erster Punkt (+ %), Trainings = Punkte.
+  Rekordpunkte (rot) = Wert strikt größer als alle früheren Punkte dieser Metrik (gesamte Historie). Tabelle: die letzten
+  10 Trainings im Zeitraum, neueste zuerst. Die gewählte Metrik wird je Übung gemerkt (nur im Speicher).
+- **Gesamt-Tab:** Kraftindex und Körpergewicht teilen sich die Zeitachse (Zeitraumbeginn bzw. erste Trainingswoche bis
+  heute); Körpergewicht als Ø-7-Linie. Wochenvolumen als Balken (Wochen ohne Training = 0). Heatmap immer die letzten 26
+  Wochen, Farbintensität relativ zum höchsten Tag. „Ø Trainings pro Woche“ über den Zeitraum (ab Zeitraumbeginn oder
+  erstem Training bis zur aktuellen Woche). Serie: Wochen in Folge mit Training bis jetzt; die laufende Woche ohne Training
+  unterbricht sie noch nicht. Trainingsdauer als Punkte je Training; Sätze pro Kategorie als horizontale Balken
+  (absteigend, inkl. „Ohne Kategorie“).
+- Achsen zeigen nur Intervallbeschriftungen (keine zusätzlichen Min/Max-Labels, die sich sonst überlappen).
+
 ## Datenbank-Migrationen (ab Schema 2)
 
 1. Tabellen in `lib/data/db/tables.dart` ändern, `AppDatabase.currentSchemaVersion` + 1.
@@ -385,4 +415,19 @@ Vorher: `./scripts/dev-install.sh`, in den Einstellungen „Demo-Daten erzeugen�
 - [ ] Kennzahlen „Aktuell (Ø 7 Tage)“, „30 Tage“ (mit Vorzeichen), „Min / Max“.
 - [ ] Eintrag nach links wischen → gelöscht, „Rückgängig“ holt ihn zurück; Eintrag antippen → Gewicht ändern.
 - [ ] Diagramm antippen/ziehen → Tooltip mit Datum und Wert.
+
+### M7 Statistik
+Vorher: „Demo-Daten erzeugen“.
+- [ ] Ohne Trainings: Hinweistext statt Diagrammen.
+- [ ] Übung: zuletzt trainierte Übung vorausgewählt; Auswahl öffnet Liste mit Suche; Metrik-Chips je Typ
+  (Gewicht: 1RM/Maximalgewicht/Volumen; Körpergewicht: Max. Wdh/Gesamt-Wdh/Max. Zusatzgewicht/Effektives 1RM;
+  Zeit: Max. Dauer/Gesamtdauer). Linie mit roten Rekordpunkten; Antippen zeigt Datum, Wert und Sätze.
+- [ ] Bestwert, Veränderung (mit %), Trainings; Tabelle der letzten Trainings. 4 W / 3 M / 1 J / Alles ändert Diagramm
+  und Kennzahlen.
+- [ ] Gesamt: Kraftindex in % mit gestrichelter 100-%-Linie, „Durchschnitt über N Übungen“; Schalter „Körpergewicht
+  einblenden“ zeigt darunter das Körpergewicht auf derselben Zeitachse.
+- [ ] Wochenvolumen-Balken (Lücken in ausgelassenen Wochen), Trainingskalender (26 Wochen, Mo–So), „Ø … Trainings pro
+  Woche“, „Serie: … Wochen in Folge“, Trainingsdauer, Sätze pro Kategorie.
+- [ ] Rekorde: alle Übungen mit Bestwerten und Datum; Tippen springt in „Übung“ mit dieser Übung.
+- [ ] Statistik-Tab öffnet ohne spürbare Verzögerung, auch nach „Demo-Daten erzeugen“.
 

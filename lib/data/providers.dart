@@ -4,6 +4,7 @@ import '../core/clock.dart';
 import '../domain/history.dart';
 import '../domain/models/models.dart';
 import '../domain/records.dart';
+import '../domain/statistics.dart';
 import 'db/database.dart';
 import 'demo/dev_tools.dart';
 import 'repositories/body_weight_repository.dart';
@@ -12,6 +13,7 @@ import 'repositories/maintenance_repository.dart';
 import 'repositories/plan_repository.dart';
 import 'repositories/session_repository.dart';
 import 'repositories/settings_repository.dart';
+import 'repositories/stats_repository.dart';
 
 /// The app database. Tests override this with an in-memory database.
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -129,4 +131,13 @@ final sessionProvider = StreamProvider.family<Session?, int>(
 
 final bodyWeightsProvider = StreamProvider<List<BodyWeightEntry>>(
   (ref) => ref.watch(bodyWeightRepositoryProvider).watchAll(),
+);
+
+final statsRepositoryProvider = Provider<StatsRepository>(
+  (ref) => StatsRepository(ref.watch(databaseProvider)),
+);
+
+/// All data of the statistics tab, updated live.
+final statsDataProvider = StreamProvider<StatsData>(
+  (ref) => ref.watch(statsRepositoryProvider).watch(),
 );

@@ -29,7 +29,9 @@ class ChartCard extends StatelessWidget {
   final String? subtitle;
   final Widget? trailing;
   final Widget child;
-  final double height;
+
+  /// Fixed chart height; `null` = height of the child.
+  final double? height;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +64,10 @@ class ChartCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            SizedBox(height: height, child: child),
+            if (height == null)
+              child
+            else
+              SizedBox(height: height, child: child),
           ],
         ),
       ),
@@ -137,6 +142,8 @@ FlTitlesData dayTitles(
       sideTitles: SideTitles(
         showTitles: true,
         reservedSize: reservedLeft,
+        minIncluded: false,
+        maxIncluded: false,
         getTitlesWidget: (value, meta) => SideTitleWidget(
           meta: meta,
           child: Text(

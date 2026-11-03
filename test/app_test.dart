@@ -36,7 +36,7 @@ void main() {
 
     final tabs = {
       S.tabHistory: S.historyEmpty,
-      S.tabStats: S.statsEmpty,
+      S.tabStats: S.statsNoData,
       S.tabBody: S.bodyFirstHint,
       S.tabTraining: S.freeEmpty,
     };

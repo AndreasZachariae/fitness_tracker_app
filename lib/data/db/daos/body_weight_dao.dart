@@ -16,6 +16,11 @@ class BodyWeightDao extends DatabaseAccessor<AppDatabase>
     bodyWeightEntries,
   )..orderBy([(b) => OrderingTerm.desc(b.date)])).watch();
 
+  /// All entries, oldest day first.
+  Future<List<BodyWeightEntry>> getAllAscending() => (select(
+    bodyWeightEntries,
+  )..orderBy([(b) => OrderingTerm.asc(b.date)])).get();
+
   Future<BodyWeightEntry?> findByDate(LocalDate date) => (select(
     bodyWeightEntries,
   )..where((b) => b.date.equalsValue(date))).getSingleOrNull();

@@ -1,5 +1,6 @@
 import '../../domain/models/enums.dart';
 import '../../domain/records.dart';
+import '../../domain/statistics.dart';
 
 /// All user-facing German texts of the app.
 ///
@@ -21,8 +22,6 @@ abstract final class S {
   // Placeholders until the tabs are implemented
   static const historyEmpty =
       'Noch keine Trainings. Starte dein erstes im Tab Training.';
-  static const statsEmpty =
-      'Sobald du trainierst, siehst du hier deine Fortschritte.';
   static const settingsExercises = 'Übungen';
   static const settingsExercisesSubtitle = 'Bibliothek, Archiv';
   static const settingsPlans = 'Pläne';
@@ -334,6 +333,55 @@ abstract final class S {
   static const period3m = '3 M';
   static const period1y = '1 J';
   static const periodAll = 'Alles';
+
+  // Statistics (SPEC §6.5)
+  static const statsTabExercise = 'Übung';
+  static const statsTabOverall = 'Gesamt';
+  static const statsTabRecords = 'Rekorde';
+  static const statsNoData =
+      'Noch keine Daten. Sobald du trainierst, siehst du hier deine Fortschritte.';
+  static const statsSeriesEmpty =
+      'Für einen Verlauf brauchst du mindestens zwei Trainings mit dieser Übung '
+      'im Zeitraum.';
+  static const chooseExercise = 'Übung wählen';
+  static String metric(ExerciseMetric m) => switch (m) {
+    ExerciseMetric.estimatedOneRepMax => 'Geschätztes 1RM',
+    ExerciseMetric.maxWeight => 'Maximalgewicht',
+    ExerciseMetric.volume => 'Volumen',
+    ExerciseMetric.maxReps => 'Max. Wdh',
+    ExerciseMetric.totalReps => 'Gesamt-Wdh',
+    ExerciseMetric.maxAddedWeight => 'Max. Zusatzgewicht',
+    ExerciseMetric.effectiveOneRepMax => 'Effektives 1RM',
+    ExerciseMetric.maxDuration => 'Max. Dauer',
+    ExerciseMetric.totalDuration => 'Gesamtdauer',
+  };
+  static const statBest = 'Bestwert';
+  static const statChange = 'Veränderung';
+  static const statTrainings = 'Trainings';
+  static const lastTrainings = 'Letzte Trainings';
+  static const strengthIndex = 'Kraftindex';
+  static String strengthIndexSubtitle(int n) =>
+      n == 1 ? 'Durchschnitt über 1 Übung' : 'Durchschnitt über $n Übungen';
+  static const strengthIndexEmpty =
+      'Für den Kraftindex brauchst du Trainings mit Übungen, die im Kraftindex '
+      'zählen.';
+  static const showBodyWeight = 'Körpergewicht einblenden';
+  static const weeklyVolume = 'Wochenvolumen';
+  static const volumeEmpty = 'Noch kein Volumen im Zeitraum.';
+  static const calendar = 'Trainingskalender';
+  static const calendarSubtitle = 'Letzte 26 Wochen · Sätze pro Tag';
+  static String perWeek(String n) => 'Ø $n Trainings pro Woche';
+  static String streak(int n) =>
+      n == 1 ? 'Serie: 1 Woche in Folge' : 'Serie: $n Wochen in Folge';
+  static const weekdayInitials = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+  static const trainingDuration = 'Trainingsdauer';
+  static const durationEmpty = 'Noch keine Trainings im Zeitraum.';
+  static const setsPerCategory = 'Sätze pro Kategorie';
+  static const categoryEmpty = 'Noch keine Sätze im Zeitraum.';
+  static const bodyWeightChartEmpty =
+      'Keine Körpergewicht-Einträge im Zeitraum.';
+  static const recordsEmpty = 'Noch keine Rekorde.';
+  static String minutes(int n) => '$n min';
 
   // Errors
   static const errorInvalidValue =

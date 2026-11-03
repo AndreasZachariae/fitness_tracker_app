@@ -131,6 +131,52 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
     ];
   }
 
+  /// All finished sessions with exercises and sets, oldest first.
+  Future<List<(Session, List<SessionExerciseDetail>)>>
+  finishedWithDetails() async {
+    final query =
+        select(sessionExercises).join([
+            innerJoin(
+              sessions,
+              sessions.id.equalsExp(sessionExercises.sessionId),
+            ),
+            innerJoin(
+              exercises,
+              exercises.id.equalsExp(sessionExercises.exerciseId),
+            ),
+            leftOuterJoin(
+              setEntries,
+              setEntries.sessionExerciseId.equalsExp(sessionExercises.id),
+            ),
+          ])
+          ..where(sessions.endedAt.isNotNull())
+          ..orderBy([
+            OrderingTerm.asc(sessions.startedAt),
+            OrderingTerm.asc(sessions.id),
+            OrderingTerm.asc(sessionExercises.position),
+            OrderingTerm.asc(sessionExercises.id),
+            OrderingTerm.asc(setEntries.setIndex),
+          ]);
+    final rows = await query.get();
+    final result = <(Session, List<SessionExerciseDetail>)>[];
+    final buffer = <TypedResult>[];
+    void flush() {
+      if (buffer.isEmpty) return;
+      result.add((buffer.first.readTable(sessions), _groupDetails(buffer)));
+      buffer.clear();
+    }
+
+    for (final row in rows) {
+      if (buffer.isNotEmpty &&
+          buffer.first.readTable(sessions).id != row.readTable(sessions).id) {
+        flush();
+      }
+      buffer.add(row);
+    }
+    flush();
+    return result;
+  }
+
   Future<List<Session>> finishedSessions() =>
       (select(sessions)
             ..where((s) => s.endedAt.isNotNull())
@@ -139,6 +185,18 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
 
   Future<int> deleteSessionExercise(int id) =>
       (delete(sessionExercises)..where((e) => e.id.equals(id))).go();
+
+  /// Emits whenever training data or body weights change.
+  Stream<void> watchStatsChanges() => customSelect(
+    'SELECT 1',
+    readsFrom: {
+      setEntries,
+      sessionExercises,
+      sessions,
+      exercises,
+      attachedDatabase.bodyWeightEntries,
+    },
+  ).watch().map((_) {});
 
   /// Emits whenever sets, session exercises or sessions change.
   Stream<void> watchSetChanges() => customSelect(
