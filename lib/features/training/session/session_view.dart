@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/device.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/l10n/strings_de.dart';
 import '../../../core/router.dart';
@@ -11,7 +14,6 @@ import '../../../domain/models/models.dart';
 import '../../../domain/session_rules.dart';
 import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/dashed_add_button.dart';
-import '../../../widgets/haptics.dart';
 import '../../../widgets/snackbars.dart';
 import '../../../widgets/ticker.dart';
 import '../../settings/exercises/exercise_form_page.dart';
@@ -36,6 +38,24 @@ class _SessionViewState extends ConsumerState<SessionView>
   List<int>? _pendingOrder;
   bool _finishing = false;
 
+  /// Session exercise that just set a record (red flash, SPEC §7.7).
+  int? _flashId;
+  Timer? _flashTimer;
+
+  @override
+  void dispose() {
+    _flashTimer?.cancel();
+    super.dispose();
+  }
+
+  void _flash(int sessionExerciseId) {
+    _flashTimer?.cancel();
+    setState(() => _flashId = sessionExerciseId);
+    _flashTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _flashId = null);
+    });
+  }
+
   Session get _session => widget.session;
 
   Future<void> _guard(Future<void> Function() action) async {
@@ -51,7 +71,13 @@ class _SessionViewState extends ConsumerState<SessionView>
       _guard(() async {
         final repo = ref.read(sessionRepositoryProvider);
         final saved = await repo.saveSet(detail.sessionExercise.id, values);
-        await lightHaptic();
+        final feedback = ref.read(deviceFeedbackProvider);
+        if (saved.records.isNotEmpty) {
+          _flash(detail.sessionExercise.id);
+          unawaited(feedback.record());
+        } else {
+          unawaited(feedback.setSaved());
+        }
         if (!mounted) return;
         showMessage(
           context,
@@ -106,6 +132,20 @@ class _SessionViewState extends ConsumerState<SessionView>
           if (mounted) showMessage(context, S.setDeleted);
       }
     });
+  }
+
+  @override
+  Future<void> editNote(SessionExerciseDetail detail) async {
+    final text = await showDialog<String>(
+      context: context,
+      builder: (_) => _NoteDialog(initial: detail.exercise.notes),
+    );
+    if (text == null) return;
+    await _guard(
+      () => ref
+          .read(exerciseRepositoryProvider)
+          .update(detail.exercise.copyWith(notes: text)),
+    );
   }
 
   Future<void> _reorder(
@@ -201,6 +241,8 @@ class _SessionViewState extends ConsumerState<SessionView>
     final theme = Theme.of(context);
     final loaded = ref.watch(sessionDetailsProvider(_session.id)).value;
     final last = ref.watch(lastPerformancesProvider).value ?? const {};
+    final records =
+        ref.watch(sessionRecordsProvider(_session.id)).value ?? const {};
     var details = loaded ?? const <SessionExerciseDetail>[];
     final order = _pendingOrder;
     if (order != null && order.length == details.length) {
@@ -297,6 +339,8 @@ class _SessionViewState extends ConsumerState<SessionView>
               index: i,
               last: last[d.exercise.id],
               actions: this,
+              records: records,
+              highlight: _flashId == d.sessionExercise.id,
             ),
             SessionExerciseStatus.pending => PendingExerciseTile(
               key: key,
@@ -315,10 +359,56 @@ class _SessionViewState extends ConsumerState<SessionView>
                 if (!_expanded.remove(id)) _expanded.add(id);
               }),
               actions: this,
+              records: records,
+              highlight: _flashId == d.sessionExercise.id,
             ),
           };
         },
       ),
+    );
+  }
+}
+
+class _NoteDialog extends StatefulWidget {
+  const _NoteDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_NoteDialog> createState() => _NoteDialogState();
+}
+
+class _NoteDialogState extends State<_NoteDialog> {
+  late final _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(S.editNote),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        minLines: 2,
+        maxLines: 5,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(hintText: S.fieldNotesHint),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text(S.cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text(S.save),
+        ),
+      ],
     );
   }
 }

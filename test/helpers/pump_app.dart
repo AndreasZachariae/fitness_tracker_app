@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/app.dart';
 import 'package:gymlog/core/clock.dart';
+import 'package:gymlog/core/device.dart';
 import 'package:gymlog/data/db/database.dart';
 import 'package:gymlog/data/providers.dart';
 
+import 'fake_device.dart';
 import 'test_db.dart';
 
 /// Pumps the whole app on an in-memory database with a fixed clock.
@@ -13,6 +15,8 @@ Future<AppDatabase> pumpApp(
   WidgetTester tester, {
   AppDatabase? db,
   Clock? clock,
+  FakeFeedback? feedback,
+  FakeScreenAwake? screen,
 }) async {
   final database = db ?? newTestDatabase();
   await tester.pumpWidget(
@@ -20,6 +24,8 @@ Future<AppDatabase> pumpApp(
       overrides: [
         databaseProvider.overrideWithValue(database),
         clockProvider.overrideWithValue(clock ?? newTestClock()),
+        deviceFeedbackProvider.overrideWithValue(feedback ?? FakeFeedback()),
+        screenAwakeProvider.overrideWithValue(screen ?? FakeScreenAwake()),
       ],
       child: const GymLogApp(),
     ),

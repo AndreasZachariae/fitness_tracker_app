@@ -49,7 +49,16 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         als Plan speichern, Notiz, „Fertig“)
   - [x] Leiste „Training läuft – 42:13“ + Punkt am Training-Icon auf anderen Tabs; Wiederaufnahme; Dialog vergessene Session
   - [x] Widget-Tests: Session-Ablauf, Reorder-Regeln, Rückgängig, Beenden-Dialoge, vergessene Session
-- [ ] M4 Komfort im Studio
+- [x] M4 Komfort im Studio (0.5.0+5)
+  - [x] Domain: e1RM (§7.3), Rekordarten + Rekord-Erkennung chronologisch inkl. „erste Session“ (§7.7), Steigerungsvorschlag
+        (§7.2), Pausendauer/-zustand (§6.2.1)
+  - [x] Geräte-Dienste injizierbar (Vibration, Haptik, Display an) mit Fakes für Tests
+  - [x] Repository: Rekorde beim Speichern, Rekord-Sätze einer Session als Stream, neue Rekorde für die Zusammenfassung
+  - [x] Pausentimer-Leiste über der Tableiste (−15 s/+15 s/Überspringen, Fortschritt, Vibration, „Pause vorbei“ 10 s)
+  - [x] Display bleibt an während der Session (`keepScreenOn`)
+  - [x] Vorschlags-Chip in Satz 1, Rekord: rotes Aufleuchten + Label + mittlere Haptik, Rekorde in der Zusammenfassung
+  - [x] Übungsnotiz in der aktiven Kachel (Tap → bearbeiten)
+  - [x] Tests (Tabellen für Domain, Repository, Widgets)
 - [ ] M5 Verlauf
 - [ ] M6 Körper
 - [ ] M7 Statistik
@@ -189,6 +198,25 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 - Haptik nach „Satz speichern“ ist best effort; ein Fehler der Vibration zeigt nie eine Fehlermeldung (Satz ist gespeichert).
 - Display anlassen, Pausentimer, Vorschlags-Chip, Rekorde und Übungsnotiz in der Kachel folgen mit M4.
 
+**M4**
+- **Pausentimer:** gilt nach dem zuletzt gespeicherten Satz der Session (egal welche Übung); Dauer = Pause der
+  Session-Übung → der Übung → Standard. Ende = Zeitpunkt des Satzes + Dauer + ±15-s-Anpassungen. Die Anpassungen und
+  „Überspringen“ leben nur im Speicher; nach einem Neustart läuft der Timer ohne Anpassungen aus der gespeicherten Zeit
+  weiter. Die Leiste liegt über der Tableiste und ist auf allen Tabs sichtbar. Vibration (3 × kurz) nur, wenn die Pause
+  in dieser App-Sitzung laufend gesehen wurde, die App im Vordergrund ist und `vibrationEnabled` gilt; „Pause vorbei“
+  (grün) 10 s, Tippen blendet sie aus. Anzeige zählt aufgerundet herunter (1:30 … 0:01).
+- **Display anlassen:** `wakelock_plus` während einer laufenden Session, wenn `keepScreenOn` gesetzt ist; sonst und beim
+  Ende wird es freigegeben.
+- **Steigerungsvorschlag:** „alle erfassten Arbeitssätze der letzten Session erreichen das Ziel und es sind mindestens
+  `targetSets`“. Grundlage sind die Ziele der aktuellen Session-Übung. Der Vorschlag wird auf die vorbefüllten Werte
+  angewendet (Gewicht + Steigerung, +1 Wdh, +5 s) und verschwindet nach Übernehmen oder „×“.
+- **Rekorde:** chronologisch nach `completedAt` über alle Sessions; „strikt größer“ als alle früheren Arbeitssätze, auch
+  derselben Session; in der Session mit dem ersten Satz der Übung nie. Beim Körpergewicht zählt jede Erhöhung des
+  Zusatzgewichts (auch weniger Unterstützung, z. B. −20 → −10 kg). Die Rekord-Labels werden aus der Datenbank berechnet
+  (bleiben nach Neustart, verschwinden bei „Rückgängig“). Zusammenfassung: je Übung und Rekordart der beste Wert der Session.
+- **Übungsnotiz** in der aktiven Kachel: einzeilig; Tippen öffnet einen Dialog; gespeichert wird an der Übung (gilt überall).
+- Geräte-Dienste (`lib/core/device.dart`) sind injizierbar; Tests nutzen Fakes und prüfen Vibration/Haptik/Display-an.
+
 ## Datenbank-Migrationen (ab Schema 2)
 
 1. Tabellen in `lib/data/db/tables.dart` ändern, `AppDatabase.currentSchemaVersion` + 1.
@@ -286,4 +314,16 @@ Vorher: `./scripts/dev-install.sh`, in den Einstellungen „Demo-Daten erzeugen�
 - [ ] Training starten, ohne Satz „Beenden“ → „Keine Sätze erfasst. Training verwerfen?“.
 - [ ] (Optional, dauert 12 h) Training starten, liegen lassen, am nächsten Tag öffnen → „Das Training vom … läuft noch.“
 - [ ] Systemschrift groß: Kacheln, Stepper und Zusammenfassung ohne Überlappung.
+
+### M4 Komfort im Studio
+- [ ] Nach „Satz speichern“ erscheint über der Tableiste die gelbe Leiste „Pause 1:30“ mit Fortschritt; −15 s/+15 s
+  ändern die Zeit; „Überspringen“ blendet sie aus. Die Leiste ist auch auf den anderen Tabs sichtbar.
+- [ ] Bei 0: 3 × kurze Vibration, Leiste wird grün „Pause vorbei“ und verschwindet nach 10 s.
+- [ ] App während der Pause schließen und wieder öffnen: Restzeit stimmt.
+- [ ] Display geht während des Trainings nicht aus; nach dem Beenden wieder normal.
+- [ ] Hat das letzte Training alle Ziel-Sätze geschafft, zeigt Satz 1 „Vorschlag: +2,5 kg“ (Körpergewicht: „+1 Wdh“,
+  Zeit: „+5 s“). Tippen übernimmt, „×“ verwirft.
+- [ ] Ein Satz über dem bisherigen Bestwert (z. B. Vorschlag übernehmen): Kachel leuchtet kurz rot, mittlere Vibration,
+  Satzzeile mit rotem „Rekord“; Zusammenfassung listet „Neue Rekorde“. Beim allerersten Training einer neuen Übung keine Rekorde.
+- [ ] Aktive Kachel: „Notiz hinzufügen“ → Text → erscheint einzeilig; Tippen bearbeitet.
 

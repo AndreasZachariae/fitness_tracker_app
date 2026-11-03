@@ -1,4 +1,5 @@
 import '../../domain/models/enums.dart';
+import '../../domain/records.dart';
 
 /// All user-facing German texts of the app.
 ///
@@ -232,6 +233,33 @@ abstract final class S {
   static const trainingDiscarded = 'Training verworfen.';
   static String trainingRunning(String time) => 'Training läuft – $time';
   static const trainingRunningA11y = 'Laufendes Training öffnen';
+
+  // Rest timer (SPEC §6.2.1)
+  static const rest = 'Pause';
+  static const restMinus = '−15 s';
+  static const restPlus = '+15 s';
+  static const restSkip = 'Überspringen';
+  static const restOver = 'Pause vorbei';
+
+  // Progression suggestion (SPEC §7.2)
+  static String suggestion(String delta) => 'Vorschlag: $delta';
+  static const plusOneRep = '+1 Wdh';
+  static const dismissSuggestion = 'Vorschlag verwerfen';
+
+  // Records (SPEC §7.7)
+  static const record = 'Rekord';
+  static const newRecords = 'Neue Rekorde';
+  static String recordKind(RecordKind kind) => switch (kind) {
+    RecordKind.estimatedOneRepMax => 'Geschätztes 1RM',
+    RecordKind.weight => 'Höchstes Gewicht',
+    RecordKind.reps => 'Meiste Wdh',
+    RecordKind.addedWeight => 'Höchstes Zusatzgewicht',
+    RecordKind.duration => 'Längste Dauer',
+  };
+
+  // Exercise note in the active tile
+  static const addNote = 'Notiz hinzufügen';
+  static const editNote = 'Notiz zur Übung';
 
   // Forgotten session
   static String forgottenTitle(String date) =>

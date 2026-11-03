@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/clock.dart';
 import '../domain/models/models.dart';
+import '../domain/records.dart';
 import 'db/database.dart';
 import 'demo/dev_tools.dart';
 import 'repositories/body_weight_repository.dart';
@@ -108,4 +109,11 @@ final sessionDetailsProvider =
     StreamProvider.family<List<SessionExerciseDetail>, int>(
       (ref, sessionId) =>
           ref.watch(sessionRepositoryProvider).watchDetails(sessionId),
+    );
+
+/// Record sets of a session by set id.
+final sessionRecordsProvider =
+    StreamProvider.family<Map<int, List<RecordKind>>, int>(
+      (ref, sessionId) =>
+          ref.watch(sessionRepositoryProvider).watchSessionRecords(sessionId),
     );

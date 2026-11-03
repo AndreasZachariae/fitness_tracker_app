@@ -7,6 +7,7 @@ import 'package:gymlog/data/repositories/repository_exceptions.dart';
 import 'package:gymlog/data/repositories/session_repository.dart';
 import 'package:gymlog/data/repositories/settings_repository.dart';
 import 'package:gymlog/domain/models/models.dart';
+import 'package:gymlog/domain/records.dart';
 
 import '../../helpers/test_db.dart';
 
@@ -317,5 +318,33 @@ void main() {
     ]) {
       await expectLater(action(), throwsA(isA<SessionNotActiveException>()));
     }
+  });
+
+  test('saveSet reports records, but not in the first session', () async {
+    final first = await startSession(sets: 3);
+    final a = await seId(first, 0);
+    final s1 = await repo.saveSet(a, w60);
+    final s2 = await repo.saveSet(a, const SetValues(weightKg: 70, reps: 10));
+    expect(s1.records, isEmpty);
+    expect(s2.records, isEmpty, reason: 'first session of the exercise');
+    await repo.finishSession(first);
+
+    clock.advance(const Duration(days: 2));
+    final second = await startSession(sets: 3);
+    final b = await seId(second, 0);
+    final s3 = await repo.saveSet(b, const SetValues(weightKg: 70, reps: 10));
+    expect(s3.records, isEmpty, reason: 'equal is not a record');
+    final s4 = await repo.saveSet(b, const SetValues(weightKg: 72.5, reps: 3));
+    expect(s4.records, [RecordKind.weight]);
+    final s5 = await repo.saveSet(b, const SetValues(weightKg: 72.5, reps: 4));
+    expect(s5.records, isEmpty, reason: 'e1RM 82.2 < 93.3, weight equal');
+
+    final flagged = await repo.watchSessionRecords(second).first;
+    expect(flagged.keys, [s4.set.id]);
+
+    // Undo removes the record set; the flags follow.
+    await repo.undoSave(s5);
+    await repo.undoSave(s4);
+    expect(await repo.watchSessionRecords(second).first, isEmpty);
   });
 }

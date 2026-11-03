@@ -8,6 +8,8 @@ import '../core/theme/typography.dart';
 import '../data/providers.dart';
 import '../domain/models/models.dart';
 import '../features/training/session/forgotten_session_guard.dart';
+import '../features/training/session/keep_screen_on.dart';
+import '../features/training/session/rest_timer_bar.dart';
 import 'ticker.dart';
 
 /// Scaffold with the bottom [NavigationBar] around the four tabs. While a
@@ -33,52 +35,60 @@ class HomeShell extends ConsumerWidget {
         active != null && navigationShell.currentIndex != _trainingBranch;
 
     return ForgottenSessionGuard(
-      child: Scaffold(
-        body: Column(
-          children: [
-            if (showBar)
-              _RunningSessionBar(
-                session: active,
-                onTap: () => _goTo(_trainingBranch),
+      child: KeepScreenOn(
+        child: Scaffold(
+          body: Column(
+            children: [
+              if (showBar)
+                _RunningSessionBar(
+                  session: active,
+                  onTap: () => _goTo(_trainingBranch),
+                ),
+              Expanded(
+                child: MediaQuery.removePadding(
+                  context: context,
+                  removeTop: showBar,
+                  child: navigationShell,
+                ),
               ),
-            Expanded(
-              child: MediaQuery.removePadding(
-                context: context,
-                removeTop: showBar,
-                child: navigationShell,
+            ],
+          ),
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const RestTimerBar(),
+              NavigationBar(
+                selectedIndex: navigationShell.currentIndex,
+                onDestinationSelected: _goTo,
+                destinations: [
+                  NavigationDestination(
+                    icon: Badge(
+                      isLabelVisible: active != null,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      child: const Icon(Icons.fitness_center_outlined),
+                    ),
+                    selectedIcon: const Icon(Icons.fitness_center),
+                    label: S.tabTraining,
+                  ),
+                  const NavigationDestination(
+                    icon: Icon(Icons.history_outlined),
+                    selectedIcon: Icon(Icons.history),
+                    label: S.tabHistory,
+                  ),
+                  const NavigationDestination(
+                    icon: Icon(Icons.insights_outlined),
+                    selectedIcon: Icon(Icons.insights),
+                    label: S.tabStats,
+                  ),
+                  const NavigationDestination(
+                    icon: Icon(Icons.monitor_weight_outlined),
+                    selectedIcon: Icon(Icons.monitor_weight),
+                    label: S.tabBody,
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: navigationShell.currentIndex,
-          onDestinationSelected: _goTo,
-          destinations: [
-            NavigationDestination(
-              icon: Badge(
-                isLabelVisible: active != null,
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                child: const Icon(Icons.fitness_center_outlined),
-              ),
-              selectedIcon: const Icon(Icons.fitness_center),
-              label: S.tabTraining,
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.history_outlined),
-              selectedIcon: Icon(Icons.history),
-              label: S.tabHistory,
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.insights_outlined),
-              selectedIcon: Icon(Icons.insights),
-              label: S.tabStats,
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.monitor_weight_outlined),
-              selectedIcon: Icon(Icons.monitor_weight),
-              label: S.tabBody,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

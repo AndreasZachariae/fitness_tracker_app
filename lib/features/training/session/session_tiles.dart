@@ -8,6 +8,8 @@ import '../../../core/theme/gym_colors.dart';
 import '../../../domain/metrics.dart';
 import '../../../domain/models/models.dart';
 import '../../../domain/prefill.dart';
+import '../../../domain/progression.dart';
+import '../../../domain/records.dart';
 import '../../../widgets/exercise_type_icon.dart';
 import 'set_input.dart';
 
@@ -19,6 +21,62 @@ abstract interface class SessionTileActions {
   Future<void> skip(SessionExerciseDetail detail);
   Future<void> finishExercise(SessionExerciseDetail detail);
   Future<void> editSet(SessionExerciseDetail detail, SetEntry set);
+  Future<void> editNote(SessionExerciseDetail detail);
+}
+
+/// Short red highlight of a tile that just set a record (SPEC §7.7).
+class _RecordHighlight extends StatelessWidget {
+  const _RecordHighlight({required this.active, required this.child});
+
+  final bool active;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final gym = GymColors.of(context);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      margin: const EdgeInsets.symmetric(horizontal: 13, vertical: 1),
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius + 3),
+        color: active ? gym.recordContainer : Colors.transparent,
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Small red "Rekord" label.
+class RecordLabel extends StatelessWidget {
+  const RecordLabel({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final gym = GymColors.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: gym.recordContainer,
+        borderRadius: BorderRadius.circular(AppTheme.chipRadius),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.emoji_events, size: 14, color: gym.onRecordContainer),
+          const SizedBox(width: 4),
+          Text(
+            S.record,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: gym.onRecordContainer,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 Widget _dragHandle(int index) => ReorderableDragStartListener(
@@ -31,10 +89,15 @@ Widget _dragHandle(int index) => ReorderableDragStartListener(
 
 /// Rows of the recorded sets ("1   60 kg × 10"); tap → change/delete.
 class _SetRows extends StatelessWidget {
-  const _SetRows({required this.detail, required this.actions});
+  const _SetRows({
+    required this.detail,
+    required this.actions,
+    required this.records,
+  });
 
   final SessionExerciseDetail detail;
   final SessionTileActions actions;
+  final Map<int, List<RecordKind>> records;
 
   @override
   Widget build(BuildContext context) {
@@ -71,6 +134,10 @@ class _SetRows extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (records.containsKey(set.id)) ...[
+                    const RecordLabel(),
+                    const SizedBox(width: 8),
+                  ],
                   Icon(Icons.edit_outlined, size: 18, color: muted),
                 ],
               ),
@@ -89,6 +156,8 @@ class ActiveExerciseCard extends StatefulWidget {
     required this.index,
     required this.last,
     required this.actions,
+    this.records = const {},
+    this.highlight = false,
     super.key,
   });
 
@@ -96,6 +165,10 @@ class ActiveExerciseCard extends StatefulWidget {
   final int index;
   final LastPerformance? last;
   final SessionTileActions actions;
+  final Map<int, List<RecordKind>> records;
+
+  /// Red flash after a record.
+  final bool highlight;
 
   @override
   State<ActiveExerciseCard> createState() => _ActiveExerciseCardState();
@@ -104,6 +177,29 @@ class ActiveExerciseCard extends StatefulWidget {
 class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
   late SetValues _values = _prefill();
   bool _saving = false;
+
+  /// The suggestion chip was applied or dismissed (SPEC §7.2).
+  bool _suggestionDone = false;
+
+  ProgressionSuggestion? get _suggestion {
+    final d = widget.detail;
+    if (_suggestionDone || d.sets.isNotEmpty) return null;
+    final se = d.sessionExercise;
+    return suggestProgression(
+      type: d.exercise.type,
+      incrementKg: d.exercise.incrementKg,
+      targetSets: se.targetSets,
+      targetReps: se.targetReps,
+      targetDurationSec: se.targetDurationSec,
+      lastSessionSets: widget.last?.sets ?? const [],
+    );
+  }
+
+  static String _suggestionText(ProgressionSuggestion s) => switch (s) {
+    AddWeight(:final kg) => '+${formatKg(kg)}',
+    AddRep() => S.plusOneRep,
+    AddDuration(:final seconds) => '+$seconds ${S.secondsUnit}',
+  };
 
   SetValues _prefill() {
     final se = widget.detail.sessionExercise;
@@ -174,103 +270,176 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
     final done = d.sets.length;
     final current = done + 1;
     final last = widget.last;
+    final suggestion = _suggestion;
+    final notes = d.exercise.notes;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        // "Raised" surface: lighter than the background in both modes.
-        color: theme.brightness == Brightness.light
-            ? theme.colorScheme.surfaceContainerLowest
-            : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-      ),
+    return _RecordHighlight(
+      active: widget.highlight,
       child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 2),
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          border: Border(left: BorderSide(color: gym.activeEdge, width: 4)),
+          // "Raised" surface: lighter than the background in both modes.
+          color: theme.brightness == Brightness.light
+              ? theme.colorScheme.surfaceContainerLowest
+              : theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         ),
-        padding: const EdgeInsets.fromLTRB(16, 12, 0, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(d.exercise.name, style: theme.textTheme.titleLarge),
-                      Text(
-                        S.setOf(current, se.targetSets),
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      _ProgressDots(done: done, total: se.targetSets),
-                    ],
-                  ),
-                ),
-                _dragHandle(widget.index),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(left: BorderSide(color: gym.activeEdge, width: 4)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 0, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
                 children: [
-                  if (last != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      S.lastTimeOn(
-                        formatShortDate(last.sessionStartedAt),
-                        formatSetsDetailed(d.exercise.type, last.sets),
-                      ),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                  if (d.sets.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    _SetRows(detail: d, actions: widget.actions),
-                  ],
-                  const SizedBox(height: 12),
-                  SetInput(
-                    type: d.exercise.type,
-                    incrementKg: d.exercise.incrementKg,
-                    values: _values,
-                    onChanged: (v) => setState(() => _values = v),
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton.icon(
-                    icon: const Icon(Icons.check),
-                    label: const Text(S.saveSet),
-                    onPressed: _saving ? null : _save,
-                  ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        onPressed: () => widget.actions.addTargetSet(d),
-                        child: const Text(S.addOneSet),
-                      ),
-                      TextButton(
-                        onPressed: () => widget.actions.skip(d),
-                        child: const Text(S.skip),
-                      ),
-                      if (done > 0)
-                        TextButton(
-                          onPressed: () => widget.actions.finishExercise(d),
-                          child: const Text(S.finishExercise),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          d.exercise.name,
+                          style: theme.textTheme.titleLarge,
                         ),
-                    ],
+                        Text(
+                          S.setOf(current, se.targetSets),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        _ProgressDots(done: done, total: se.targetSets),
+                      ],
+                    ),
                   ),
+                  _dragHandle(widget.index),
                 ],
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.only(right: 16, top: 4),
+                child: notes.isEmpty
+                    ? Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          icon: const Icon(Icons.note_add_outlined, size: 18),
+                          label: const Text(S.addNote),
+                          onPressed: () => widget.actions.editNote(d),
+                        ),
+                      )
+                    : InkWell(
+                        onTap: () => widget.actions.editNote(d),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            minHeight: AppTheme.minTouchTarget,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.sticky_note_2_outlined,
+                                size: 18,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  notes,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (last != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        S.lastTimeOn(
+                          formatShortDate(last.sessionStartedAt),
+                          formatSetsDetailed(d.exercise.type, last.sets),
+                        ),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                    if (d.sets.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _SetRows(
+                        detail: d,
+                        actions: widget.actions,
+                        records: widget.records,
+                      ),
+                    ],
+                    if (suggestion != null) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: InputChip(
+                          avatar: const Icon(Icons.trending_up),
+                          label: Text(
+                            S.suggestion(_suggestionText(suggestion)),
+                          ),
+                          onPressed: () => setState(() {
+                            _values = suggestion.applyTo(_values);
+                            _suggestionDone = true;
+                          }),
+                          deleteButtonTooltipMessage: S.dismissSuggestion,
+                          onDeleted: () =>
+                              setState(() => _suggestionDone = true),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    SetInput(
+                      type: d.exercise.type,
+                      incrementKg: d.exercise.incrementKg,
+                      values: _values,
+                      onChanged: (v) => setState(() => _values = v),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      icon: const Icon(Icons.check),
+                      label: const Text(S.saveSet),
+                      onPressed: _saving ? null : _save,
+                    ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () => widget.actions.addTargetSet(d),
+                          child: const Text(S.addOneSet),
+                        ),
+                        TextButton(
+                          onPressed: () => widget.actions.skip(d),
+                          child: const Text(S.skip),
+                        ),
+                        if (done > 0)
+                          TextButton(
+                            onPressed: () => widget.actions.finishExercise(d),
+                            child: const Text(S.finishExercise),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -391,6 +560,8 @@ class CompletedExerciseTile extends StatelessWidget {
     required this.expanded,
     required this.onToggle,
     required this.actions,
+    this.records = const {},
+    this.highlight = false,
     super.key,
   });
 
@@ -398,6 +569,8 @@ class CompletedExerciseTile extends StatelessWidget {
   final bool expanded;
   final VoidCallback onToggle;
   final SessionTileActions actions;
+  final Map<int, List<RecordKind>> records;
+  final bool highlight;
 
   @override
   Widget build(BuildContext context) {
@@ -413,59 +586,71 @@ class CompletedExerciseTile extends StatelessWidget {
         ? S.sets(detail.sets.length)
         : S.doneSummary(detail.sets.length, formatSingleSet(e.type, best));
 
-    return Opacity(
-      opacity: expanded ? 1 : 0.6,
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            InkWell(
-              onTap: onToggle,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                child: Row(
-                  children: [
-                    Icon(
-                      skipped ? Icons.redo : Icons.check_circle,
-                      color: skipped
-                          ? theme.colorScheme.onSurfaceVariant
-                          : gym.success,
-                      semanticLabel: skipped ? S.skippedLabel : null,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(e.name, style: theme.textTheme.titleMedium),
-                          Text(summary, style: theme.textTheme.bodyMedium),
-                        ],
+    final hasRecord = detail.sets.any((s) => records.containsKey(s.id));
+    return _RecordHighlight(
+      active: highlight,
+      child: Opacity(
+        opacity: expanded || highlight ? 1 : 0.6,
+        child: Card(
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              InkWell(
+                onTap: onToggle,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                  child: Row(
+                    children: [
+                      Icon(
+                        skipped ? Icons.redo : Icons.check_circle,
+                        color: skipped
+                            ? theme.colorScheme.onSurfaceVariant
+                            : gym.success,
+                        semanticLabel: skipped ? S.skippedLabel : null,
                       ),
-                    ),
-                    Icon(expanded ? Icons.expand_less : Icons.expand_more),
-                  ],
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(e.name, style: theme.textTheme.titleMedium),
+                            Text(summary, style: theme.textTheme.bodyMedium),
+                          ],
+                        ),
+                      ),
+                      if (hasRecord) ...[
+                        const RecordLabel(),
+                        const SizedBox(width: 8),
+                      ],
+                      Icon(expanded ? Icons.expand_less : Icons.expand_more),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            if (expanded)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _SetRows(detail: detail, actions: actions),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.replay),
-                      label: const Text(S.reopen),
-                      onPressed: () => actions.activateExercise(detail),
-                    ),
-                  ],
+              if (expanded)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _SetRows(
+                        detail: detail,
+                        actions: actions,
+                        records: records,
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.replay),
+                        label: const Text(S.reopen),
+                        onPressed: () => actions.activateExercise(detail),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

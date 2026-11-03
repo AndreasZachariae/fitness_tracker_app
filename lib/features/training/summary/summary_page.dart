@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/format/exercise_format.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/l10n/strings_de.dart';
 import '../../../core/router.dart';
@@ -12,6 +13,7 @@ import '../../../core/theme/gym_colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../data/providers.dart';
 import '../../../data/repositories/repository_exceptions.dart';
+import '../../../data/repositories/session_repository.dart';
 import '../../../domain/metrics.dart';
 import '../../../domain/models/models.dart';
 import '../../../domain/session_rules.dart';
@@ -26,7 +28,11 @@ final class _SummaryData {
     required this.previousVolume,
     required this.plan,
     required this.planChanged,
+    required this.records,
   });
+
+  /// New records of this session (SPEC §6.3).
+  final List<SessionRecord> records;
 
   final Session session;
   final List<SessionExerciseDetail> details;
@@ -64,6 +70,7 @@ final _summaryProvider = FutureProvider.autoDispose.family<_SummaryData?, int>((
     previousVolume: previous == null ? null : sessionVolume(previous),
     plan: plan,
     planChanged: changed,
+    records: await sessions.sessionRecords(sessionId),
   );
 });
 
@@ -174,7 +181,9 @@ class _SummaryPageState extends ConsumerState<SummaryPage> {
         appBar: AppBar(
           automaticallyImplyLeading: false,
           title: Text(
-            data?.session.planNameSnapshot ?? S.summaryTitle,
+            data == null
+                ? S.summaryTitle
+                : data.session.planNameSnapshot ?? S.freeTrainingTitle,
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -268,6 +277,20 @@ class _SummaryBody extends StatelessWidget {
             ),
           ],
         ),
+        if (data.records.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(S.newRecords, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 4),
+          for (final r in data.records)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.emoji_events, color: gym.record),
+              title: Text(r.exercise.name),
+              subtitle: Text(
+                '${S.recordKind(r.kind)}: ${formatRecordValue(r.kind, r.value)}',
+              ),
+            ),
+        ],
         const SizedBox(height: 16),
         if (data.plan != null && data.planChanged)
           SwitchListTile(

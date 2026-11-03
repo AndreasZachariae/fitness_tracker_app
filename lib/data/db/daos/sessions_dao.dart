@@ -73,6 +73,37 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
   Future<void> updateSet(SetEntry set) =>
       update(setEntries).replace(set.toInsertable());
 
+  /// All sets of an exercise with their session, in chronological order.
+  Future<List<({SetEntry set, int sessionId})>> historySets(
+    int exerciseId,
+  ) async {
+    final query =
+        select(setEntries).join([
+            innerJoin(
+              sessionExercises,
+              sessionExercises.id.equalsExp(setEntries.sessionExerciseId),
+            ),
+          ])
+          ..where(sessionExercises.exerciseId.equals(exerciseId))
+          ..orderBy([
+            OrderingTerm.asc(setEntries.completedAt),
+            OrderingTerm.asc(setEntries.id),
+          ]);
+    return [
+      for (final row in await query.get())
+        (
+          set: row.readTable(setEntries),
+          sessionId: row.readTable(sessionExercises).sessionId,
+        ),
+    ];
+  }
+
+  /// Emits whenever sets, session exercises or sessions change.
+  Stream<void> watchSetChanges() => customSelect(
+    'SELECT 1',
+    readsFrom: {setEntries, sessionExercises, sessions, exercises},
+  ).watch().map((_) {});
+
   /// Time of the latest set of a session, if any.
   Future<DateTime?> lastSetTime(int sessionId) async {
     final max = setEntries.completedAt.max();

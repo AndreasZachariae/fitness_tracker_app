@@ -1,4 +1,5 @@
 import '../../domain/models/models.dart';
+import '../../domain/records.dart';
 import '../l10n/strings_de.dart';
 import 'formatters.dart';
 
@@ -95,3 +96,12 @@ String formatSetsDetailed(ExerciseType type, List<SetEntry> sets) {
       return formatSetsSummary(type, sets);
   }
 }
+
+/// Value of a record: `82,5 kg`, `12 Wdh`, `+10 kg`, `1:30 min`.
+String formatRecordValue(RecordKind kind, double value) => switch (kind) {
+  RecordKind.estimatedOneRepMax ||
+  RecordKind.weight => formatKg((value * 10).round() / 10),
+  RecordKind.reps => '${value.round()} ${S.repsUnit}',
+  RecordKind.addedWeight => formatSignedKg(value),
+  RecordKind.duration => formatDuration(value.round()),
+};
