@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Source of the current time. All code reads time through this abstraction
 /// so tests can control it.
 ///
-/// [now] always returns a UTC [DateTime]; convert to local time only for
-/// display and for day/week bucketing.
+/// [now] always returns a UTC [DateTime] with millisecond precision; convert
+/// to local time only for display and for day/week bucketing.
 abstract interface class Clock {
   DateTime now();
 }
@@ -14,7 +14,10 @@ final class SystemClock implements Clock {
   const SystemClock();
 
   @override
-  DateTime now() => DateTime.now().toUtc();
+  DateTime now() => DateTime.fromMillisecondsSinceEpoch(
+    DateTime.now().millisecondsSinceEpoch,
+    isUtc: true,
+  );
 }
 
 /// Clock with a manually controlled time, for tests and previews.

@@ -9,6 +9,8 @@ analyzer:
   exclude:
     - build/**
     - android/**
+    # Written by `drift_dev schema generate` / `make-migrations`, not by hand.
+    - test/data/db/migrations/generated/**
 
 linter:
   rules:
