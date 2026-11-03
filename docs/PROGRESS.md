@@ -49,6 +49,11 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 - Zahleneingabe (`parseDecimal`) akzeptiert Komma und Punkt, aber keine Tausendertrennzeichen.
 - Analyzer zusätzlich mit `strict-casts`, `strict-inference`, `strict-raw-types` und einigen strengeren Lints.
 - Unterscheidbares DEV-Launcher-Icon folgt laut §11 in M9; bis dahin unterscheidet der Name „GymLog DEV“.
+- Beim App-Start zeigt das Startbild-Theme der Vorlage (`LaunchTheme`) kurz weiße Statusleisten-Symbole auf hellem Grund,
+  bis Flutter übernimmt. Wird in M9 (Feinschliff) mit dem Startbild angepasst.
+- **USB-Debugging im Container:** `/dev/bus/usb` als Bind-Mount plus `device_cgroup_rules: c 189:* rmw` statt `devices:`,
+  weil Android sich bei jedem Einstecken mit neuer Gerätenummer anmeldet. Zugriffsrechte über eine udev-Regel auf dem Host
+  (`scripts/setup-usb-host.sh`, Gruppe = Host-GID = Container-GID).
 
 ## Abhängigkeiten außerhalb von SPEC §2
 
@@ -61,7 +66,9 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
 
 ### M0 Grundgerüst
-Kein Handy war verbunden – bitte nach `./scripts/connect-phone.sh` einmal `./scripts/dev-install.sh` ausführen.
+Am Pixel 4a (5G) per USB geprüft (`dev-install.sh` + Screenshot): Training-Tab im hellen Design, Barlow, Statusleiste lesbar.
+Handy verbinden: per USB `./scripts/connect-usb.sh` (einmalig vorher `./scripts/setup-usb-host.sh` auf dem Host),
+per WLAN `./scripts/connect-phone.sh`; danach `./scripts/dev-install.sh`.
 - [ ] App heißt im Launcher **„GymLog DEV“** und ist eine eigene App neben „GymLog“ (falls installiert, bleibt diese unberührt).
 - [ ] Vier Tabs unten: Training, Verlauf, Statistik, Körper. Jeder zeigt Titel + Leerzustand; Wechsel ist sofort.
 - [ ] Zahnrad oben rechts öffnet „Einstellungen“ ohne Tableiste; Zurück (Pfeil und Systemgeste) führt zum vorherigen Tab.

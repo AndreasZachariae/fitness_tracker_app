@@ -25,13 +25,17 @@ services:
       - gradle-cache:/home/flutter/.gradle
       # adb-Schlüssel (Handy bleibt gekoppelt) und Debug-Keystore der DEV-App
       - android-home:/home/flutter/.android
+      # Nur Linux, optional: Handy per USB-Kabel (Anleitung: scripts/setup-usb-host.sh, dann scripts/connect-usb.sh).
+      # Bind-Mount statt "devices:", damit auch nach dem Start eingesteckte Geräte sichtbar sind – Android meldet sich
+      # bei jedem Einstecken und Wechsel des USB-Modus mit neuer Gerätenummer an.
+      # Ohne USB-Handy (Docker Desktop unter Windows/macOS): diese Zeile und "device_cgroup_rules" auskommentieren.
+      - /dev/bus/usb:/dev/bus/usb
+    # Zugriff auf USB-Geräte (Major-Nummer 189) erlauben, auch für später eingesteckte.
+    device_cgroup_rules:
+      - "c 189:* rmw"
     environment:
       CLAUDE_CONFIG_DIR: /home/flutter/.claude
       TZ: Europe/Berlin
-    # Nur Linux, optional: Handy per USB-Kabel statt WLAN.
-    # Vorher auf dem Host keinen eigenen adb-Server laufen lassen ("adb kill-server").
-    # devices:
-    #   - /dev/bus/usb:/dev/bus/usb
 
 volumes:
   claude-config:
