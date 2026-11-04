@@ -8,7 +8,15 @@ import '../../widgets/number_stepper.dart';
 import '../settings/exercises/exercise_form_page.dart';
 
 /// What the sheet asks its caller to do after closing.
-enum PlanEntrySheetResult { editExercise }
+enum PlanEntrySheetResult {
+  editExercise,
+
+  /// Take the exercise out of its superset or rotation (M9).
+  removeFromGroup,
+
+  /// Make this rotation member the one due next (M9).
+  makeDue,
+}
 
 /// Bottom sheet "Im Plan bearbeiten": sets, target reps/duration, rest.
 /// Every change is passed to [onChanged] at once.
@@ -19,6 +27,8 @@ Future<PlanEntrySheetResult?> showPlanEntrySheet(
   required int defaultRestSec,
   required bool isPlan,
   required ValueChanged<ExerciseTargets> onChanged,
+  PlanGroupKind? groupKind,
+  bool canMakeDue = false,
 }) {
   return showModalBottomSheet<PlanEntrySheetResult>(
     context: context,
@@ -32,6 +42,8 @@ Future<PlanEntrySheetResult?> showPlanEntrySheet(
       defaultRestSec: exercise.restSec ?? defaultRestSec,
       isPlan: isPlan,
       onChanged: onChanged,
+      groupKind: groupKind,
+      canMakeDue: canMakeDue,
     ),
   );
 }
@@ -43,8 +55,12 @@ class _PlanEntrySheet extends StatefulWidget {
     required this.defaultRestSec,
     required this.isPlan,
     required this.onChanged,
+    required this.groupKind,
+    required this.canMakeDue,
   });
 
+  final PlanGroupKind? groupKind;
+  final bool canMakeDue;
   final Exercise exercise;
   final ExerciseTargets initial;
   final int defaultRestSec;
@@ -139,6 +155,25 @@ class _PlanEntrySheetState extends State<_PlanEntrySheet> {
               ),
             ),
           const SizedBox(height: 8),
+          if (widget.canMakeDue) ...[
+            FilledButton.tonalIcon(
+              icon: const Icon(Icons.autorenew),
+              label: const Text(S.rotationMakeDue),
+              onPressed: () =>
+                  Navigator.of(context).pop(PlanEntrySheetResult.makeDue),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (widget.groupKind case final kind?) ...[
+            OutlinedButton.icon(
+              icon: const Icon(Icons.link_off),
+              label: Text(S.removeFromGroup(kind)),
+              onPressed: () =>
+                  Navigator.of(context)
+                      .pop(PlanEntrySheetResult.removeFromGroup),
+            ),
+            const SizedBox(height: 8),
+          ],
           OutlinedButton.icon(
             icon: const Icon(Icons.edit_outlined),
             label: const Text(S.editExercise),

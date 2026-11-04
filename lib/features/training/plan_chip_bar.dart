@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../core/l10n/strings_de.dart';
+import '../../core/theme/gym_colors.dart';
 import '../../domain/models/models.dart';
 
 /// Horizontal plan chips: plans in order, "Frei", "+ Plan" (SPEC §6.1).
+///
+/// Only one chip can be selected, so there is no checkmark (it looked like a
+/// multi-select filter and changed the chip width). The selected chip is
+/// filled with the action color instead.
 class PlanChipBar extends StatelessWidget {
   const PlanChipBar({
     required this.plans,
@@ -33,16 +38,16 @@ class PlanChipBar extends StatelessWidget {
           for (final plan in plans)
             GestureDetector(
               onLongPress: () => onLongPress(plan),
-              child: ChoiceChip(
-                label: Text(plan.name),
+              child: _SelectChip(
+                label: plan.name,
                 selected: plan.id == selectedPlanId,
-                onSelected: (_) => onSelect(plan.id),
+                onSelected: () => onSelect(plan.id),
               ),
             ),
-          ChoiceChip(
-            label: const Text(S.freeTraining),
+          _SelectChip(
+            label: S.freeTraining,
             selected: selectedPlanId == null,
-            onSelected: (_) => onSelect(null),
+            onSelected: () => onSelect(null),
           ),
           ActionChip(
             avatar: const Icon(Icons.add),
@@ -52,6 +57,40 @@ class PlanChipBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SelectChip extends StatelessWidget {
+  const _SelectChip({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final gym = GymColors.of(context);
+    final base = theme.chipTheme.labelStyle;
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      showCheckmark: false,
+      selectedColor: gym.action,
+      side: BorderSide(
+        color: selected ? gym.action : theme.colorScheme.outlineVariant,
+      ),
+      labelStyle: base?.copyWith(
+        color: selected ? gym.onAction : theme.colorScheme.onSurface,
+      ),
+      onSelected: (_) {
+        if (!selected) onSelected();
+      },
     );
   }
 }

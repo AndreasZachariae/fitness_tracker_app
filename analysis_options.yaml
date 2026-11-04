@@ -10,7 +10,8 @@ analyzer:
     - build/**
     - android/**
     # Written by `drift_dev schema generate` / `make-migrations`, not by hand.
-    - test/data/db/migrations/generated/**
+    - test/data/db/migrations/gymlog/generated/**
+    - lib/data/db/database.steps.dart
 
 linter:
   rules:

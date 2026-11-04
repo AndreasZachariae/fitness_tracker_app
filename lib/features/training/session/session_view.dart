@@ -2,18 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart' hide Block;
 
 import '../../../core/device.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/l10n/strings_de.dart';
 import '../../../core/router.dart';
+import '../../../core/theme/gym_colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../data/providers.dart';
+import '../../../domain/groups.dart';
 import '../../../domain/models/models.dart';
+import '../../../domain/records.dart';
+import '../../../domain/rest_timer.dart';
 import '../../../domain/session_rules.dart';
 import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/dashed_add_button.dart';
+import '../../../widgets/group_frame.dart';
 import '../../../widgets/snackbars.dart';
 import '../../../widgets/ticker.dart';
 import '../../settings/exercises/exercise_form_page.dart';
@@ -148,16 +153,7 @@ class _SessionViewState extends ConsumerState<SessionView>
     );
   }
 
-  Future<void> _reorder(
-    List<SessionExerciseDetail> details,
-    int oldIndex,
-    int newIndex,
-  ) async {
-    final ids = reorderSessionExercises(
-      [for (final d in details) d.sessionExercise],
-      oldIndex,
-      newIndex,
-    );
+  Future<void> _applyOrder(List<int>? ids) async {
     if (ids == null) return;
     setState(() => _pendingOrder = ids);
     await _guard(
@@ -167,7 +163,99 @@ class _SessionViewState extends ConsumerState<SessionView>
     if (mounted) setState(() => _pendingOrder = null);
   }
 
-  Future<void> _add(List<SessionExerciseDetail> details) async {
+  /// Superset options (M9).
+  Future<void> _supersetOptions(
+    SessionSuperset superset,
+    List<SessionExerciseDetail> members,
+    List<SessionExerciseDetail> details,
+  ) async {
+    final option = await showGroupOptions<_SupersetAction>(
+      context,
+      kind: PlanGroupKind.superset,
+      options: [
+        (
+          icon: Icons.timer_outlined,
+          label: S.supersetRestTitle,
+          value: _SupersetAction.rest,
+        ),
+        (icon: Icons.add, label: S.addExercise, value: _SupersetAction.add),
+        (
+          icon: Icons.output,
+          label: '${S.removeFromGroup(PlanGroupKind.superset)} …',
+          value: _SupersetAction.remove,
+        ),
+        (
+          icon: Icons.link_off,
+          label: S.dissolve,
+          value: _SupersetAction.dissolve,
+        ),
+      ],
+    );
+    if (option == null || !mounted) return;
+    final repo = ref.read(sessionRepositoryProvider);
+    switch (option) {
+      case _SupersetAction.rest:
+        final settings =
+            ref.read(settingsProvider).value ?? AppSettings.defaults;
+        final last = members.last;
+        final choice = await showSupersetRestDialog(
+          context,
+          restSec: superset.restSec,
+          defaultRestSec: restDurationSec(
+            sessionExerciseRestSec: last.sessionExercise.restSec,
+            exerciseRestSec: last.exercise.restSec,
+            defaultRestSec: settings.defaultRestSec,
+          ),
+        );
+        if (choice == null) return;
+        await _guard(
+          () => repo.updateSupersetRest(superset.id, choice.restSec),
+        );
+      case _SupersetAction.add:
+        await _add(details, supersetId: superset.id);
+      case _SupersetAction.remove:
+        final index = await showChooseExercise(
+          context,
+          title: S.whichExercise,
+          names: [for (final m in members) m.exercise.name],
+        );
+        if (index == null) return;
+        await _guard(
+          () => repo.removeFromSuperset(members[index].sessionExercise.id),
+        );
+      case _SupersetAction.dissolve:
+        await _guard(() => repo.dissolveSuperset(superset.id));
+    }
+  }
+
+  /// "Superset erstellen" in the running session (M9): open exercises that
+  /// are not in a superset yet.
+  Future<void> _createSuperset(List<SessionExerciseDetail> details) async {
+    final free = [
+      for (final d in details)
+        if (d.sessionExercise.supersetId == null &&
+            isMovable(d.sessionExercise.status))
+          d,
+    ];
+    final chosen = await showGroupCreateSheet(
+      context,
+      kind: PlanGroupKind.superset,
+      candidates: [
+        for (final d in free) (key: d.sessionExercise.id, exercise: d.exercise),
+      ],
+    );
+    if (chosen == null || !mounted) return;
+    await _guard(
+      () => ref
+          .read(sessionRepositoryProvider)
+          .createSuperset(_session.id, chosen.cast<int>()),
+    );
+  }
+
+  Future<void> _add(
+    List<SessionExerciseDetail> details, {
+    int? supersetId,
+  }) async {
     final result = await showExercisePicker(
       context,
       containedIds: {for (final d in details) d.exercise.id},
@@ -189,7 +277,12 @@ class _SessionViewState extends ConsumerState<SessionView>
     await _guard(
       () => ref
           .read(sessionRepositoryProvider)
-          .addExerciseToSession(_session.id, toAdd.$1, toAdd.$2),
+          .addExerciseToSession(
+            _session.id,
+            toAdd.$1,
+            toAdd.$2,
+            supersetId: supersetId,
+          ),
     );
   }
 
@@ -243,6 +336,8 @@ class _SessionViewState extends ConsumerState<SessionView>
     final last = ref.watch(lastPerformancesProvider).value ?? const {};
     final records =
         ref.watch(sessionRecordsProvider(_session.id)).value ?? const {};
+    final supersets =
+        ref.watch(sessionSupersetsProvider(_session.id)).value ?? const {};
     var details = loaded ?? const <SessionExerciseDetail>[];
     final order = _pendingOrder;
     if (order != null && order.length == details.length) {
@@ -317,57 +412,166 @@ class _SessionViewState extends ConsumerState<SessionView>
           ),
         ],
       ),
-      body: ReorderableListView.builder(
-        buildDefaultDragHandles: false,
-        padding: const EdgeInsets.only(top: 4, bottom: 24),
-        footer: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: DashedAddButton(
-            label: S.addExercise,
-            onPressed: () => _add(details),
-          ),
-        ),
-        itemCount: details.length,
-        onReorderItem: (a, b) => _reorder(details, a, b),
-        itemBuilder: (context, i) {
-          final d = details[i];
-          final key = ValueKey(d.sessionExercise.id);
-          return switch (d.sessionExercise.status) {
-            SessionExerciseStatus.active => ActiveExerciseCard(
-              key: key,
-              detail: d,
-              index: i,
-              last: last[d.exercise.id],
-              actions: this,
-              records: records,
-              highlight: _flashId == d.sessionExercise.id,
-            ),
-            SessionExerciseStatus.pending => PendingExerciseTile(
-              key: key,
-              detail: d,
-              index: i,
-              isNext: d.sessionExercise.id == nextId,
-              onTap: () => activateExercise(d),
-            ),
-            SessionExerciseStatus.done ||
-            SessionExerciseStatus.skipped => CompletedExerciseTile(
-              key: key,
-              detail: d,
-              expanded: _expanded.contains(d.sessionExercise.id),
-              onToggle: () => setState(() {
-                final id = d.sessionExercise.id;
-                if (!_expanded.remove(id)) _expanded.add(id);
-              }),
-              actions: this,
-              records: records,
-              highlight: _flashId == d.sessionExercise.id,
-            ),
-          };
-        },
-      ),
+      body: _buildList(details, last, records, supersets, nextId),
     );
   }
+
+  Widget _tile(
+    SessionExerciseDetail d,
+    int index,
+    Map<int, LastPerformance> last,
+    Map<int, List<RecordKind>> records,
+    int? nextId,
+  ) {
+    final key = ValueKey(d.sessionExercise.id);
+    return switch (d.sessionExercise.status) {
+      SessionExerciseStatus.active => ActiveExerciseCard(
+        key: key,
+        detail: d,
+        index: index,
+        last: last[d.exercise.id],
+        actions: this,
+        records: records,
+        highlight: _flashId == d.sessionExercise.id,
+      ),
+      SessionExerciseStatus.pending => PendingExerciseTile(
+        key: key,
+        detail: d,
+        index: index,
+        isNext: d.sessionExercise.id == nextId,
+        onTap: () => activateExercise(d),
+      ),
+      SessionExerciseStatus.done ||
+      SessionExerciseStatus.skipped => CompletedExerciseTile(
+        key: key,
+        detail: d,
+        expanded: _expanded.contains(d.sessionExercise.id),
+        onToggle: () => setState(() {
+          final id = d.sessionExercise.id;
+          if (!_expanded.remove(id)) _expanded.add(id);
+        }),
+        actions: this,
+        records: records,
+        highlight: _flashId == d.sessionExercise.id,
+      ),
+    };
+  }
+
+  Widget _buildList(
+    List<SessionExerciseDetail> details,
+    Map<int, LastPerformance> last,
+    Map<int, List<RecordKind>> records,
+    Map<int, SessionSuperset> supersets,
+    int? nextId,
+  ) {
+    final blocks = blocksOf(
+      details,
+      (d) => supersets.containsKey(d.sessionExercise.supersetId)
+          ? d.sessionExercise.supersetId
+          : null,
+    );
+    List<Block<SessionExercise>> exerciseBlocks() => [
+      for (final b in blocks)
+        Block(b.groupId, [for (final d in b.items) d.sessionExercise]),
+    ];
+    final gym = GymColors.of(context);
+
+    return ReorderableListView.builder(
+      buildDefaultDragHandles: false,
+      padding: const EdgeInsets.only(top: 4, bottom: 24),
+      footer: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 8,
+          children: [
+            DashedAddButton(
+              label: S.addExercise,
+              onPressed: () => _add(details),
+            ),
+            DashedAddButton(
+              label: S.createGroup(PlanGroupKind.superset),
+              icon: groupIcon(PlanGroupKind.superset),
+              color: gym.superset,
+              onPressed: () => _createSuperset(details),
+            ),
+          ],
+        ),
+      ),
+      itemCount: blocks.length,
+      onReorderItem: (a, b) =>
+          _applyOrder(reorderSessionBlocks(exerciseBlocks(), a, b)),
+      itemBuilder: (context, i) {
+        final block = blocks[i];
+        if (!block.isGroup) {
+          return KeyedSubtree(
+            key: ValueKey(block.first.sessionExercise.id),
+            child: _tile(block.first, i, last, records, nextId),
+          );
+        }
+        final superset = supersets[block.groupId]!;
+        final members = block.items;
+        final movable = members.every(
+          (d) => isMovable(d.sessionExercise.status),
+        );
+        return GroupFrame(
+          key: ValueKey('superset-${superset.id}'),
+          kind: PlanGroupKind.superset,
+          subtitle: _supersetSubtitle(superset, members),
+          dragHandle: movable
+              ? GroupDragHandle(kind: PlanGroupKind.superset, index: i)
+              : null,
+          onOptions: () => _supersetOptions(superset, members, details),
+          child: ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            itemCount: members.length,
+            onReorderItem: (a, b) {
+              final inner = reorderKeepingFixed(
+                [for (final d in members) d.sessionExercise],
+                a,
+                b,
+                (e) => isMovable(e.status),
+              );
+              if (inner == null) return;
+              _applyOrder([
+                for (final x in exerciseBlocks())
+                  ...(x.groupId == superset.id ? inner : x.items).map(
+                    (e) => e.id,
+                  ),
+              ]);
+            },
+            itemBuilder: (context, k) => KeyedSubtree(
+              key: ValueKey(members[k].sessionExercise.id),
+              child: _tile(members[k], k, last, records, nextId),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// "Runde 2 von 3 · Pause 1:30 nach jeder Runde".
+  String _supersetSubtitle(
+    SessionSuperset superset,
+    List<SessionExerciseDetail> members,
+  ) {
+    final rest = supersetSubtitle(superset.restSec);
+    final open = [
+      for (final d in members)
+        if (hasSetsLeft(supersetMemberOf(d))) supersetMemberOf(d),
+    ];
+    if (open.isEmpty) return rest;
+    final rounds = members
+        .map((d) => d.sessionExercise.targetSets)
+        .reduce((a, b) => a > b ? a : b);
+    final round = open.map((m) => m.sets).reduce((a, b) => a < b ? a : b) + 1;
+    return '${S.supersetRound(round.clamp(1, rounds), rounds)} · $rest';
+  }
 }
+
+enum _SupersetAction { rest, add, remove, dissolve }
 
 class _NoteDialog extends StatefulWidget {
   const _NoteDialog({required this.initial});

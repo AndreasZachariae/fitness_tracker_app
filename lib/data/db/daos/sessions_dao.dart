@@ -6,7 +6,9 @@ import '../tables.dart';
 
 part 'sessions_dao.g.dart';
 
-@DriftAccessor(tables: [Sessions, SessionExercises, SetEntries, Exercises])
+@DriftAccessor(
+  tables: [Sessions, SessionExercises, SessionSupersets, SetEntries, Exercises],
+)
 class SessionsDao extends DatabaseAccessor<AppDatabase>
     with _$SessionsDaoMixin {
   SessionsDao(super.attachedDatabase);
@@ -369,4 +371,29 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
 
   Future<int> deleteSet(int id) =>
       (delete(setEntries)..where((s) => s.id.equals(id))).go();
+
+  // Supersets (M9)
+
+  SimpleSelectStatement<$SessionSupersetsTable, SessionSuperset> _supersets(
+    int sessionId,
+  ) => select(sessionSupersets)..where((x) => x.sessionId.equals(sessionId));
+
+  Stream<List<SessionSuperset>> watchSupersets(int sessionId) =>
+      _supersets(sessionId).watch();
+
+  Future<List<SessionSuperset>> getSupersets(int sessionId) =>
+      _supersets(sessionId).get();
+
+  Future<SessionSuperset?> findSuperset(int id) => (select(
+    sessionSupersets,
+  )..where((x) => x.id.equals(id))).getSingleOrNull();
+
+  Future<int> insertSuperset(SessionSupersetsCompanion row) =>
+      into(sessionSupersets).insert(row);
+
+  Future<void> updateSuperset(SessionSuperset superset) =>
+      update(sessionSupersets).replace(superset.toInsertable());
+
+  Future<int> deleteSuperset(int id) =>
+      (delete(sessionSupersets)..where((x) => x.id.equals(id))).go();
 }

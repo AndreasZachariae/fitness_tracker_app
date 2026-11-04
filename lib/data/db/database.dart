@@ -8,6 +8,7 @@ import 'daos/exercises_dao.dart';
 import 'daos/plans_dao.dart';
 import 'daos/sessions_dao.dart';
 import 'daos/settings_dao.dart';
+import 'database.steps.dart';
 import 'tables.dart';
 
 part 'database.g.dart';
@@ -18,8 +19,10 @@ part 'database.g.dart';
     Exercises,
     Plans,
     PlanExercises,
+    PlanGroups,
     Sessions,
     SessionExercises,
+    SessionSupersets,
     SetEntries,
     BodyWeightEntries,
     AppSettingsTable,
@@ -34,7 +37,7 @@ class AppDatabase extends _$AppDatabase {
   factory AppDatabase.open() => AppDatabase(driftDatabase(name: 'gymlog'));
 
   /// Current schema version. Changes only via migration (CLAUDE.md, rule 4).
-  static const currentSchemaVersion = 1;
+  static const currentSchemaVersion = 2;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -45,8 +48,22 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
       await into(appSettingsTable).insert(AppSettings.defaults.toInsertable());
     },
-    // No onUpgrade yet: drift throws for unknown upgrades instead of
-    // touching the data. From version 2 on: stepByStep(...) with tests.
+    // Only additive steps (CLAUDE.md, rule 4); each step has a data
+    // integrity test in test/data/db/migrations/gymlog/.
+    onUpgrade: stepByStep(
+      // M9: supersets and rotations.
+      from1To2: (m, schema) async {
+        await m.createTable(schema.planGroups);
+        await m.createIndex(schema.planGroupsPlan);
+        await m.addColumn(schema.planExercises, schema.planExercises.groupId);
+        await m.createTable(schema.sessionSupersets);
+        await m.createIndex(schema.sessionSupersetsSession);
+        await m.addColumn(
+          schema.sessionExercises,
+          schema.sessionExercises.supersetId,
+        );
+      },
+    ),
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
       // Durable writes: a committed set survives app kill and power loss.

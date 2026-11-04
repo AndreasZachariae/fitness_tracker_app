@@ -147,6 +147,29 @@ void main() {
       await disposeApp(tester, db);
     });
 
+    testWidgets('"Im Kraftindex" has an explanation (M9)', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2340);
+      tester.view.devicePixelRatio = 2.75;
+      addTearDown(tester.view.reset);
+      await openSettings(tester, S.settingsExercises);
+      await tester.tap(find.text(S.newExercise));
+      await tester.pumpAndSettle();
+      final info = find.byTooltip('${S.explain}: ${S.strengthIndex}');
+      await tester.scrollUntilVisible(
+        info,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(info);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('auch rückwirkend'), findsOneWidget);
+      await tester.tap(find.text(S.ok));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('auch rückwirkend'), findsNothing);
+      await disposeApp(tester, db);
+    });
+
     testWidgets('edit; type is locked once trained', (tester) async {
       await seed(tester);
       await dbWork(tester, () => train(2));

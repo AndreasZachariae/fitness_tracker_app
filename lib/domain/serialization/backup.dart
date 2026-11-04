@@ -6,7 +6,10 @@ import 'csv.dart' show isoWithOffset;
 
 /// JSON backup (SPEC §8.2). All columns of all tables, ids are kept.
 const backupFormat = 'gymlog-backup';
-const backupFormatVersion = 1;
+
+/// 2 (M9): `planGroups`, `sessionSupersets`, `planExercises[].groupId` and
+/// `sessionExercises[].supersetId`. Version 1 files are still read.
+const backupFormatVersion = 2;
 
 final class BackupData {
   const BackupData({
@@ -136,6 +139,19 @@ String encodeBackup(BackupData b) {
             'targetReps': p.targetReps,
             'targetDurationSec': p.targetDurationSec,
             'restSec': p.restSec,
+            'groupId': p.groupId,
+          },
+      ],
+      'planGroups': [
+        for (final g in d.planGroups)
+          {
+            'id': g.id,
+            'planId': g.planId,
+            'kind': g.kind.code,
+            'restSec': g.restSec,
+            'rotationEvery': g.rotationEvery,
+            'rotationExerciseId': g.rotationExerciseId,
+            'rotationDone': g.rotationDone,
           },
       ],
       'sessions': [
@@ -162,7 +178,12 @@ String encodeBackup(BackupData b) {
             'restSec': x.restSec,
             'status': x.status.code,
             'completedAt': _tn(x.completedAt),
+            'supersetId': x.supersetId,
           },
+      ],
+      'sessionSupersets': [
+        for (final x in d.sessionSupersets)
+          {'id': x.id, 'sessionId': x.sessionId, 'restSec': x.restSec},
       ],
       'sets': [
         for (final x in d.sets)
@@ -333,6 +354,7 @@ BackupData decodeBackup(String text) {
   final data = root['data'];
   if (data is! Map<String, Object?>) _invalid('data');
 
+  final v2 = version >= 2;
   final dataset = Dataset(
     exercises: _list(
       data,
@@ -372,8 +394,24 @@ BackupData decodeBackup(String text) {
         targetReps: r.intOrNull('targetReps'),
         targetDurationSec: r.intOrNull('targetDurationSec'),
         restSec: r.intOrNull('restSec'),
+        groupId: v2 ? r.intOrNull('groupId') : null,
       ),
     ),
+    planGroups: !v2
+        ? const []
+        : _list(
+            data,
+            'planGroups',
+            (r) => PlanGroup(
+              id: r.integer('id'),
+              planId: r.integer('planId'),
+              kind: r.coded('kind', PlanGroupKind.values),
+              restSec: r.intOrNull('restSec'),
+              rotationEvery: r.integer('rotationEvery'),
+              rotationExerciseId: r.intOrNull('rotationExerciseId'),
+              rotationDone: r.integer('rotationDone'),
+            ),
+          ),
     sessions: _list(
       data,
       'sessions',
@@ -400,8 +438,20 @@ BackupData decodeBackup(String text) {
         restSec: r.intOrNull('restSec'),
         status: r.coded('status', SessionExerciseStatus.values),
         completedAt: r.timeOrNull('completedAt'),
+        supersetId: v2 ? r.intOrNull('supersetId') : null,
       ),
     ),
+    sessionSupersets: !v2
+        ? const []
+        : _list(
+            data,
+            'sessionSupersets',
+            (r) => SessionSuperset(
+              id: r.integer('id'),
+              sessionId: r.integer('sessionId'),
+              restSec: r.intOrNull('restSec'),
+            ),
+          ),
     sets: _list(
       data,
       'sets',
@@ -496,17 +546,47 @@ void validateDataset(Dataset d, AppSettings settings) {
   unique(d.plans.map((p) => nameKey(p.name)), 'plan name');
   unique(d.bodyWeights.map((b) => b.date), 'body weight date');
 
+  final groupPlan = {for (final g in d.planGroups) g.id: g.planId};
+  ids(d.planGroups, (g) => g.id, 'planGroup');
+  for (final g in d.planGroups) {
+    ref(plans, g.planId, 'planGroup.planId');
+  }
   for (final p in d.planExercises) {
     ref(plans, p.planId, 'planExercise.planId');
     ref(exercises, p.exerciseId, 'planExercise.exerciseId');
+    ref(groupPlan.keys.toSet(), p.groupId, 'planExercise.groupId');
+    if (p.groupId != null && groupPlan[p.groupId] != p.planId) {
+      throw BackupFormatException(
+        BackupError.brokenReference,
+        'planExercise.groupId ${p.groupId}',
+      );
+    }
   }
   unique(d.planExercises.map((p) => (p.planId, p.exerciseId)), 'plan exercise');
   for (final s in d.sessions) {
     ref(plans, s.planId, 'session.planId');
   }
+  final supersetSession = {
+    for (final x in d.sessionSupersets) x.id: x.sessionId,
+  };
+  ids(d.sessionSupersets, (x) => x.id, 'sessionSuperset');
+  for (final x in d.sessionSupersets) {
+    ref(sessions, x.sessionId, 'sessionSuperset.sessionId');
+  }
   for (final s in d.sessionExercises) {
     ref(sessions, s.sessionId, 'sessionExercise.sessionId');
     ref(exercises, s.exerciseId, 'sessionExercise.exerciseId');
+    ref(
+      supersetSession.keys.toSet(),
+      s.supersetId,
+      'sessionExercise.supersetId',
+    );
+    if (s.supersetId != null && supersetSession[s.supersetId] != s.sessionId) {
+      throw BackupFormatException(
+        BackupError.brokenReference,
+        'sessionExercise.supersetId ${s.supersetId}',
+      );
+    }
   }
   unique(
     d.sessionExercises.map((s) => (s.sessionId, s.exerciseId)),

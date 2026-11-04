@@ -277,7 +277,7 @@ abstract final class S {
   static const statVolume = 'Volumen';
   static String compareLast(String percent) => '$percent zum letzten Mal';
   static String adoptIntoPlan(String plan) =>
-      'Reihenfolge und neue Übungen in Plan „$plan“ übernehmen';
+      'Reihenfolge, Supersets und neue Übungen in Plan „$plan“ übernehmen';
   static const saveAsPlan = 'Als Plan speichern';
   static String savedAsPlan(String name) => 'Als Plan „$name“ gespeichert.';
   static const summaryNotesHint = 'Wie lief das Training?';
@@ -355,6 +355,157 @@ abstract final class S {
     ExerciseMetric.maxDuration => 'Max. Dauer',
     ExerciseMetric.totalDuration => 'Gesamtdauer',
   };
+  // Supersets and rotations (M9)
+  static String groupKind(PlanGroupKind k) => switch (k) {
+    PlanGroupKind.superset => 'Superset',
+    PlanGroupKind.rotation => 'Rotation',
+  };
+  static String createGroup(PlanGroupKind k) => switch (k) {
+    PlanGroupKind.superset => 'Superset erstellen',
+    PlanGroupKind.rotation => 'Rotation erstellen',
+  };
+  static String groupCreateHint(PlanGroupKind k) => switch (k) {
+    PlanGroupKind.superset =>
+      'Wähle mindestens zwei Übungen. Sie werden abwechselnd trainiert, '
+          'die Pause läuft erst nach jeder Runde.',
+    PlanGroupKind.rotation =>
+      'Wähle mindestens zwei Übungen. Pro Training ist nur eine davon dran, '
+          'beim nächsten Training dieses Plans die nächste.',
+  };
+  static String groupInfo(PlanGroupKind k) => switch (k) {
+    PlanGroupKind.superset =>
+      'Übungen eines Supersets machst du abwechselnd ohne Pause '
+          'dazwischen:\n\n'
+          'Übung A Satz 1, Übung B Satz 1, Pause, A Satz 2, B Satz 2, '
+          'Pause …\n\n'
+          'Nach jedem Satz springt das Training automatisch zur nächsten Übung '
+          'des Supersets. Der Pausentimer startet erst nach dem letzten Satz '
+          'einer Runde. Die Pause stellst du für das ganze Superset ein; ohne '
+          'eigene Einstellung gilt die Pause der letzten Übung.\n\n'
+          'Haben die Übungen unterschiedlich viele Sätze, läuft die Übung mit '
+          'mehr Sätzen am Ende allein weiter.\n\n'
+          'Im Plan verschiebst du ein Superset als Ganzes am Griff oben; die '
+          'Reihenfolge innerhalb änderst du an den Griffen der Übungen.',
+    PlanGroupKind.rotation =>
+      'In einer Rotation wechseln sich Übungen von Training zu Training ab, '
+          'z. B. Bizepscurls mit Hantel und am Seilzug.\n\n'
+          'Beim Start eines Trainings dieses Plans kommt nur die Übung, die '
+          'gerade dran ist, ins Training. Die anderen sind ausgegraut.\n\n'
+          'Die Rotation rückt weiter, wenn du das Training beendest und die '
+          'Übung dabei mindestens einen Satz hatte. Wird sie übersprungen, '
+          'bleibt sie beim nächsten Mal dran.\n\n'
+          'Mit „Wechsel nach …“ bleibt jede Übung mehrere Trainings dran. '
+          'Welche Übung als Nächstes kommt, kannst du jederzeit selbst wählen.',
+  };
+  static const groupNeedsTwo =
+      'Dafür brauchst du mindestens zwei Übungen, die noch in keinem Superset '
+      'und keiner Rotation sind.';
+  static String groupOptions(PlanGroupKind k) => '${groupKind(k)}-Optionen';
+  static String moveGroup(PlanGroupKind k) => '${groupKind(k)} verschieben';
+  static String supersetRest(String rest) => 'Pause $rest nach jeder Runde';
+  static const supersetRestDefault = 'Pause nach jeder Runde wie letzte Übung';
+  static const supersetRestTitle = 'Pause nach jeder Runde';
+  static String rotationEvery(int n) =>
+      n == 1 ? 'Wechsel nach jedem Training' : 'Wechsel nach $n Trainings';
+  static const rotationEveryTitle = 'Übung wechseln nach';
+  static const rotationEveryOption = 'Wechsel nach … Trainings';
+  static String trainings(int n) => n == 1 ? '1 Training' : '$n Trainings';
+  static const rotationDue = 'Ist dran';
+  static String rotationDueLeft(int n) =>
+      n == 1 ? 'Ist dran · noch 1 Training' : 'Ist dran · noch $n Trainings';
+  static const rotationLater = 'Später';
+  static const rotationMakeDue = 'Als Nächstes trainieren';
+  static String removeFromGroup(PlanGroupKind k) => switch (k) {
+    PlanGroupKind.superset => 'Aus Superset nehmen',
+    PlanGroupKind.rotation => 'Aus Rotation nehmen',
+  };
+  static const dissolve = 'Auflösen';
+  static const whichExercise = 'Welche Übung?';
+  static String supersetRound(int round, int rounds) =>
+      'Runde $round von $rounds';
+
+  // Explanations behind the info icons (M9)
+  static const explain = 'Erklärung';
+  static String metricInfo(ExerciseMetric m) => switch (m) {
+    ExerciseMetric.estimatedOneRepMax =>
+      'Das Gewicht, das du schätzungsweise genau einmal heben könntest '
+          '(One-Rep-Max, 1RM). Berechnet nach der Epley-Formel aus jedem Satz:\n\n'
+          'Gewicht × (1 + Wdh / 30), bei 1 Wdh das Gewicht selbst.\n\n'
+          'Beispiel: 80 kg × 8 Wdh ergibt 80 × (1 + 8/30) ≈ 101,3 kg.\n\n'
+          'Pro Training zählt der beste Satz. So lassen sich Sätze mit '
+          'unterschiedlich vielen Wiederholungen vergleichen – steigt der Wert, '
+          'bist du stärker geworden.',
+    ExerciseMetric.maxWeight =>
+      'Das höchste Gewicht, das du in einem Satz dieses Trainings bewegt '
+          'hast – unabhängig davon, wie viele Wiederholungen es waren.',
+    ExerciseMetric.volume =>
+      'Das insgesamt bewegte Gewicht dieser Übung im Training: die Summe aus '
+          'Gewicht × Wiederholungen über alle Sätze.\n\n'
+          'Beispiel: 3 Sätze × 10 Wdh mit 60 kg = 1.800 kg.\n\n'
+          'Das Volumen zeigt die Trainingsmenge, nicht die Maximalkraft.',
+    ExerciseMetric.maxReps =>
+      'Die meisten Wiederholungen in einem Satz dieses Trainings.',
+    ExerciseMetric.totalReps =>
+      'Alle Wiederholungen dieser Übung im Training zusammen.',
+    ExerciseMetric.maxAddedWeight =>
+      'Das höchste Zusatzgewicht eines Satzes (z. B. Gewichtsgürtel). '
+          'Negative Werte bedeuten Unterstützung (z. B. Gummiband, Maschine).',
+    ExerciseMetric.effectiveOneRepMax =>
+      'Wie das geschätzte 1RM, aber mit der effektiven Last: dein '
+          'Körpergewicht (Eintrag mit dem nächstgelegenen Datum) plus '
+          'Zusatzgewicht.\n\n'
+          'Beispiel: 80 kg Körpergewicht, +10 kg, 6 Wdh ergibt '
+          '90 × (1 + 6/30) = 108 kg.\n\n'
+          'Nur verfügbar, wenn du im Tab Körper Gewicht eingetragen hast.',
+    ExerciseMetric.maxDuration => 'Der längste Satz dieses Trainings.',
+    ExerciseMetric.totalDuration =>
+      'Die Dauer aller Sätze dieser Übung im Training zusammen.',
+  };
+  static const strengthIndexInfo =
+      'Deine Kraftentwicklung über mehrere Übungen in einer Zahl.\n\n'
+      'Für jede Übung mit „Im Kraftindex berücksichtigen“ wird pro Woche der '
+      'beste Leistungswert durch den Wert ihres ersten Trainings geteilt. '
+      'Leistungswert: bei Gewicht × Wdh das geschätzte 1RM, bei Körpergewicht '
+      'das 1RM mit Körpergewicht (ohne Körpergewicht-Einträge: Max. Wdh), bei '
+      'Zeit die Max. Dauer.\n\n'
+      'Der Kraftindex ist der Durchschnitt dieser Verhältnisse: 100 % = dein '
+      'Startniveau, 110 % = im Schnitt 10 % stärker als am Anfang.\n\n'
+      'Wird eine Übung eine Woche nicht trainiert, zählt ihr letzter Wert '
+      'weiter, höchstens 8 Wochen lang.\n\n'
+      'Welche Übungen zählen, stellst du je Übung ein. Der Verlauf wird bei '
+      'jeder Änderung komplett neu berechnet.';
+  static const weeklyVolumeInfo =
+      'Das insgesamt bewegte Gewicht einer Kalenderwoche (Mo–So): die Summe aus '
+      'Gewicht × Wiederholungen aller Sätze von Übungen mit Gewicht × Wdh.\n\n'
+      'Beispiel: 3 × 10 mit 60 kg = 1.800 kg.\n\n'
+      'Körpergewichts- und Zeitübungen zählen nicht mit. Das Volumen zeigt die '
+      'Trainingsmenge, nicht die Maximalkraft.';
+  static const calendarInfo =
+      'Jedes Kästchen ist ein Tag der letzten 26 Wochen (Spalten = Wochen, '
+      'Zeilen = Mo–So). Je kräftiger die Farbe, desto mehr Sätze.\n\n'
+      'Ø Trainings pro Woche bezieht sich auf den gewählten Zeitraum.\n\n'
+      'Serie: Wochen in Folge mit mindestens einem Training. Die laufende Woche '
+      'zählt mit, sobald du trainiert hast; solange sie noch leer ist, bricht '
+      'sie die Serie nicht.';
+  static const recordsInfo =
+      'Rekorde sind Bestwerte je Übung:\n\n'
+      '• Gewicht × Wdh: geschätztes 1RM (Epley: Gewicht × (1 + Wdh / 30)) und '
+      'höchstes Gewicht\n'
+      '• Körpergewicht: meiste Wdh und höchstes Zusatzgewicht\n'
+      '• Zeit: längste Dauer\n\n'
+      'Ein Satz ist ein Rekord, wenn er alle früheren Sätze der Übung '
+      'übertrifft. Das erste Training einer Übung setzt nur den Startwert.';
+  static const strengthIndexFieldInfo =
+      'Ist der Schalter an, fließt diese Übung in den Kraftindex ein '
+      '(Statistik, Tab Gesamt): Ihr Fortschritt gegenüber dem ersten Training wird '
+      'zusammen mit den anderen Übungen gemittelt.\n\n'
+      'Schaltest du ihn aus, wird der Kraftindex für den gesamten Verlauf ohne '
+      'diese Übung neu berechnet – auch rückwirkend. Schaltest du ihn wieder '
+      'ein, ist sie ebenso rückwirkend wieder enthalten.\n\n'
+      'Deine Trainingsdaten bleiben dabei unverändert.\n\n'
+      'Sinnvoll für Übungen, an denen du deine Kraft messen willst; eher aus '
+      'für Aufwärm-, Dehn- oder Technikübungen.';
+
   static const statBest = 'Bestwert';
   static const statChange = 'Veränderung';
   static const statTrainings = 'Trainings';

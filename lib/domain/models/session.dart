@@ -79,7 +79,11 @@ final class SessionExercise {
     required this.restSec,
     required this.status,
     required this.completedAt,
+    this.supersetId,
   });
+
+  /// Superset of the session this exercise belongs to (M9).
+  final int? supersetId;
 
   final int id;
   final int sessionId;
@@ -99,6 +103,7 @@ final class SessionExercise {
     int? targetSets,
     SessionExerciseStatus? status,
     Object? completedAt = unset,
+    Object? supersetId = unset,
   }) {
     return SessionExercise(
       id: id,
@@ -111,6 +116,7 @@ final class SessionExercise {
       restSec: restSec,
       status: status ?? this.status,
       completedAt: pick<DateTime?>(completedAt, this.completedAt),
+      supersetId: pick<int?>(supersetId, this.supersetId),
     );
   }
 
@@ -126,7 +132,8 @@ final class SessionExercise {
       other.targetDurationSec == targetDurationSec &&
       other.restSec == restSec &&
       other.status == status &&
-      other.completedAt == completedAt;
+      other.completedAt == completedAt &&
+      other.supersetId == supersetId;
 
   @override
   int get hashCode => Object.hash(
@@ -140,6 +147,7 @@ final class SessionExercise {
     restSec,
     status,
     completedAt,
+    supersetId,
   );
 
   @override
@@ -216,6 +224,8 @@ final class SessionExerciseDraft {
     this.targetReps,
     this.targetDurationSec,
     this.restSec,
+    this.supersetKey,
+    this.supersetRestSec,
   });
 
   final int exerciseId;
@@ -223,6 +233,12 @@ final class SessionExerciseDraft {
   final int? targetReps;
   final int? targetDurationSec;
   final int? restSec;
+
+  /// Drafts with the same key form a superset of the session (M9).
+  final int? supersetKey;
+
+  /// Rest after each round of that superset (taken from its first member).
+  final int? supersetRestSec;
 }
 
 /// The working sets of an exercise in the last finished session that

@@ -21,6 +21,10 @@ class GymColors extends ThemeExtension<GymColors> {
     required this.record,
     required this.recordContainer,
     required this.onRecordContainer,
+    required this.superset,
+    required this.supersetContainer,
+    required this.rotation,
+    required this.rotationContainer,
   });
 
   /// Fill of primary actions ("Training starten", "Satz speichern").
@@ -46,6 +50,15 @@ class GymColors extends ThemeExtension<GymColors> {
   final Color recordContainer;
   final Color onRecordContainer;
 
+  /// Supersets (M9): frame, icon and label; [supersetContainer] tints the
+  /// group background.
+  final Color superset;
+  final Color supersetContainer;
+
+  /// Rotations (M9), same roles as for supersets.
+  final Color rotation;
+  final Color rotationContainer;
+
   static const light = GymColors(
     action: Palette.plateBlue,
     onAction: Palette.white,
@@ -59,6 +72,10 @@ class GymColors extends ThemeExtension<GymColors> {
     record: Palette.plateRed,
     recordContainer: Palette.plateRed,
     onRecordContainer: Palette.white,
+    superset: Palette.orangeDeep,
+    supersetContainer: Palette.orangeContainerLight,
+    rotation: Palette.greenDeep,
+    rotationContainer: Palette.greenContainerLight,
   );
 
   static const dark = GymColors(
@@ -74,6 +91,10 @@ class GymColors extends ThemeExtension<GymColors> {
     record: Palette.redLight,
     recordContainer: Palette.plateRed,
     onRecordContainer: Palette.white,
+    superset: Palette.orangeLight,
+    supersetContainer: Palette.orangeContainerDark,
+    rotation: Palette.greenLight,
+    rotationContainer: Palette.greenContainerDark,
   );
 
   /// The [GymColors] of the current theme.
@@ -94,6 +115,10 @@ class GymColors extends ThemeExtension<GymColors> {
     Color? record,
     Color? recordContainer,
     Color? onRecordContainer,
+    Color? superset,
+    Color? supersetContainer,
+    Color? rotation,
+    Color? rotationContainer,
   }) {
     return GymColors(
       action: action ?? this.action,
@@ -108,6 +133,10 @@ class GymColors extends ThemeExtension<GymColors> {
       record: record ?? this.record,
       recordContainer: recordContainer ?? this.recordContainer,
       onRecordContainer: onRecordContainer ?? this.onRecordContainer,
+      superset: superset ?? this.superset,
+      supersetContainer: supersetContainer ?? this.supersetContainer,
+      rotation: rotation ?? this.rotation,
+      rotationContainer: rotationContainer ?? this.rotationContainer,
     );
   }
 
@@ -137,6 +166,18 @@ class GymColors extends ThemeExtension<GymColors> {
       onRecordContainer: Color.lerp(
         onRecordContainer,
         other.onRecordContainer,
+        t,
+      )!,
+      superset: Color.lerp(superset, other.superset, t)!,
+      supersetContainer: Color.lerp(
+        supersetContainer,
+        other.supersetContainer,
+        t,
+      )!,
+      rotation: Color.lerp(rotation, other.rotation, t)!,
+      rotationContainer: Color.lerp(
+        rotationContainer,
+        other.rotationContainer,
         t,
       )!,
     );

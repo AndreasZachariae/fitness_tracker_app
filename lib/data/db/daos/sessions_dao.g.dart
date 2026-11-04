@@ -7,6 +7,8 @@ mixin _$SessionsDaoMixin on DatabaseAccessor<AppDatabase> {
   $PlansTable get plans => attachedDatabase.plans;
   $SessionsTable get sessions => attachedDatabase.sessions;
   $ExercisesTable get exercises => attachedDatabase.exercises;
+  $SessionSupersetsTable get sessionSupersets =>
+      attachedDatabase.sessionSupersets;
   $SessionExercisesTable get sessionExercises =>
       attachedDatabase.sessionExercises;
   $SetEntriesTable get setEntries => attachedDatabase.setEntries;
@@ -22,6 +24,11 @@ class SessionsDaoManager {
       $$SessionsTableTableManager(_db.attachedDatabase, _db.sessions);
   $$ExercisesTableTableManager get exercises =>
       $$ExercisesTableTableManager(_db.attachedDatabase, _db.exercises);
+  $$SessionSupersetsTableTableManager get sessionSupersets =>
+      $$SessionSupersetsTableTableManager(
+        _db.attachedDatabase,
+        _db.sessionSupersets,
+      );
   $$SessionExercisesTableTableManager get sessionExercises =>
       $$SessionExercisesTableTableManager(
         _db.attachedDatabase,

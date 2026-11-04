@@ -98,17 +98,17 @@ void main() {
     expect(find.byType(LineChart), findsOneWidget);
     // e1RM: 80, 83,3, 82,3 → best 83,3; change +2,3 kg (+3 %)
     expect(find.text('83,3 kg'), findsWidgets);
-    expect(find.text('+2,3 kg (+3 %)'), findsOneWidget);
+    expect(find.text('+2,3 kg\n(+3\u00A0%)'), findsOneWidget);
     expect(find.text('3'), findsOneWidget, reason: '3 trainings in 3 M');
 
     await tester.tap(find.text(S.metric(ExerciseMetric.maxWeight)));
     await tester.pumpAndSettle();
-    expect(find.text('+5 kg (+8 %)'), findsOneWidget);
+    expect(find.text('+5 kg\n(+8\u00A0%)'), findsOneWidget);
 
     await tester.tap(find.text(S.period4w));
     await tester.pumpAndSettle();
     expect(find.text('2'), findsOneWidget, reason: '1.9. is outside 4 W');
-    expect(find.text('+2,5 kg (+4 %)'), findsOneWidget);
+    expect(find.text('+2,5 kg\n(+4\u00A0%)'), findsOneWidget);
     await disposeApp(tester, db);
   });
 
@@ -183,5 +183,59 @@ void main() {
     await settle(tester);
     expect(find.text(S.metric(ExerciseMetric.maxDuration)), findsWidgets);
     await disposeApp(tester, db);
+  });
+
+  group('info icons (M9)', () {
+    Future<void> expectInfo(
+      WidgetTester tester,
+      String title,
+      String textPart,
+    ) async {
+      await tester.tap(find.byTooltip('${S.explain}: $title').first);
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AlertDialog, title), findsOneWidget);
+      expect(find.textContaining(textPart), findsOneWidget);
+      await tester.tap(find.text(S.ok));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('exercise metric: explanation follows the chosen metric', (
+      tester,
+    ) async {
+      await seed(tester);
+      await openStats(tester);
+      await expectInfo(
+        tester,
+        S.metric(ExerciseMetric.estimatedOneRepMax),
+        'Epley',
+      );
+      await tester.tap(find.text(S.metric(ExerciseMetric.volume)));
+      await tester.pumpAndSettle();
+      await expectInfo(
+        tester,
+        S.metric(ExerciseMetric.volume),
+        'insgesamt bewegte Gewicht',
+      );
+      await disposeApp(tester, db);
+    });
+
+    testWidgets('overall and records tab', (tester) async {
+      await seed(tester);
+      await openStats(tester);
+      await tester.tap(find.text(S.statsTabOverall));
+      await settle(tester);
+      await expectInfo(tester, S.strengthIndex, 'komplett neu berechnet');
+      await tester.dragUntilVisible(
+        find.text(S.weeklyVolume),
+        find.byType(ListView).last,
+        const Offset(0, -300),
+      );
+      await tester.pumpAndSettle();
+      await expectInfo(tester, S.weeklyVolume, 'Kalenderwoche');
+      await tester.tap(find.text(S.statsTabRecords));
+      await settle(tester);
+      await expectInfo(tester, S.statsTabRecords, 'übertrifft');
+      await disposeApp(tester, db);
+    });
   });
 }

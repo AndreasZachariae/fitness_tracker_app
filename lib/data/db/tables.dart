@@ -8,7 +8,9 @@ import 'package:drift/drift.dart';
 import '../../domain/models/models.dart';
 import 'converters.dart';
 
-// Tables of SPEC §5, schema version 1.
+// Tables of SPEC §5, schema version 1; groups (supersets, rotations) added in
+// schema version 2 (M9). New columns of existing tables stay at the end so a
+// migrated database has the same layout as a new one.
 //
 // CHECK lists of enum codes are literals on purpose: schema dumps must stay
 // frozen even when an enum gains a value later (that needs a migration).
@@ -85,10 +87,40 @@ class PlanExercises extends Table {
   IntColumn get restSec =>
       integer().nullable().check(restSec.isBiggerOrEqualValue(0))();
 
+  // Schema 2
+  IntColumn get groupId => integer().nullable().references(
+    PlanGroups,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+
   @override
   List<Set<Column>> get uniqueKeys => [
     {planId, exerciseId},
   ];
+}
+
+/// Supersets and rotations of a plan (schema 2).
+@UseRowClass(PlanGroup, generateInsertable: true)
+@TableIndex(name: 'plan_groups_plan', columns: {#planId})
+class PlanGroups extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get planId =>
+      integer().references(Plans, #id, onDelete: KeyAction.cascade)();
+  TextColumn get kind => text()
+      .check(kind.isIn(const ['superset', 'rotation']))
+      .map(const PlanGroupKindConverter())();
+  IntColumn get restSec =>
+      integer().nullable().check(restSec.isBiggerOrEqualValue(0))();
+  IntColumn get rotationEvery => integer()
+      .withDefault(const Constant(1))
+      .check(rotationEvery.isBetweenValues(1, 10))();
+
+  /// No foreign key: a stale id simply means "first member".
+  IntColumn get rotationExerciseId => integer().nullable()();
+  IntColumn get rotationDone => integer()
+      .withDefault(const Constant(0))
+      .check(rotationDone.isBiggerOrEqualValue(0))();
 }
 
 @UseRowClass(Session, generateInsertable: true)
@@ -135,10 +167,28 @@ class SessionExercises extends Table {
       .map(const SessionExerciseStatusConverter())();
   DateTimeColumn get completedAt => dateTime().nullable()();
 
+  // Schema 2
+  IntColumn get supersetId => integer().nullable().references(
+    SessionSupersets,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+
   @override
   List<Set<Column>> get uniqueKeys => [
     {sessionId, exerciseId},
   ];
+}
+
+/// Supersets of a session (schema 2).
+@UseRowClass(SessionSuperset, generateInsertable: true)
+@TableIndex(name: 'session_supersets_session', columns: {#sessionId})
+class SessionSupersets extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get sessionId =>
+      integer().references(Sessions, #id, onDelete: KeyAction.cascade)();
+  IntColumn get restSec =>
+      integer().nullable().check(restSec.isBiggerOrEqualValue(0))();
 }
 
 @UseRowClass(SetEntry, generateInsertable: true)

@@ -144,6 +144,24 @@ void main() {
     await disposeApp(tester, db);
   });
 
+  testWidgets('plan chips: single choice without checkmark, colored (M9)', (
+    tester,
+  ) async {
+    await seedPlan(tester);
+    await start(tester);
+    final chipWidget = tester.widget<ChoiceChip>(chip('Oberkörper'));
+    expect(chipWidget.showCheckmark, isFalse);
+    expect(chipWidget.selectedColor, isNotNull);
+    // The new selection shows at once, before the database round trip.
+    await tester.tap(find.text(S.freeTraining));
+    await tester.pump();
+    expect(isSelected(tester, S.freeTraining), isTrue);
+    expect(isSelected(tester, 'Oberkörper'), isFalse);
+    await settle(tester);
+    expect((await settings(tester)).lastSelectedPlanId, isNull);
+    await disposeApp(tester, db);
+  });
+
   testWidgets('picker marks contained exercises and adds the chosen one', (
     tester,
   ) async {

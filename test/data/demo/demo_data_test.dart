@@ -187,4 +187,77 @@ void main() {
     final year = generateDemoData(now: testNow, weeks: 52);
     expect(year.sessions.length, greaterThan(120));
   });
+
+  group('groups (M9)', () {
+    final upper = data.plans.firstWhere((p) => p.name == 'Oberkörper');
+    String name(int exerciseId) => exercises[exerciseId]!.name;
+
+    test('"Oberkörper" has a superset and a rotation, contiguous', () {
+      final groups = data.planGroups.where((g) => g.planId == upper.id);
+      expect(groups.map((g) => g.kind).toSet(), PlanGroupKind.values.toSet());
+      final entries =
+          data.planExercises.where((p) => p.planId == upper.id).toList()
+            ..sort((a, b) => a.position.compareTo(b.position));
+      final superset = groups.firstWhere(
+        (g) => g.kind == PlanGroupKind.superset,
+      );
+      expect(
+        entries
+            .where((e) => e.groupId == superset.id)
+            .map((e) => name(e.exerciseId)),
+        ['Schulterdrücken', 'Rudern am Kabel'],
+      );
+      expect(superset.restSec, 90);
+    });
+
+    test('superset sets alternate: A1 B1 A2 B2 A3 B3', () {
+      expect(data.sessionSupersets, isNotEmpty);
+      for (final x in data.sessionSupersets) {
+        final members = data.sessionExercises
+            .where((e) => e.supersetId == x.id)
+            .toList();
+        expect(members, hasLength(2));
+        expect(members.every((e) => e.sessionId == x.sessionId), isTrue);
+        final sets =
+            data.sets
+                .where((s) => members.any((m) => m.id == s.sessionExerciseId))
+                .toList()
+              ..sort((a, b) => a.completedAt.compareTo(b.completedAt));
+        expect(
+          sets.map(
+            (s) => (s.sessionExerciseId == members.first.id, s.setIndex),
+          ),
+          [(true, 1), (false, 1), (true, 2), (false, 2), (true, 3), (false, 3)],
+        );
+      }
+    });
+
+    test('the rotation alternates between plan sessions', () {
+      final rotation = data.planGroups.firstWhere(
+        (g) => g.kind == PlanGroupKind.rotation,
+      );
+      final members = {
+        for (final p in data.planExercises)
+          if (p.groupId == rotation.id) p.exerciseId,
+      };
+      final sessions = data.sessions.where((s) => s.planId == upper.id).toList()
+        ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
+      final picked = <int>[];
+      for (final s in sessions) {
+        final inRotation = data.sessionExercises
+            .where((e) => e.sessionId == s.id && members.contains(e.exerciseId))
+            .toList();
+        expect(inRotation, hasLength(1), reason: 'one member per session');
+        if (inRotation.single.status == SessionExerciseStatus.done) {
+          picked.add(inRotation.single.exerciseId);
+        }
+      }
+      for (var i = 1; i < picked.length; i++) {
+        expect(picked[i], isNot(picked[i - 1]));
+      }
+      // Due next: the other one than the last trained.
+      expect(rotation.rotationExerciseId, isNot(picked.last));
+      expect(members, contains(rotation.rotationExerciseId));
+    });
+  });
 }

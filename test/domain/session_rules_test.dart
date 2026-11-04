@@ -88,25 +88,4 @@ void main() {
       expect(forgottenSessionEnd(session, null), session.startedAt);
     });
   });
-
-  group('sessionChangesPlan', () {
-    final cases = <(String, List<int>, List<int>, bool)>[
-      ('same order', [1, 2, 3], [1, 2, 3], false),
-      ('other order', [1, 2, 3], [2, 1, 3], true),
-      ('added exercise', [1, 2], [1, 2, 4], true),
-      ('plan edited meanwhile (missing in session)', [1, 2, 3], [1, 3], false),
-      ('empty', [], [], false),
-    ];
-    for (final (name, plan, session, expected) in cases) {
-      test(name, () {
-        expect(
-          sessionChangesPlan(
-            planExerciseIds: plan,
-            sessionExerciseIds: session,
-          ),
-          expected,
-        );
-      });
-    }
-  });
 }

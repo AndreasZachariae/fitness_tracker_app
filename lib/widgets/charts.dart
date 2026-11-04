@@ -6,6 +6,7 @@ import '../core/l10n/strings_de.dart';
 import '../core/theme/app_theme.dart';
 import '../domain/models/local_date.dart';
 import '../domain/period.dart';
+import 'info_button.dart';
 
 final _epoch = LocalDate(1970, 1, 1);
 
@@ -21,6 +22,7 @@ class ChartCard extends StatelessWidget {
     required this.child,
     this.subtitle,
     this.trailing,
+    this.info,
     this.height = 220,
     super.key,
   });
@@ -28,6 +30,9 @@ class ChartCard extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Widget? trailing;
+
+  /// Explanation behind an "ⓘ" button next to the title.
+  final String? info;
   final Widget child;
 
   /// Fixed chart height; `null` = height of the child.
@@ -61,6 +66,7 @@ class ChartCard extends StatelessWidget {
                   ),
                 ),
                 ?trailing,
+                if (info != null) InfoButton(title: title, text: info!),
               ],
             ),
             const SizedBox(height: 12),

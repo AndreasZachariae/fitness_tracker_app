@@ -1,3 +1,4 @@
+import 'groups.dart';
 import 'models/models.dart';
 
 /// A session counts as forgotten after this time (SPEC §6.2).
@@ -28,19 +29,26 @@ List<int>? reorderSessionExercises(
   List<SessionExercise> ordered,
   int oldIndex,
   int newIndex,
-) {
-  if (!isMovable(ordered[oldIndex].status)) return null;
-  final dragged = [...ordered];
-  dragged.insert(newIndex, dragged.removeAt(oldIndex));
-  final movable = [
-    for (final e in dragged)
-      if (isMovable(e.status)) e.id,
-  ];
-  var next = 0;
-  return [
-    for (final e in ordered) isMovable(e.status) ? movable[next++] : e.id,
-  ];
-}
+) => reorderKeepingFixed(
+  ordered,
+  oldIndex,
+  newIndex,
+  (e) => isMovable(e.status),
+)?.map((e) => e.id).toList();
+
+/// New order of session exercise ids after dragging block [oldIndex] to
+/// [newIndex] among the blocks (singles and supersets, M9). A block is
+/// movable when all its exercises are; fixed blocks keep their places.
+List<int>? reorderSessionBlocks(
+  List<Block<SessionExercise>> blocks,
+  int oldIndex,
+  int newIndex,
+) => reorderKeepingFixed(
+  blocks,
+  oldIndex,
+  newIndex,
+  (b) => b.items.every((e) => isMovable(e.status)),
+)?.expand((b) => b.items.map((e) => e.id)).toList();
 
 /// The open exercise that comes next after [afterId] (wrapping around), or
 /// the first open one. `null` if nothing is open.
@@ -57,22 +65,4 @@ int? nextPendingExercise(List<SessionExercise> ordered, {int? afterId}) {
     if (i > start) return id;
   }
   return pending.first.$2;
-}
-
-/// Whether finishing a plan session changed the plan: other order of the
-/// plan's exercises or exercises added during the session.
-bool sessionChangesPlan({
-  required List<int> planExerciseIds,
-  required List<int> sessionExerciseIds,
-}) {
-  final inPlan = planExerciseIds.toSet();
-  if (sessionExerciseIds.any((id) => !inPlan.contains(id))) return true;
-  final sessionOrder = sessionExerciseIds.where(inPlan.contains).toList();
-  final planOrder = planExerciseIds
-      .where(sessionExerciseIds.toSet().contains)
-      .toList();
-  for (var i = 0; i < sessionOrder.length; i++) {
-    if (sessionOrder[i] != planOrder[i]) return true;
-  }
-  return false;
 }

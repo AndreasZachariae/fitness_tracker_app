@@ -95,7 +95,23 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         Erinnerung), Über (Version, Build, Schemaversion)
   - [x] Backup-Hinweis in der Zusammenfassung (§6.3)
   - [x] Tests
-- [ ] M9 Feinschliff, Version 1.0.0
+- [x] M9 Verbesserungen aus `docs/IMPROVEMENTS.md` (0.10.0+10, zusätzlicher Meilenstein auf Wunsch, vor 1.0)
+  - [x] Info-Symbole in der Statistik (Metriken, Kraftindex, Wochenvolumen, Kalender, Rekorde) und am Schalter
+        „Im Kraftindex“ im Übungsformular (Erklärung inkl. rückwirkender Neuberechnung)
+  - [x] Plan-Chips ohne Haken, farbig hervorgehoben, sofortige Auswahl ohne Ruckeln
+  - [x] Statistik „Veränderung“: Prozentwert immer in eigener Zeile
+  - [x] Schema 2 (Migration 1 → 2, additiv): `plan_groups` (Superset/Rotation mit Pause, Wechselrhythmus,
+        aktueller Übung, Zähler), `plan_exercises.group_id`, `session_supersets`, `session_exercises.superset_id`;
+        Backup-Format 2 (liest weiterhin Format 1)
+  - [x] Domain: Blöcke (einzeln/Gruppe), Superset-Ablauf abwechselnd mit Pause nach jeder Runde, Rotation
+        (Weiterrücken nur, wenn die aktive Übung trainiert wurde), Plan übernehmen/als Plan speichern mit Gruppen
+  - [x] Training-Tab: „Superset erstellen“ (orange) und „Rotation erstellen“ (grün, nur Pläne) unter „+ Übung
+        hinzufügen“; Gruppen als Rahmen, als Ganzes verschiebbar, innen umsortierbar; Menü (Pause, Wechsel, Übung
+        hinzufügen, auflösen)
+  - [x] Laufende Session: Supersets anzeigen, befolgen und neu bilden; Pausentimer erst nach der Runde
+  - [x] Demo-Daten mit Superset und Rotation, Tests (Domain, Migration, Repository, Widgets), Testliste
+  - [x] Zusätzlich: Test, dass jedes Zeichen der UI-Texte in den gebündelten Schriften existiert („→“ fehlte)
+- [ ] M10 Feinschliff, Version 1.0.0 (bisher M9)
 
 ## Annahmen
 
@@ -157,7 +173,7 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 - **Schema-Dump:** `drift_schemas/gymlog/drift_schema_v1.json`. CHECK-Listen der Enum-Codes stehen absichtlich als
   Literale in `tables.dart`, damit alte Dumps eingefroren bleiben; ein Test prüft, dass sie zu den Enums passen.
   `test/data/db/schema_test.dart` vergleicht das Code-Schema mit dem Dump und schlägt fehl, wenn Tabellen ohne Migration
-  geändert werden. Generierte Helfer unter `test/data/db/migrations/generated/` sind von der Analyse ausgenommen.
+  geändert werden. Generierte Helfer unter `test/data/db/migrations/gymlog/generated/` (und `lib/data/db/database.steps.dart`) sind von der Analyse ausgenommen.
 - **Demo-Daten** (deterministisch, Seed 42): 13 Übungen aller Typen (davon „Butterfly“ archiviert, mit Historie), Pläne
   „Oberkörper“/„Unterkörper“, ca. 20 % freie Trainings, 2 ausgelassene Wochen, gelegentlich übersprungene Übungen und
   Session-Notizen, Körpergewicht 82 → ca. 80,5 kg. „Demo-Daten erzeugen“ **ersetzt alle Daten** (auch eine laufende
@@ -319,6 +335,48 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 - Teilen/Speichern/Datei wählen/Dokumentenordner liegen hinter `FileGateway` (Fake in Tests). Das zusammengeführte
   Release-Manifest enthält weiterhin nur `VIBRATE` (+ interne AndroidX-Berechtigung), geprüft nach Aufnahme der Plugins.
 
+- **M9 – Entscheidungen des Nutzers:** Superset-Sätze **abwechselnd** (A1 → B1 → Pause → A2 → B2 …); Rotation rückt
+  **nur weiter, wenn die fällige Übung im beendeten Training mindestens einen Arbeitssatz hatte**; **keine
+  Verschachtelung** (eine Übung ist entweder einzeln, im Superset oder in einer Rotation); Supersets **überall**
+  (Plan, freie Liste, laufende Session), Rotationen nur in Plänen.
+- **M9 Superset-Ablauf:** Nach jedem Satz wird immer die nächste Übung des Supersets aktiv, die den Satz dieser Runde
+  noch nicht hat (unabhängig von „Nächste Übung automatisch aktivieren“); nach der letzten Übung einer Runde wieder die
+  erste mit offenen Sätzen. Haben Übungen unterschiedlich viele Sätze, läuft die längere am Ende allein (mit Pause
+  nach jedem Satz). „Überspringen“/„Übung beenden“ springen zur nächsten Übung mit offenen Sätzen. Ist das ganze
+  Superset fertig, gilt wieder die normale Regel (Einstellung `autoActivateNext`). „Rückgängig“ stellt auch die aktive
+  Übung wieder her.
+- **M9 Pausentimer im Superset:** Pause nur nach dem letzten Satz einer Runde; Dauer = Pause des Supersets, ohne eigene
+  Einstellung die Pause der Übung, die die Runde beendet (Session-Übung → Übung → Standard). Weiterhin aus der
+  gespeicherten Satzzeit berechnet, also nach Neustart korrekt.
+- **M9 Rotation:** Gespeichert sind fällige Übung (`rotationExerciseId`, ohne Fremdschlüssel: ungültig = erste Übung)
+  und Zähler. Ins Training kommt nur die fällige Übung; die anderen sind ausgegraut („Später“). „Wechsel nach N
+  Trainings“ 1–10. „Als Nächstes trainieren“ (Kachel antippen oder Menü) setzt den Zähler zurück. Freie Trainings und
+  Trainings anderer Pläne bewegen die Rotation nicht. Gelöschte Trainings drehen die Rotation nicht zurück.
+- **M9 Gruppen bearbeiten:** Neue Gruppe aus mindestens zwei Übungen der Liste, die noch in keiner Gruppe sind; die
+  Übungen rücken an die Stelle der ersten und behalten ihre Reihenfolge. „Übung hinzufügen“ im Gruppenmenü fügt eine
+  neue Übung aus der Bibliothek ans Ende der Gruppe (bereits enthaltene Einzelübungen: Gruppe auflösen und neu bilden).
+  „Aus Superset/Rotation nehmen“ setzt die Übung direkt hinter die Gruppe; bleibt weniger als zwei Übungen übrig,
+  wird die Gruppe aufgelöst. Wischen entfernt die Übung wie bisher aus dem Plan (mit „Rückgängig“); eine dabei leer
+  gewordene Gruppe wird gelöscht, beim Rückgängig kommt die Übung dann einzeln zurück.
+- **M9 Reihenfolge in der Session:** Ein Superset ist als Block verschiebbar, solange keine seiner Übungen erledigt
+  oder übersprungen ist; innerhalb des Supersets gelten die bisherigen Regeln (nur offene/aktive verschiebbar). Ein
+  Superset in der Session kann nur aus offenen Übungen gebildet werden.
+- **M9 Plan übernehmen:** Reihenfolge, Supersets (inkl. Pause) und neue Übungen werden übernommen; Rotationen bleiben
+  unverändert an der Stelle ihrer Übung. Plan-Übungen, die in der Session fehlen, rutschen ans Ende – dadurch zeigt die
+  Zusammenfassung den Schalter dann auch an (vorher nicht). „Als Plan speichern“ übernimmt Supersets.
+- **M9 Backup/CSV:** Backup-Format 2 mit `planGroups`, `sessionSupersets`, `groupId`, `supersetId`; Format-1-Dateien
+  werden weiterhin gelesen (ohne Gruppen). Der CSV-Export bleibt wie in §8.1 (keine Gruppenspalten).
+- **M9 Verlauf/Statistik:** Sätze werden weiter je Übung gezählt, Supersets/Rotationen ändern keine Kennzahl. Die
+  Verlaufsdetails zeigen Supersets nicht als Rahmen.
+- **M9 Kraftindex:** wird wie bisher bei jedem Öffnen aus der gesamten Historie berechnet. Wer „Im Kraftindex
+  berücksichtigen“ abschaltet, nimmt die Übung damit auch rückwirkend heraus (Info-Text im Formular).
+- **M9 Plan-Chips:** Auswahl wird sofort angezeigt und im Hintergrund gespeichert; die Liste zeigt beim Wechsel keinen
+  kurzzeitigen Leerzustand mehr. Keine Bestätigungs-Snackbars beim Bilden/Auflösen von Gruppen (sie würden „Training
+  starten“ verdecken; der Rahmen zeigt das Ergebnis).
+- **M9 Farben:** Superset Orange (hell `#9E420A` auf `#FCE7D8`, dunkel `#F5A066` auf `#3B2A1E`), Rotation Grün
+  (Platten-Grün-Familie); Kontraste per Test ≥ 4,5:1. Symbole: Kette (Superset), Kreispfeile (Rotation).
+- **Meilensteine:** Auf Wunsch eingeschoben als M9; der bisherige M9 (Feinschliff, 1.0.0) heißt jetzt M10.
+
 ## Datenbank-Migrationen (ab Schema 2)
 
 1. Tabellen in `lib/data/db/tables.dart` ändern, `AppDatabase.currentSchemaVersion` + 1.
@@ -476,5 +534,38 @@ Vorher: „Demo-Daten erzeugen“.
 - [ ] Eine beliebige andere Datei wählen → verständliche Meldung, nichts ändert sich.
 - [ ] Während eines Trainings ist „Backup wiederherstellen“ ausgegraut.
 - [ ] Backup-Erinnerung auf 1 Tag, Training beenden → Zusammenfassung zeigt den gelben Hinweis mit „Backup erstellen“.
-- [ ] „Über“: App-Version, Build-Nummer, Schemaversion 1, Lizenzen.
+- [ ] „Über“: App-Version, Build-Nummer, Schemaversion 1, Lizenzen. (Ab M9: Schemaversion 2.)
+
+### M9 Verbesserungen
+Vorher: Version 0.9 mit echten Daten ist auf dem Handy? Die DEV-App hat eigene Daten; beim Installieren von 0.10 wird
+ihre Datenbank von Schema 1 auf 2 migriert – vorhandene Trainings/Pläne müssen danach unverändert da sein.
+- [ ] Nach dem Update: Verlauf, Statistik, Pläne und Körpergewicht sind unverändert; „Über“ zeigt Schemaversion 2.
+- [ ] „Alle Daten löschen“ → „Demo-Daten erzeugen“: „Oberkörper“ zeigt ein **oranges Superset** (Schulterdrücken +
+  Rudern am Kabel, „Pause 1:30 min nach jeder Runde“) und eine **grüne Rotation** (Bizepscurls/Hammercurls, eine
+  „Ist dran“, die andere ausgegraut „Später“).
+- [ ] Plan-Chips: kein Haken mehr, gewählter Chip blau gefüllt, Wechsel ist sofort und ruckelfrei, Liste flackert nicht.
+- [ ] Superset am Griff oben rechts verschieben: wandert als Ganzes. Innerhalb über die Griffe der Übungen umsortieren.
+- [ ] Unter „+ Übung hinzufügen“: „Superset erstellen“ → zwei Übungen ankreuzen → Rahmen erscheint an der Stelle der
+  ersten. ⋮-Menü: Pause einstellen (wird im Untertitel angezeigt), Übung hinzufügen, Auflösen. ⓘ erklärt das Superset.
+- [ ] „Rotation erstellen“ (nur in Plänen, nicht bei „Frei“) → zwei Übungen. Ausgegraute Übung antippen → „Als
+  Nächstes trainieren“ → sie ist jetzt dran. ⋮-Menü → „Wechsel nach … Trainings“ = 2 → Untertitel ändert sich, „Ist dran
+  · noch 2 Trainings“.
+- [ ] Training „Oberkörper“ starten: nur die fällige Curl-Übung ist im Training. Superset-Rahmen mit „Runde 1 von 3“.
+  Schulterdrücken Satz speichern → Rudern wird automatisch aktiv, **keine** Pausenleiste. Rudern Satz speichern →
+  Schulterdrücken aktiv, gelbe Pausenleiste mit der Superset-Pause, Untertitel „Runde 2 von 3“.
+- [ ] „Rückgängig“ nach einem Superset-Satz: Satz weg, vorherige Übung wieder aktiv.
+- [ ] In der Session: „Superset erstellen“ aus zwei offenen Übungen (z. B. Dips + Curls) → Rahmen erscheint; ⋮ →
+  „Aus Superset nehmen …“, „Auflösen“.
+- [ ] Training beenden (die Curl-Übung hatte Sätze) → im Training-Tab ist jetzt die andere Curl-Übung „Ist dran“.
+  Nächstes Training die Curl-Übung überspringen → Rotation bleibt stehen.
+- [ ] Zusammenfassung nach geändertem Superset: Schalter „Reihenfolge, Supersets und neue Übungen … übernehmen“ → an →
+  „Fertig“ → Plan zeigt die neue Gruppierung.
+- [ ] Freies Training: zwei Übungen hinzufügen, „Superset erstellen“ (kein „Rotation erstellen“), starten → Superset in
+  der Session.
+- [ ] Statistik → Übung: ⓘ rechts neben den Metrik-Chips erklärt die gewählte Metrik (1RM mit Epley-Beispiel, Volumen
+  = insgesamt bewegtes Gewicht …). Gesamt: ⓘ bei Kraftindex, Wochenvolumen, Trainingskalender. Rekorde: ⓘ oben rechts.
+- [ ] „Veränderung“: Prozentwert steht immer vollständig in der zweiten Zeile, z. B. „+14,6 kg“ / „(+13 %)“.
+- [ ] Übung anlegen/bearbeiten: ⓘ neben „Im Kraftindex berücksichtigen“ erklärt die rückwirkende Neuberechnung.
+- [ ] Backup erstellen und wiederherstellen: Supersets, Rotationen (inkl. fälliger Übung) sind danach wieder da.
+- [ ] Dunkelmodus und große Systemschrift: Rahmen, Untertitel und die beiden „… erstellen“-Buttons bleiben lesbar.
 

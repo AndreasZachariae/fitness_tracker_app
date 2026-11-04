@@ -112,6 +112,7 @@ class _StrengthIndexChart extends StatelessWidget {
     if (points.isEmpty) {
       return const ChartCard(
         title: S.strengthIndex,
+        info: S.strengthIndexInfo,
         height: 120,
         child: ChartEmpty(S.strengthIndexEmpty),
       );
@@ -122,6 +123,7 @@ class _StrengthIndexChart extends StatelessWidget {
     final hi = ys.reduce((a, b) => a > b ? a : b);
     return ChartCard(
       title: S.strengthIndex,
+      info: S.strengthIndexInfo,
       subtitle: S.strengthIndexSubtitle(points.last.exerciseCount),
       child: LineChart(
         LineChartData(
@@ -263,6 +265,7 @@ class _WeeklyVolumeChart extends StatelessWidget {
     if (weeks.every((w) => w.value == 0)) {
       return const ChartCard(
         title: S.weeklyVolume,
+        info: S.weeklyVolumeInfo,
         height: 100,
         child: ChartEmpty(S.volumeEmpty),
       );
@@ -273,6 +276,7 @@ class _WeeklyVolumeChart extends StatelessWidget {
     );
     return ChartCard(
       title: S.weeklyVolume,
+      info: S.weeklyVolumeInfo,
       subtitle: S.unitKg,
       child: BarChart(
         BarChartData(
@@ -379,6 +383,7 @@ class _Heatmap extends StatelessWidget {
     );
     return ChartCard(
       title: S.calendar,
+      info: S.calendarInfo,
       subtitle: S.calendarSubtitle,
       height: null,
       child: Column(

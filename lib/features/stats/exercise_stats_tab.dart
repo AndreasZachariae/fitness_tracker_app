@@ -12,6 +12,7 @@ import '../../domain/period.dart';
 import '../../domain/statistics.dart';
 import '../../widgets/charts.dart';
 import '../../widgets/exercise_type_icon.dart';
+import '../../widgets/info_button.dart';
 import 'metric_format.dart';
 
 /// Tab "Übung": one exercise, one metric, one point per training.
@@ -87,17 +88,31 @@ class ExerciseStatsTab extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 4,
+          padding: const EdgeInsets.only(left: 16, right: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final m in available)
-                ChoiceChip(
-                  label: Text(S.metric(m)),
-                  selected: m == metric,
-                  onSelected: (_) => onMetric(exercise.id, m),
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    for (final m in available)
+                      ChoiceChip(
+                        label: Text(S.metric(m)),
+                        selected: m == metric,
+                        onSelected: (_) => onMetric(exercise.id, m),
+                      ),
+                  ],
                 ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: InfoButton(
+                  title: S.metric(metric),
+                  text: S.metricInfo(metric),
+                ),
+              ),
             ],
           ),
         ),

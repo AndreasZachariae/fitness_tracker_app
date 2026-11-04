@@ -8,6 +8,7 @@ import '../../domain/names.dart';
 import '../../domain/statistics.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/exercise_type_icon.dart';
+import '../../widgets/info_button.dart';
 
 /// Tab "Rekorde": best values of every exercise; tap → tab "Übung".
 class RecordsTab extends StatelessWidget {
@@ -28,8 +29,15 @@ class RecordsTab extends StatelessWidget {
       );
     }
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(bottom: 8),
       children: [
+        const Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: InfoButton(title: S.statsTabRecords, text: S.recordsInfo),
+          ),
+        ),
         for (final (exercise, best) in records)
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

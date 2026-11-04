@@ -9,17 +9,24 @@ class DashedAddButton extends StatelessWidget {
   const DashedAddButton({
     required this.label,
     required this.onPressed,
+    this.icon = Icons.add,
+    this.color,
     super.key,
   });
 
   final String label;
   final VoidCallback? onPressed;
+  final IconData icon;
+
+  /// Text, icon and outline; default: primary text on the outline color.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final fg = color ?? scheme.primary;
     return CustomPaint(
-      painter: _DashedBorderPainter(color: scheme.outline),
+      painter: _DashedBorderPainter(color: color ?? scheme.outline),
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
@@ -33,13 +40,13 @@ class DashedAddButton extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, color: scheme.primary),
+                  Icon(icon, color: fg),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       label,
                       style: Theme.of(context).textTheme.labelLarge
-                          ?.copyWith(color: scheme.primary, fontSize: 16),
+                          ?.copyWith(color: fg, fontSize: 16),
                     ),
                   ),
                 ],

@@ -46,8 +46,10 @@ class MaintenanceRepository {
       exercises: await _db.select(_db.exercises).get(),
       plans: await _db.select(_db.plans).get(),
       planExercises: await _db.select(_db.planExercises).get(),
+      planGroups: await _db.select(_db.planGroups).get(),
       sessions: await _db.select(_db.sessions).get(),
       sessionExercises: await _db.select(_db.sessionExercises).get(),
+      sessionSupersets: await _db.select(_db.sessionSupersets).get(),
       sets: await _db.select(_db.setEntries).get(),
       bodyWeights: await _db.select(_db.bodyWeightEntries).get(),
     ),
@@ -66,11 +68,17 @@ class MaintenanceRepository {
           for (final e in data.exercises) e.toInsertable(),
         ]);
         b.insertAll(_db.plans, [for (final p in data.plans) p.toInsertable()]);
+        b.insertAll(_db.planGroups, [
+          for (final g in data.planGroups) g.toInsertable(),
+        ]);
         b.insertAll(_db.planExercises, [
           for (final p in data.planExercises) p.toInsertable(),
         ]);
         b.insertAll(_db.sessions, [
           for (final s in data.sessions) s.toInsertable(),
+        ]);
+        b.insertAll(_db.sessionSupersets, [
+          for (final s in data.sessionSupersets) s.toInsertable(),
         ]);
         b.insertAll(_db.sessionExercises, [
           for (final s in data.sessionExercises) s.toInsertable(),
@@ -110,8 +118,10 @@ class MaintenanceRepository {
     // Children first, so no foreign key is ever violated.
     await _db.delete(_db.setEntries).go();
     await _db.delete(_db.sessionExercises).go();
+    await _db.delete(_db.sessionSupersets).go();
     await _db.delete(_db.sessions).go();
     await _db.delete(_db.planExercises).go();
+    await _db.delete(_db.planGroups).go();
     await _db.settingsDao.write(
       (await _db.settingsDao.get()).copyWith(lastSelectedPlanId: null),
     );

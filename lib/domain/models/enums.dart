@@ -80,3 +80,19 @@ enum ThemePreference implements Coded {
 
   static ThemePreference fromCode(String code) => byCode(values, code);
 }
+
+/// Kind of a group of plan exercises (M9).
+enum PlanGroupKind implements Coded {
+  /// Exercises done alternately, rest only after each round.
+  superset('superset'),
+
+  /// One exercise per training, the next one after `rotationEvery` trainings.
+  rotation('rotation');
+
+  const PlanGroupKind(this.code);
+
+  @override
+  final String code;
+
+  static PlanGroupKind fromCode(String code) => byCode(values, code);
+}

@@ -9,6 +9,7 @@ import '../../../data/repositories/plan_repository.dart';
 import '../../../data/repositories/repository_exceptions.dart';
 import '../../../domain/models/models.dart';
 import '../../../domain/names.dart';
+import '../../../widgets/info_button.dart';
 import '../../../widgets/number_stepper.dart';
 import '../../../widgets/snackbars.dart';
 import 'exercise_actions.dart';
@@ -352,14 +353,24 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text(S.fieldStrengthIndex),
-                    value: _inIndex,
-                    onChanged: (v) => setState(() {
-                      _inIndex = v;
-                      _inIndexTouched = true;
-                    }),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text(S.fieldStrengthIndex),
+                          value: _inIndex,
+                          onChanged: (v) => setState(() {
+                            _inIndex = v;
+                            _inIndexTouched = true;
+                          }),
+                        ),
+                      ),
+                      const InfoButton(
+                        title: S.strengthIndex,
+                        text: S.strengthIndexFieldInfo,
+                      ),
+                    ],
                   ),
                 ],
               ),

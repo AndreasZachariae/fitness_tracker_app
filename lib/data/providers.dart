@@ -78,6 +78,11 @@ final planEntriesProvider = StreamProvider.family<List<PlanEntry>, int>(
   (ref, planId) => ref.watch(planRepositoryProvider).watchEntries(planId),
 );
 
+/// Supersets and rotations of a plan by id (M9).
+final planGroupsProvider = StreamProvider.family<Map<int, PlanGroup>, int>(
+  (ref, planId) => ref.watch(planRepositoryProvider).watchGroups(planId),
+);
+
 final planEntryCountsProvider = StreamProvider<Map<int, int>>(
   (ref) => ref.watch(planRepositoryProvider).watchEntryCounts(),
 );
@@ -115,6 +120,13 @@ final sessionDetailsProvider =
     StreamProvider.family<List<SessionExerciseDetail>, int>(
       (ref, sessionId) =>
           ref.watch(sessionRepositoryProvider).watchDetails(sessionId),
+    );
+
+/// Supersets of a session by id (M9).
+final sessionSupersetsProvider =
+    StreamProvider.family<Map<int, SessionSuperset>, int>(
+      (ref, sessionId) =>
+          ref.watch(sessionRepositoryProvider).watchSupersets(sessionId),
     );
 
 /// Record sets of a session by set id.

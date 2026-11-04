@@ -4,7 +4,7 @@ import 'package:gymlog/data/db/database.dart';
 import 'package:gymlog/domain/models/models.dart';
 
 import '../../helpers/test_db.dart';
-import 'migrations/generated/schema.dart';
+import 'migrations/gymlog/generated/schema.dart';
 
 /// Schema rules enforced by SQLite itself, independent of the repositories.
 void main() {
@@ -49,14 +49,14 @@ void main() {
     );
   }
 
-  test('schema of the code equals the dumped schema v1', () async {
+  test('schema of the code equals the dumped schema', () async {
     // Fails when tables change without bumping schemaVersion + new dump.
     final verifier = SchemaVerifier(GeneratedHelper());
-    final connection = await verifier.startAt(1);
+    final connection = await verifier.startAt(AppDatabase.currentSchemaVersion);
     final dumped = AppDatabase(connection);
     addTearDown(dumped.close);
-    await verifier.migrateAndValidate(dumped, 1);
-    expect(AppDatabase.currentSchemaVersion, 1);
+    await verifier.migrateAndValidate(dumped, AppDatabase.currentSchemaVersion);
+    expect(GeneratedHelper.versions.last, AppDatabase.currentSchemaVersion);
   });
 
   test('fresh database validates and has the settings row', () async {

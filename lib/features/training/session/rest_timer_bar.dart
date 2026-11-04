@@ -56,28 +56,6 @@ final restTimerProvider =
       RestTimerController.new,
     );
 
-/// The last set of the running session and its rest duration.
-typedef _LastSet = ({SetEntry set, int durationSec});
-
-_LastSet? _lastSet(List<SessionExerciseDetail> details, AppSettings settings) {
-  _LastSet? last;
-  for (final d in details) {
-    for (final set in d.sets) {
-      if (last == null || set.completedAt.isAfter(last.set.completedAt)) {
-        last = (
-          set: set,
-          durationSec: restDurationSec(
-            sessionExerciseRestSec: d.sessionExercise.restSec,
-            exerciseRestSec: d.exercise.restSec,
-            defaultRestSec: settings.defaultRestSec,
-          ),
-        );
-      }
-    }
-  }
-  return last;
-}
-
 /// "Pause 1:12" above the navigation bar (SPEC §6.2.1). Only in the
 /// foreground, no notifications.
 class RestTimerBar extends ConsumerStatefulWidget {
@@ -118,7 +96,14 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar> {
     }
     final details =
         ref.watch(sessionDetailsProvider(session.id)).value ?? const [];
-    final last = _lastSet(details, settings);
+    final supersets =
+        ref.watch(sessionSupersetsProvider(session.id)).value ?? const {};
+    // In a superset only the end of a round starts a rest (M9).
+    final last = restAfterLatestSet(
+      details,
+      supersets,
+      defaultRestSec: settings.defaultRestSec,
+    );
     final adjustments = ref.watch(restTimerProvider);
     if (last == null || adjustments.skipped.contains(last.set.id)) {
       return const SizedBox.shrink();

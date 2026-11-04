@@ -17,7 +17,6 @@ import '../../../data/repositories/repository_exceptions.dart';
 import '../../../data/repositories/session_repository.dart';
 import '../../../domain/metrics.dart';
 import '../../../domain/models/models.dart';
-import '../../../domain/session_rules.dart';
 import '../../../widgets/name_dialog.dart';
 import '../../../widgets/snackbars.dart';
 import '../../settings/data/data_actions.dart';
@@ -31,7 +30,11 @@ final class _SummaryData {
     required this.plan,
     required this.planChanged,
     required this.records,
+    required this.supersets,
   });
+
+  /// Supersets of the session (M9).
+  final Map<int, SessionSuperset> supersets;
 
   /// New records of this session (SPEC §6.3).
   final List<SessionRecord> records;
@@ -58,14 +61,10 @@ final _summaryProvider = FutureProvider.autoDispose.family<_SummaryData?, int>((
   final plan = session.planId == null
       ? null
       : await plans.findById(session.planId!);
-  var changed = false;
-  if (plan != null) {
-    final entries = await plans.getEntries(plan.id);
-    changed = sessionChangesPlan(
-      planExerciseIds: [for (final e in entries) e.exercise.id],
-      sessionExerciseIds: [for (final d in details) d.exercise.id],
-    );
-  }
+  final supersets = await sessions.getSupersets(sessionId);
+  final changed =
+      plan != null &&
+      await plans.sessionChangesPlan(plan.id, details, supersets);
   return _SummaryData(
     session: session,
     details: details,
@@ -73,6 +72,7 @@ final _summaryProvider = FutureProvider.autoDispose.family<_SummaryData?, int>((
     plan: plan,
     planChanged: changed,
     records: await sessions.sessionRecords(sessionId),
+    supersets: supersets,
   );
 });
 
@@ -123,7 +123,7 @@ class _SummaryPageState extends ConsumerState<SummaryPage> {
         try {
           final planId = await ref
               .read(planRepositoryProvider)
-              .createFromSession(name, data.details);
+              .createFromSession(name, data.details, data.supersets);
           await ref
               .read(settingsRepositoryProvider)
               .update((s) => s.copyWith(lastSelectedPlanId: planId));
@@ -149,7 +149,7 @@ class _SummaryPageState extends ConsumerState<SummaryPage> {
         if (_adopt && data.plan != null) {
           await ref
               .read(planRepositoryProvider)
-              .adoptSession(data.plan!.id, data.details);
+              .adoptSession(data.plan!.id, data.details, data.supersets);
         }
       }
     } on Object catch (e) {

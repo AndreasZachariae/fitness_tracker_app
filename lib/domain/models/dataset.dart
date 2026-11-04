@@ -1,5 +1,6 @@
 import 'body_weight_entry.dart';
 import 'exercise.dart';
+import 'group.dart';
 import 'plan.dart';
 import 'session.dart';
 
@@ -10,8 +11,10 @@ final class Dataset {
     this.exercises = const [],
     this.plans = const [],
     this.planExercises = const [],
+    this.planGroups = const [],
     this.sessions = const [],
     this.sessionExercises = const [],
+    this.sessionSupersets = const [],
     this.sets = const [],
     this.bodyWeights = const [],
   });
@@ -19,8 +22,10 @@ final class Dataset {
   final List<Exercise> exercises;
   final List<Plan> plans;
   final List<PlanExercise> planExercises;
+  final List<PlanGroup> planGroups;
   final List<Session> sessions;
   final List<SessionExercise> sessionExercises;
+  final List<SessionSuperset> sessionSupersets;
   final List<SetEntry> sets;
   final List<BodyWeightEntry> bodyWeights;
 }

@@ -20,13 +20,17 @@ String formatMetric(ExerciseMetric metric, double value) => switch (metric) {
   ExerciseMetric.totalDuration => formatDuration(value.round()),
 };
 
-/// Signed change with percent: `+5 kg (+8 %)`.
+/// Signed change with percent on its own line: `+5 kg\n(+8 %)`.
+///
+/// The percentage always wraps as a whole, so long values like
+/// `+12,5 kg` never split it (M9).
 String formatMetricChange(ExerciseMetric metric, double change, double? pct) {
   final sign = change > 0 ? '+' : (change < 0 ? '−' : '±');
   final abs = formatMetric(metric, change.abs()).replaceFirst('+', '');
+  // Non-breaking spaces keep "(+8 %)" together.
   final percent = pct == null
       ? ''
-      : ' (${pct >= 0 ? '+' : '−'}${_int.format(pct.abs().round())} %)';
+      : '\n(${pct >= 0 ? '+' : '−'}${_int.format(pct.abs().round())}\u00A0%)';
   return '$sign$abs$percent';
 }
 

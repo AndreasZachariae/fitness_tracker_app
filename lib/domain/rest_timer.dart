@@ -2,6 +2,9 @@
 /// completion time of the last set, so it survives an app restart.
 library;
 
+import 'groups.dart';
+import 'models/models.dart';
+
 /// How long "Pause vorbei" stays visible.
 const restOverDisplay = Duration(seconds: 10);
 
@@ -11,6 +14,48 @@ int restDurationSec({
   required int? exerciseRestSec,
   required int defaultRestSec,
 }) => sessionExerciseRestSec ?? exerciseRestSec ?? defaultRestSec;
+
+/// The set the rest timer runs for and its duration: the latest set of the
+/// session. In a superset only a set that ends a round starts a rest (M9),
+/// with the rest of the superset if set. `null` = no rest.
+({SetEntry set, int durationSec})? restAfterLatestSet(
+  List<SessionExerciseDetail> details,
+  Map<int, SessionSuperset> supersets, {
+  required int defaultRestSec,
+}) {
+  SetEntry? latest;
+  SessionExerciseDetail? owner;
+  for (final d in details) {
+    for (final set in d.sets) {
+      if (latest == null ||
+          set.completedAt.isAfter(latest.completedAt) ||
+          (set.completedAt == latest.completedAt && set.id > latest.id)) {
+        latest = set;
+        owner = d;
+      }
+    }
+  }
+  if (latest == null || owner == null) return null;
+  final own = restDurationSec(
+    sessionExerciseRestSec: owner.sessionExercise.restSec,
+    exerciseRestSec: owner.exercise.restSec,
+    defaultRestSec: defaultRestSec,
+  );
+  final supersetId = owner.sessionExercise.supersetId;
+  if (supersetId == null) return (set: latest, durationSec: own);
+  final members = [
+    for (final d in details)
+      if (d.sessionExercise.supersetId == supersetId) supersetMemberOf(d),
+  ];
+  if (members.length < 2) return (set: latest, durationSec: own);
+  final step = afterSupersetSet(
+    members,
+    owner.sessionExercise.id,
+    latest.setIndex,
+  );
+  if (!step.roundEnd) return null;
+  return (set: latest, durationSec: supersets[supersetId]?.restSec ?? own);
+}
 
 sealed class RestState {
   const RestState();

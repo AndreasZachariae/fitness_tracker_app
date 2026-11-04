@@ -35,6 +35,8 @@ void main() {
         'success': (gym.success, text),
         'rest': (gym.rest, text),
         'record': (gym.record, text),
+        'superset': (gym.superset, text),
+        'rotation': (gym.rotation, text),
         'activeEdge': (gym.activeEdge, large),
         'outline': (scheme.outline, large),
       };
@@ -51,6 +53,27 @@ void main() {
 
       final pairs = <String, (Color, Color, double)>{
         'onPrimary/primary': (scheme.onPrimary, scheme.primary, text),
+        // Group labels and text on the tinted group background (M9).
+        'superset/supersetContainer': (
+          gym.superset,
+          gym.supersetContainer,
+          text,
+        ),
+        'rotation/rotationContainer': (
+          gym.rotation,
+          gym.rotationContainer,
+          text,
+        ),
+        'onSurface/supersetContainer': (
+          scheme.onSurface,
+          gym.supersetContainer,
+          text,
+        ),
+        'onSurface/rotationContainer': (
+          scheme.onSurface,
+          gym.rotationContainer,
+          text,
+        ),
         'onPrimaryContainer/primaryContainer': (
           scheme.onPrimaryContainer,
           scheme.primaryContainer,

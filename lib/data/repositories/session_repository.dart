@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../core/clock.dart';
+import '../../domain/groups.dart';
 import '../../domain/history.dart';
 import '../../domain/models/models.dart';
 import '../../domain/records.dart';
@@ -103,6 +104,24 @@ class SessionRepository {
         startedAt: storageTime(_clock.now()),
       ),
     );
+    // Supersets need at least two exercises.
+    final keyCount = <int, int>{};
+    for (final d in exercises) {
+      if (d.supersetKey case final k?) keyCount[k] = (keyCount[k] ?? 0) + 1;
+    }
+    final supersetIds = <int, int>{};
+    for (final d in exercises) {
+      final k = d.supersetKey;
+      if (k == null || keyCount[k]! < 2 || supersetIds.containsKey(k)) {
+        continue;
+      }
+      supersetIds[k] = await _db.sessionsDao.insertSuperset(
+        SessionSupersetsCompanion.insert(
+          sessionId: sessionId,
+          restSec: Value(d.supersetRestSec),
+        ),
+      );
+    }
     for (var i = 0; i < exercises.length; i++) {
       final draft = exercises[i];
       await _db.sessionsDao.insertSessionExercise(
@@ -117,6 +136,7 @@ class SessionRepository {
           status: i == 0
               ? SessionExerciseStatus.active
               : SessionExerciseStatus.pending,
+          supersetId: Value(supersetIds[draft.supersetKey]),
         ),
       );
     }
@@ -202,6 +222,18 @@ class SessionRepository {
             ),
           );
           completed = true;
+        }
+        final members = await _supersetMembers(se);
+        if (members != null) {
+          // Superset (M9): always on to the next member; when the whole
+          // superset is done, as for a single exercise.
+          final step = afterSupersetSet(members, se.id, set.setIndex);
+          if (step.nextId case final next?) {
+            await _activate((await _db.sessionsDao.findSessionExercise(next))!);
+          } else {
+            await _autoActivateNext(se);
+          }
+        } else if (completed) {
           await _autoActivateNext(se);
         } else if (se.status != SessionExerciseStatus.active) {
           await _activate(se);
@@ -251,7 +283,7 @@ class SessionRepository {
         completedAt: storageTime(_clock.now()),
       ),
     );
-    await _autoActivateNext(se);
+    await _continueAfter(se);
   });
 
   /// "Übung beenden" (needs at least one set).
@@ -268,7 +300,7 @@ class SessionRepository {
             completedAt: sets.last.completedAt,
           ),
         );
-        await _autoActivateNext(se);
+        await _continueAfter(se);
       });
 
   /// "+1 Satz": one more target set.
@@ -279,12 +311,14 @@ class SessionRepository {
     );
   });
 
-  /// Adds an exercise to the running session only (not to the plan).
+  /// Adds an exercise to the running session only (not to the plan); with
+  /// [supersetId] at the end of that superset.
   Future<int> addExerciseToSession(
     int sessionId,
     int exerciseId,
-    ExerciseTargets targets,
-  ) => _db.transaction(() async {
+    ExerciseTargets targets, {
+    int? supersetId,
+  }) => _db.transaction(() async {
     final session = await _db.sessionsDao.findById(sessionId);
     if (session == null) throw NotFoundException('session', sessionId);
     if (!session.isActive) throw SessionNotActiveException(sessionId);
@@ -298,7 +332,13 @@ class SessionRepository {
     if (targets.sets < 1) {
       throw InvalidValueException('targetSets', targets.sets);
     }
-    return _db.sessionsDao.insertSessionExercise(
+    if (supersetId != null) {
+      final superset = await _db.sessionsDao.findSuperset(supersetId);
+      if (superset == null || superset.sessionId != sessionId) {
+        throw NotFoundException('sessionSuperset', supersetId);
+      }
+    }
+    final id = await _db.sessionsDao.insertSessionExercise(
       SessionExercisesCompanion.insert(
         sessionId: sessionId,
         exerciseId: exerciseId,
@@ -310,6 +350,20 @@ class SessionRepository {
         status: SessionExerciseStatus.pending,
       ),
     );
+    if (supersetId != null) {
+      final all = await _db.sessionsDao.getSessionExercises(sessionId);
+      final added = all.firstWhere((e) => e.id == id);
+      final others = [
+        for (final e in all)
+          if (e.id != id) e,
+      ];
+      final last = others.lastIndexWhere((e) => e.supersetId == supersetId);
+      await _writeSessionOrder(
+        [...others]..insert(last + 1, added.copyWith(supersetId: supersetId)),
+        all,
+      );
+    }
+    return id;
   });
 
   /// New order of a session's exercises. Done and skipped exercises must
@@ -317,17 +371,23 @@ class SessionRepository {
   Future<void> reorderSession(int sessionId, List<int> sessionExerciseIds) =>
       _db.transaction(() async {
         final current = await _db.sessionsDao.getSessionExercises(sessionId);
-        final valid =
+        final byId = {for (final e in current) e.id: e};
+        final isPermutation =
             sessionExerciseIds.length == current.length &&
-            sessionExerciseIds.toSet().containsAll(current.map((e) => e.id)) &&
-            [
-              for (final (i, e) in current.indexed)
-                if (!isMovable(e.status)) sessionExerciseIds[i] == e.id,
-            ].every((ok) => ok);
+            sessionExerciseIds.toSet().containsAll(byId.keys);
+        // Done and skipped exercises (and supersets containing one) keep
+        // their places; supersets stay together (M9).
+        final valid =
+            isPermutation &&
+            _keepsFixedPlaces(
+              blocksOf(current, (e) => e.supersetId),
+              blocksOf([
+                for (final id in sessionExerciseIds) byId[id]!,
+              ], (e) => e.supersetId),
+            );
         if (!valid) {
           throw InvalidValueException('sessionExerciseIds', sessionExerciseIds);
         }
-        final byId = {for (final e in current) e.id: e};
         for (final (i, id) in sessionExerciseIds.indexed) {
           final e = byId[id]!;
           if (e.position != i) {
@@ -394,7 +454,48 @@ class SessionRepository {
             endedAt: end.isBefore(session.startedAt) ? session.startedAt : end,
           ),
         );
+        if (session.planId case final planId?) {
+          await _advanceRotations(planId, sessionId);
+        }
       });
+
+  /// Rotations of the plan move on when their due exercise was trained in
+  /// the session (M9).
+  Future<void> _advanceRotations(int planId, int sessionId) async {
+    final groups = await _db.plansDao.getGroups(planId);
+    if (!groups.any((g) => g.kind == PlanGroupKind.rotation)) return;
+    final entries = await _db.plansDao.getEntries(planId);
+    final trained = <int>{
+      for (final d in await _db.sessionsDao.getDetails(sessionId))
+        if (d.sets.any((s) => !s.isWarmup)) d.exercise.id,
+    };
+    for (final g in groups) {
+      if (g.kind != PlanGroupKind.rotation) continue;
+      final members = [
+        for (final e in entries)
+          if (e.planExercise.groupId == g.id) e.exercise.id,
+      ];
+      final current = members.isEmpty
+          ? null
+          : members[rotationIndex(members, g.rotationExerciseId)];
+      final next = advanceRotation(
+        memberExerciseIds: members,
+        currentExerciseId: g.rotationExerciseId,
+        done: g.rotationDone,
+        every: g.rotationEvery,
+        trained: current != null && trained.contains(current),
+      );
+      if (next.exerciseId != g.rotationExerciseId ||
+          next.done != g.rotationDone) {
+        await _db.plansDao.updateGroup(
+          g.copyWith(
+            rotationExerciseId: next.exerciseId,
+            rotationDone: next.done,
+          ),
+        );
+      }
+    }
+  }
 
   Future<void> updateNotes(int sessionId, String notes) =>
       _db.transaction(() async {
@@ -497,6 +598,9 @@ class SessionRepository {
           throw NotFoundException('sessionExercise', sessionExerciseId);
         }
         await _db.sessionsDao.deleteSessionExercise(sessionExerciseId);
+        if (se.supersetId case final supersetId?) {
+          await _dissolveIfTooSmall(se.sessionId, supersetId);
+        }
       });
 
   /// Record sets of a session by set id, updated live (label "Rekord").
@@ -588,6 +692,29 @@ class SessionRepository {
     );
   }
 
+  /// After skipping or finishing [se]: in a superset the next member with
+  /// sets left becomes active; otherwise as configured.
+  Future<void> _continueAfter(SessionExercise se) async {
+    final members = await _supersetMembers(se);
+    final next = members == null ? null : nextSupersetMember(members, se.id);
+    if (next != null) {
+      await _activate((await _db.sessionsDao.findSessionExercise(next))!);
+    } else {
+      await _autoActivateNext(se);
+    }
+  }
+
+  /// Members of the superset of [se] in order, `null` if it has none.
+  Future<List<SupersetMember>?> _supersetMembers(SessionExercise se) async {
+    final supersetId = se.supersetId;
+    if (supersetId == null) return null;
+    final members = [
+      for (final d in await _db.sessionsDao.getDetails(se.sessionId))
+        if (d.sessionExercise.supersetId == supersetId) supersetMemberOf(d),
+    ];
+    return members.length < 2 ? null : members;
+  }
+
   Future<void> _autoActivateNext(SessionExercise completed) async {
     if (!(await _db.settingsDao.get()).autoActivateNext) return;
     final all = await _db.sessionsDao.getSessionExercises(completed.sessionId);
@@ -618,6 +745,162 @@ class SessionRepository {
       updates: {_db.setEntries},
     );
   });
+
+  // ---------------------------------------------------------------------------
+  // Supersets (M9)
+
+  Stream<Map<int, SessionSuperset>> watchSupersets(int sessionId) => _db
+      .sessionsDao
+      .watchSupersets(sessionId)
+      .map((list) => {for (final x in list) x.id: x});
+
+  Future<Map<int, SessionSuperset>> getSupersets(int sessionId) async => {
+    for (final x in await _db.sessionsDao.getSupersets(sessionId)) x.id: x,
+  };
+
+  /// Forms a superset of open exercises of the running session (at least
+  /// two, none in a superset yet). They keep their relative order and move
+  /// together to the place of the first one. Returns the superset id.
+  Future<int> createSuperset(
+    int sessionId,
+    List<int> sessionExerciseIds, {
+    int? restSec,
+  }) => _db.transaction(() async {
+    final session = await _db.sessionsDao.findById(sessionId);
+    if (session == null) throw NotFoundException('session', sessionId);
+    if (!session.isActive) throw SessionNotActiveException(sessionId);
+    final all = await _db.sessionsDao.getSessionExercises(sessionId);
+    final chosen = sessionExerciseIds.toSet();
+    final members = [
+      for (final e in all)
+        if (chosen.contains(e.id)) e,
+    ];
+    if (chosen.length < 2 ||
+        members.length != chosen.length ||
+        members.any((e) => e.supersetId != null || !isMovable(e.status))) {
+      throw InvalidValueException('sessionExerciseIds', sessionExerciseIds);
+    }
+    if (restSec != null && (restSec < 0 || restSec > 3600)) {
+      throw InvalidValueException('restSec', restSec);
+    }
+    final supersetId = await _db.sessionsDao.insertSuperset(
+      SessionSupersetsCompanion.insert(
+        sessionId: sessionId,
+        restSec: Value(restSec),
+      ),
+    );
+    final firstIndex = all.indexOf(members.first);
+    final ordered = [
+      for (final e in all)
+        if (!chosen.contains(e.id) && all.indexOf(e) < firstIndex) e,
+      for (final e in members) e.copyWith(supersetId: supersetId),
+      for (final e in all)
+        if (!chosen.contains(e.id) && all.indexOf(e) > firstIndex) e,
+    ];
+    await _writeSessionOrder(ordered, all);
+    return supersetId;
+  });
+
+  /// Dissolves a superset; its exercises stay where they are.
+  Future<void> dissolveSuperset(int supersetId) => _db.transaction(() async {
+    final superset = await _db.sessionsDao.findSuperset(supersetId);
+    if (superset == null) {
+      throw NotFoundException('sessionSuperset', supersetId);
+    }
+    for (final e in await _db.sessionsDao.getSessionExercises(
+      superset.sessionId,
+    )) {
+      if (e.supersetId == supersetId) {
+        await _db.sessionsDao.updateSessionExercise(
+          e.copyWith(supersetId: null),
+        );
+      }
+    }
+    await _db.sessionsDao.deleteSuperset(supersetId);
+  });
+
+  Future<void> updateSupersetRest(int supersetId, int? restSec) =>
+      _db.transaction(() async {
+        final superset = await _db.sessionsDao.findSuperset(supersetId);
+        if (superset == null) {
+          throw NotFoundException('sessionSuperset', supersetId);
+        }
+        if (restSec != null && (restSec < 0 || restSec > 3600)) {
+          throw InvalidValueException('restSec', restSec);
+        }
+        await _db.sessionsDao.updateSuperset(
+          superset.copyWith(restSec: restSec),
+        );
+      });
+
+  /// Takes an exercise out of its superset and puts it right after it. A
+  /// superset left with one exercise is dissolved.
+  Future<void> removeFromSuperset(int sessionExerciseId) =>
+      _db.transaction(() async {
+        final se = await _db.sessionsDao.findSessionExercise(sessionExerciseId);
+        if (se == null) {
+          throw NotFoundException('sessionExercise', sessionExerciseId);
+        }
+        final supersetId = se.supersetId;
+        if (supersetId == null) return;
+        final all = await _db.sessionsDao.getSessionExercises(se.sessionId);
+        final others = [
+          for (final e in all)
+            if (e.id != se.id) e,
+        ];
+        final last = others.lastIndexWhere((e) => e.supersetId == supersetId);
+        await _writeSessionOrder(
+          [...others]..insert(last + 1, se.copyWith(supersetId: null)),
+          all,
+        );
+        await _dissolveIfTooSmall(se.sessionId, supersetId);
+      });
+
+  Future<void> _dissolveIfTooSmall(int sessionId, int supersetId) async {
+    final members = (await _db.sessionsDao.getSessionExercises(sessionId))
+        .where((e) => e.supersetId == supersetId)
+        .length;
+    if (members < 2) await dissolveSuperset(supersetId);
+  }
+
+  /// Writes positions and superset ids of [ordered] where they changed.
+  Future<void> _writeSessionOrder(
+    List<SessionExercise> ordered,
+    List<SessionExercise> before,
+  ) async {
+    final old = {for (final e in before) e.id: e};
+    for (final (i, e) in ordered.indexed) {
+      final o = old[e.id]!;
+      if (o.position != i || o.supersetId != e.supersetId) {
+        await _db.sessionsDao.updateSessionExercise(
+          o.copyWith(position: i, supersetId: e.supersetId),
+        );
+      }
+    }
+  }
+
+  /// Fixed blocks (with a done or skipped exercise) keep their block
+  /// index, and inside a block done/skipped exercises keep their index.
+  static bool _keepsFixedPlaces(
+    List<Block<SessionExercise>> before,
+    List<Block<SessionExercise>> after,
+  ) {
+    if (before.length != after.length) return false;
+    for (var i = 0; i < before.length; i++) {
+      final b = before[i];
+      if (b.items.every((e) => isMovable(e.status))) continue;
+      final a = after[i];
+      if (a.groupId != b.groupId || a.items.length != b.items.length) {
+        return false;
+      }
+      for (var k = 0; k < b.items.length; k++) {
+        if (!isMovable(b.items[k].status) && a.items[k].id != b.items[k].id) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 
   /// Ends a running session now (see [finishSession]).
   Future<void> finish(int sessionId) => finishSession(sessionId);

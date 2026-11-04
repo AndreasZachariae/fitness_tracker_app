@@ -29,6 +29,10 @@ class SessionExerciseStatusConverter
   const SessionExerciseStatusConverter() : super(SessionExerciseStatus.values);
 }
 
+class PlanGroupKindConverter extends CodedConverter<PlanGroupKind> {
+  const PlanGroupKindConverter() : super(PlanGroupKind.values);
+}
+
 class ThemePreferenceConverter extends CodedConverter<ThemePreference> {
   const ThemePreferenceConverter() : super(ThemePreference.values);
 }

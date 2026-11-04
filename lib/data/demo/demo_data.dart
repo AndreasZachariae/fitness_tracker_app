@@ -4,9 +4,10 @@ import '../../domain/models/models.dart';
 import '../db/storage_time.dart';
 
 /// Generates a realistic, deterministic demo dataset (DEV app only):
-/// [weeks] weeks up to [now], two plans plus free trainings, 13 exercises of
+/// [weeks] weeks up to [now], two plans plus free trainings, 14 exercises of
 /// all types (one archived), progression with noise, skipped weeks and body
-/// weight 3–5 times per week with a slight downward trend.
+/// weight 3–5 times per week with a slight downward trend. "Oberkörper" has a
+/// superset and a rotation (M9).
 Dataset generateDemoData({
   required DateTime now,
   int weeks = 16,
@@ -104,6 +105,14 @@ const _specs = [
     increment: 1,
   ),
   _Spec(
+    'Hammercurls',
+    ExerciseType.weightReps,
+    ExerciseCategory.arms,
+    start: 12,
+    end: 15,
+    increment: 1,
+  ),
+  _Spec(
     'Klimmzüge',
     ExerciseType.bodyweight,
     ExerciseCategory.back,
@@ -144,24 +153,59 @@ const _specs = [
   ),
 ];
 
-/// Plan exercises: (exercise name, sets, reps, duration).
-const _plans = <String, List<(String, int, int?, int?)>>{
+/// Plan exercises: (exercise name, sets, reps, duration, group key).
+/// Group keys: see [_groups].
+const _plans = <String, List<(String, int, int?, int?, int?)>>{
   'Oberkörper': [
-    ('Bankdrücken', 3, 8, null),
-    ('Klimmzüge', 3, 8, null),
-    ('Schulterdrücken', 3, 10, null),
-    ('Rudern am Kabel', 3, 10, null),
-    ('Dips', 3, 10, null),
-    ('Bizepscurls', 3, 12, null),
+    ('Bankdrücken', 3, 8, null, null),
+    ('Klimmzüge', 3, 8, null, null),
+    ('Schulterdrücken', 3, 10, null, 1),
+    ('Rudern am Kabel', 3, 10, null, 1),
+    ('Dips', 3, 10, null, null),
+    ('Bizepscurls', 3, 12, null, 2),
+    ('Hammercurls', 3, 12, null, 2),
   ],
   'Unterkörper': [
-    ('Kniebeuge', 3, 8, null),
-    ('Kreuzheben', 3, 5, null),
-    ('Beinpresse', 3, 10, null),
-    ('Plank', 3, null, 60),
-    ('Wandsitzen', 2, null, 45),
+    ('Kniebeuge', 3, 8, null, null),
+    ('Kreuzheben', 3, 5, null, null),
+    ('Beinpresse', 3, 10, null, null),
+    ('Plank', 3, null, 60, null),
+    ('Wandsitzen', 2, null, 45, null),
   ],
 };
+
+/// Groups of "Oberkörper" by key: (kind, rest after a round).
+const _groups = <int, (PlanGroupKind, int?)>{
+  1: (PlanGroupKind.superset, 90),
+  2: (PlanGroupKind.rotation, null),
+};
+
+/// An exercise of a generated session with its targets.
+final class _Item {
+  /// An exercise of a free training.
+  const _Item(this.exercise, {required this.sets, this.reps, this.duration})
+    : restSec = null,
+      superset = null,
+      rotation = null;
+
+  _Item.of(this.exercise, PlanExercise p, {this.superset, this.rotation})
+    : sets = p.targetSets,
+      reps = p.targetReps,
+      duration = p.targetDurationSec,
+      restSec = p.restSec;
+
+  final Exercise exercise;
+  final int sets;
+  final int? reps;
+  final int? duration;
+  final int? restSec;
+
+  /// Plan group id of the superset this exercise belongs to.
+  final int? superset;
+
+  /// Plan group id of the rotation this exercise was chosen from.
+  final int? rotation;
+}
 
 const _sessionNotes = [
   'Gut geschlafen, viel Energie.',
@@ -181,8 +225,13 @@ final class _DemoGenerator {
   final _exercises = <Exercise>[];
   final _plansOut = <Plan>[];
   final _planExercises = <PlanExercise>[];
+  final _planGroups = <PlanGroup>[];
   final _sessions = <Session>[];
   final _sessionExercises = <SessionExercise>[];
+  final _sessionSupersets = <SessionSuperset>[];
+
+  /// Rotation progress per plan group id: index of the due member.
+  final _rotation = <int, int>{};
   final _sets = <SetEntry>[];
   final _bodyWeights = <BodyWeightEntry>[];
 
@@ -220,7 +269,13 @@ final class _DemoGenerator {
         createdAt: created,
       );
       _plansOut.add(plan);
-      for (final (i, (exerciseName, sets, reps, duration)) in entries.indexed) {
+      final groupIds = <int, int>{};
+      for (final (i, (exerciseName, sets, reps, duration, key))
+          in entries.indexed) {
+        int? groupId;
+        if (key != null) {
+          groupId = groupIds[key] ??= _addGroup(plan.id, key);
+        }
         _planExercises.add(
           PlanExercise(
             id: _planExercises.length + 1,
@@ -231,6 +286,7 @@ final class _DemoGenerator {
             targetReps: reps,
             targetDurationSec: duration,
             restSec: null,
+            groupId: groupId,
           ),
         );
       }
@@ -239,16 +295,50 @@ final class _DemoGenerator {
     _generateSessions();
     _generateBodyWeights();
 
+    // The rotation remembers which exercise is due next.
+    for (final (i, g) in _planGroups.indexed) {
+      if (g.kind != PlanGroupKind.rotation) continue;
+      final members = _members(g.id);
+      _planGroups[i] = g.copyWith(
+        rotationExerciseId:
+            members[(_rotation[g.id] ?? 0) % members.length].exerciseId,
+      );
+    }
+
     return Dataset(
       exercises: _exercises,
       plans: _plansOut,
       planExercises: _planExercises,
+      planGroups: _planGroups,
       sessions: _sessions,
       sessionExercises: _sessionExercises,
+      sessionSupersets: _sessionSupersets,
       sets: _sets,
       bodyWeights: _bodyWeights,
     );
   }
+
+  int _addGroup(int planId, int key) {
+    final (kind, rest) = _groups[key]!;
+    final id = _planGroups.length + 1;
+    _planGroups.add(
+      PlanGroup(
+        id: id,
+        planId: planId,
+        kind: kind,
+        restSec: rest,
+        rotationEvery: 1,
+        rotationExerciseId: null,
+        rotationDone: 0,
+      ),
+    );
+    return id;
+  }
+
+  List<PlanExercise> _members(int groupId) => [
+    for (final p in _planExercises)
+      if (p.groupId == groupId) p,
+  ];
 
   Exercise _exerciseByName(String name) =>
       _exercises.firstWhere((e) => e.name == name);
@@ -304,43 +394,82 @@ final class _DemoGenerator {
     final sessionId = _sessions.length + 1;
     final progress = _progress(day);
 
-    final List<(Exercise, int, int?, int?, int?)> exercises;
+    final List<_Item> exercises;
     if (plan != null) {
-      exercises = [
-        for (final p in _planExercises.where((p) => p.planId == plan.id))
-          (
-            _exercises[p.exerciseId - 1],
-            p.targetSets,
-            p.targetReps,
-            p.targetDurationSec,
-            p.restSec,
-          ),
-      ];
+      exercises = [];
+      final rotations = <int>{};
+      for (final p in _planExercises.where((p) => p.planId == plan.id)) {
+        final group = p.groupId == null ? null : _planGroups[p.groupId! - 1];
+        if (group != null && group.kind == PlanGroupKind.rotation) {
+          // Only the due member of a rotation.
+          if (!rotations.add(group.id)) continue;
+          final members = _members(group.id);
+          final due = members[(_rotation[group.id] ?? 0) % members.length];
+          exercises.add(
+            _Item.of(_exercises[due.exerciseId - 1], due, rotation: group.id),
+          );
+          continue;
+        }
+        exercises.add(
+          _Item.of(_exercises[p.exerciseId - 1], p, superset: group?.id),
+        );
+      }
     } else {
       final pool =
           _exercises.where((e) => !e.archived || progress < 0.5).toList()
             ..shuffle(random);
       exercises = [
         for (final e in pool.take(3 + random.nextInt(2)))
-          (
+          _Item(
             e,
-            3,
-            e.type == ExerciseType.timed ? null : 10,
-            e.type == ExerciseType.timed ? 45 : null,
-            null,
+            sets: 3,
+            reps: e.type == ExerciseType.timed ? null : 10,
+            duration: e.type == ExerciseType.timed ? 45 : null,
           ),
       ];
     }
 
     var cursor = localStart.add(Duration(minutes: 5 + random.nextInt(6)));
-    for (final (i, (exercise, targetSets, reps, duration, restSec))
-        in exercises.indexed) {
+    var i = 0;
+    while (i < exercises.length) {
+      final key = exercises[i].superset;
+      if (key != null) {
+        // A superset: all members alternately, rest after each round.
+        final members = [
+          for (
+            var j = i;
+            j < exercises.length && exercises[j].superset == key;
+            j++
+          )
+            exercises[j],
+        ];
+        final supersetId = _sessionSupersets.length + 1;
+        _sessionSupersets.add(
+          SessionSuperset(
+            id: supersetId,
+            sessionId: sessionId,
+            restSec: _planGroups[key - 1].restSec,
+          ),
+        );
+        cursor = _addSupersetSets(
+          sessionId,
+          supersetId,
+          i,
+          members,
+          cursor,
+          progress,
+        );
+        i += members.length;
+        continue;
+      }
+      final item = exercises[i];
+      final exercise = item.exercise;
       final skippedExercise = random.nextDouble() < 0.04;
       final sessionExerciseId = _sessionExercises.length + 1;
       DateTime? completedAt;
       if (!skippedExercise) {
-        final rest = restSec ?? exercise.restSec ?? 90;
-        for (var setIndex = 1; setIndex <= targetSets; setIndex++) {
+        final rest = item.restSec ?? exercise.restSec ?? 90;
+        for (var setIndex = 1; setIndex <= item.sets; setIndex++) {
           cursor = cursor.add(Duration(seconds: 40 + random.nextInt(30)));
           _sets.add(
             _makeSet(
@@ -348,17 +477,19 @@ final class _DemoGenerator {
               sessionExerciseId: sessionExerciseId,
               setIndex: setIndex,
               exercise: exercise,
-              targetReps: reps,
-              targetDuration: duration,
+              targetReps: item.reps,
+              targetDuration: item.duration,
               progress: progress,
               completedAt: storageTime(cursor),
             ),
           );
           completedAt = storageTime(cursor);
-          if (setIndex < targetSets) {
+          if (setIndex < item.sets) {
             cursor = cursor.add(Duration(seconds: rest + random.nextInt(40)));
           }
         }
+        // The rotation moves on only when its exercise was trained.
+        if (item.rotation case final r?) _rotation[r] = (_rotation[r] ?? 0) + 1;
       }
       _sessionExercises.add(
         SessionExercise(
@@ -366,10 +497,10 @@ final class _DemoGenerator {
           sessionId: sessionId,
           exerciseId: exercise.id,
           position: i,
-          targetSets: targetSets,
-          targetReps: reps,
-          targetDurationSec: duration,
-          restSec: restSec,
+          targetSets: item.sets,
+          targetReps: item.reps,
+          targetDurationSec: item.duration,
+          restSec: item.restSec,
           status: skippedExercise
               ? SessionExerciseStatus.skipped
               : SessionExerciseStatus.done,
@@ -377,6 +508,7 @@ final class _DemoGenerator {
         ),
       );
       cursor = cursor.add(Duration(minutes: 2 + random.nextInt(3)));
+      i++;
     }
 
     _sessions.add(
@@ -393,6 +525,67 @@ final class _DemoGenerator {
             : '',
       ),
     );
+  }
+
+  /// Sets of a superset: A1 B1 · rest · A2 B2 · rest … Returns the time
+  /// after the superset.
+  DateTime _addSupersetSets(
+    int sessionId,
+    int supersetId,
+    int firstPosition,
+    List<_Item> members,
+    DateTime start,
+    double progress,
+  ) {
+    var cursor = start;
+    final ids = [
+      for (var k = 0; k < members.length; k++) _sessionExercises.length + 1 + k,
+    ];
+    final completed = <int, DateTime>{};
+    final rounds = members.map((m) => m.sets).reduce(max);
+    final rest = _sessionSupersets[supersetId - 1].restSec ?? 90;
+    for (var round = 1; round <= rounds; round++) {
+      for (final (k, m) in members.indexed) {
+        if (round > m.sets) continue;
+        cursor = cursor.add(Duration(seconds: 40 + random.nextInt(30)));
+        _sets.add(
+          _makeSet(
+            id: _sets.length + 1,
+            sessionExerciseId: ids[k],
+            setIndex: round,
+            exercise: m.exercise,
+            targetReps: m.reps,
+            targetDuration: m.duration,
+            progress: progress,
+            completedAt: storageTime(cursor),
+          ),
+        );
+        completed[k] = storageTime(cursor);
+        // Changing stations within a round.
+        cursor = cursor.add(Duration(seconds: 15 + random.nextInt(20)));
+      }
+      if (round < rounds) {
+        cursor = cursor.add(Duration(seconds: rest + random.nextInt(40)));
+      }
+    }
+    for (final (k, m) in members.indexed) {
+      _sessionExercises.add(
+        SessionExercise(
+          id: ids[k],
+          sessionId: sessionId,
+          exerciseId: m.exercise.id,
+          position: firstPosition + k,
+          targetSets: m.sets,
+          targetReps: m.reps,
+          targetDurationSec: m.duration,
+          restSec: m.restSec,
+          status: SessionExerciseStatus.done,
+          completedAt: completed[k],
+          supersetId: supersetId,
+        ),
+      );
+    }
+    return cursor.add(Duration(minutes: 2 + random.nextInt(3)));
   }
 
   SetEntry _makeSet({

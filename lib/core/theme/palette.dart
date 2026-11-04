@@ -15,6 +15,16 @@ abstract final class Palette {
   static const plateGreen = Color(0xFF2E8B57);
   static const white = Color(0xFFFFFFFF);
 
+  // Groups (M9): supersets orange between plate red and yellow, rotations
+  // in the plate green family.
+  static const plateOrange = Color(0xFFE0661A);
+  static const orangeDeep = Color(0xFF9E420A);
+  static const orangeContainerLight = Color(0xFFFCE7D8);
+  static const orangeLight = Color(0xFFF5A066);
+  static const orangeContainerDark = Color(0xFF3B2A1E);
+  static const greenContainerLight = Color(0xFFDDF0E4);
+  static const greenContainerDark = Color(0xFF1D3328);
+
   // Light mode: neutrals and tones derived for text/icons on steel
   static const steelLowest = Color(0xFFFFFFFF);
   static const steelLow = Color(0xFFF6F7F9);

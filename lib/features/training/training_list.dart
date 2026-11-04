@@ -2,33 +2,54 @@ import 'package:flutter/material.dart';
 
 import '../../core/format/exercise_format.dart';
 import '../../core/l10n/strings_de.dart';
+import '../../core/theme/gym_colors.dart';
+import '../../domain/groups.dart';
 import '../../domain/models/models.dart';
 import '../../widgets/dashed_add_button.dart';
 import '../../widgets/exercise_type_icon.dart';
+import '../../widgets/group_frame.dart';
 import 'training_item.dart';
 
-/// Reorderable list of the exercises before a session (SPEC §6.1).
+/// Reorderable list of the exercises before a session (SPEC §6.1) with
+/// supersets and rotations as framed groups (M9): a group moves as a whole
+/// at its header handle, its exercises move inside it.
 class TrainingList extends StatefulWidget {
   const TrainingList({
     required this.items,
+    required this.groups,
     required this.lastPerformances,
     required this.emptyText,
     required this.onReorder,
     required this.onRemove,
     required this.onTap,
     required this.onAdd,
+    required this.groupKinds,
+    required this.onCreateGroup,
+    required this.onGroupOptions,
+    this.loading = false,
     super.key,
   });
 
   final List<TrainingItem> items;
+  final Map<int, TrainingGroup> groups;
   final Map<int, LastPerformance> lastPerformances;
   final String emptyText;
+
+  /// While the list is loading, the empty text is not shown (no flicker
+  /// when switching plans).
+  final bool loading;
 
   /// New order of all items.
   final Future<void> Function(List<TrainingItem> ordered) onReorder;
   final Future<void> Function(TrainingItem item) onRemove;
   final ValueChanged<TrainingItem> onTap;
   final VoidCallback onAdd;
+
+  /// Which "… erstellen" buttons are shown below "+ Übung hinzufügen".
+  final List<PlanGroupKind> groupKinds;
+  final ValueChanged<PlanGroupKind> onCreateGroup;
+  final void Function(TrainingGroup group, List<TrainingItem> members)
+  onGroupOptions;
 
   @override
   State<TrainingList> createState() => _TrainingListState();
@@ -47,11 +68,9 @@ class _TrainingListState extends State<TrainingList> {
     if (!identical(oldWidget.items, widget.items)) _pendingOrder = null;
   }
 
-  Future<void> _reorder(List<TrainingItem> items, int oldIndex, int newIndex) {
-    final list = [...items];
-    list.insert(newIndex, list.removeAt(oldIndex));
-    setState(() => _pendingOrder = list);
-    return widget.onReorder(list);
+  Future<void> _apply(List<TrainingItem> ordered) {
+    setState(() => _pendingOrder = ordered);
+    return widget.onReorder(ordered);
   }
 
   Future<void> _dismiss(TrainingItem item) async {
@@ -63,17 +82,50 @@ class _TrainingListState extends State<TrainingList> {
     }
   }
 
+  int? _groupOf(TrainingItem i) =>
+      widget.groups.containsKey(i.groupKey) ? i.groupKey : null;
+
+  Widget _dismissible(TrainingItem item, Widget child) {
+    final theme = Theme.of(context);
+    return Dismissible(
+      key: ValueKey(item.key),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        color: theme.colorScheme.errorContainer,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              S.remove,
+              style: TextStyle(color: theme.colorScheme.onErrorContainer),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.delete_outline,
+              color: theme.colorScheme.onErrorContainer,
+            ),
+          ],
+        ),
+      ),
+      onDismissed: (_) => _dismiss(item),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final items = (_pendingOrder ?? widget.items)
         .where((i) => !_hidden.contains(i.key))
         .toList();
+    final blocks = blocksOf(items, _groupOf);
 
     return ReorderableListView.builder(
       buildDefaultDragHandles: false,
       padding: const EdgeInsets.only(bottom: 16),
-      header: items.isEmpty
+      header: items.isEmpty && !widget.loading
           ? Padding(
               padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
               child: Text(
@@ -85,45 +137,133 @@ class _TrainingListState extends State<TrainingList> {
               ),
             )
           : null,
-      footer: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        child: DashedAddButton(label: S.addExercise, onPressed: widget.onAdd),
-      ),
-      itemCount: items.length,
-      onReorderItem: (a, b) => _reorder(items, a, b),
-      itemBuilder: (context, i) {
-        final item = items[i];
-        return Dismissible(
-          key: ValueKey(item.key),
-          direction: DismissDirection.endToStart,
-          background: Container(
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 24),
-            color: theme.colorScheme.errorContainer,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  S.remove,
-                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.delete_outline,
-                  color: theme.colorScheme.onErrorContainer,
-                ),
-              ],
+      footer: widget.loading
+          ? null
+          : _Footer(
+              groupKinds: widget.groupKinds,
+              onAdd: widget.onAdd,
+              onCreateGroup: widget.onCreateGroup,
             ),
-          ),
-          onDismissed: (_) => _dismiss(item),
-          child: _TrainingTile(
-            item: item,
-            index: i,
-            last: widget.lastPerformances[item.exercise.id],
-            onTap: () => widget.onTap(item),
+      itemCount: blocks.length,
+      onReorderItem: (a, b) {
+        final moved = [...blocks];
+        moved.insert(b, moved.removeAt(a));
+        _apply(flatten(moved));
+      },
+      itemBuilder: (context, i) {
+        final block = blocks[i];
+        if (!block.isGroup) {
+          final item = block.first;
+          return KeyedSubtree(
+            key: ValueKey(item.key),
+            child: _dismissible(
+              item,
+              _TrainingTile(
+                item: item,
+                index: i,
+                last: widget.lastPerformances[item.exercise.id],
+                onTap: () => widget.onTap(item),
+              ),
+            ),
+          );
+        }
+        final group = widget.groups[block.groupId]!;
+        final members = block.items;
+        final due = group.kind == PlanGroupKind.rotation
+            ? group.dueIndex(members)
+            : null;
+        return GroupFrame(
+          key: ValueKey('group-${group.key}'),
+          kind: group.kind,
+          subtitle: switch (group.kind) {
+            PlanGroupKind.superset => supersetSubtitle(group.restSec),
+            PlanGroupKind.rotation => S.rotationEvery(group.rotationEvery),
+          },
+          dragHandle: GroupDragHandle(kind: group.kind, index: i),
+          onOptions: () => widget.onGroupOptions(group, members),
+          child: ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            itemCount: members.length,
+            onReorderItem: (a, b) {
+              final inner = [...members];
+              inner.insert(b, inner.removeAt(a));
+              _apply(
+                flatten([
+                  for (final x in blocks)
+                    identical(x, block) ? Block(x.groupId, inner) : x,
+                ]),
+              );
+            },
+            itemBuilder: (context, k) {
+              final item = members[k];
+              return KeyedSubtree(
+                key: ValueKey(item.key),
+                child: _dismissible(
+                  item,
+                  _TrainingTile(
+                    item: item,
+                    index: k,
+                    last: widget.lastPerformances[item.exercise.id],
+                    onTap: () => widget.onTap(item),
+                    rotationLabel: due == null
+                        ? null
+                        : k == due
+                        ? (group.rotationEvery > 1
+                              ? S.rotationDueLeft(
+                                  group.rotationEvery - group.rotationDone,
+                                )
+                              : S.rotationDue)
+                        : S.rotationLater,
+                    dimmed: due != null && k != due,
+                  ),
+                ),
+              );
+            },
           ),
         );
       },
+    );
+  }
+}
+
+class _Footer extends StatelessWidget {
+  const _Footer({
+    required this.groupKinds,
+    required this.onAdd,
+    required this.onCreateGroup,
+  });
+
+  final List<PlanGroupKind> groupKinds;
+  final VoidCallback onAdd;
+  final ValueChanged<PlanGroupKind> onCreateGroup;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 8,
+        children: [
+          DashedAddButton(label: S.addExercise, onPressed: onAdd),
+          Row(
+            spacing: 8,
+            children: [
+              for (final kind in groupKinds)
+                Expanded(
+                  child: DashedAddButton(
+                    label: S.createGroup(kind),
+                    icon: groupIcon(kind),
+                    color: groupColors(context, kind).$1,
+                    onPressed: () => onCreateGroup(kind),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -134,6 +274,8 @@ class _TrainingTile extends StatelessWidget {
     required this.index,
     required this.last,
     required this.onTap,
+    this.rotationLabel,
+    this.dimmed = false,
   });
 
   final TrainingItem item;
@@ -141,13 +283,20 @@ class _TrainingTile extends StatelessWidget {
   final LastPerformance? last;
   final VoidCallback onTap;
 
+  /// "Ist dran" / "Später" in a rotation.
+  final String? rotationLabel;
+
+  /// Rotation members that are not due are greyed out.
+  final bool dimmed;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final e = item.exercise;
     final t = item.targets;
     final summary = last == null ? null : formatSetsSummary(e.type, last!.sets);
-    return Card(
+    final rotation = GymColors.of(context).rotation;
+    final tile = Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -181,6 +330,16 @@ class _TrainingTile extends StatelessWidget {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
+                    if (rotationLabel != null)
+                      Text(
+                        rotationLabel!,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: dimmed
+                              ? theme.colorScheme.onSurfaceVariant
+                              : rotation,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -199,5 +358,6 @@ class _TrainingTile extends StatelessWidget {
         ),
       ),
     );
+    return dimmed ? Opacity(opacity: 0.55, child: tile) : tile;
   }
 }

@@ -27,7 +27,7 @@ void main() {
   test('header fields (SPEC §8.2)', () {
     final json = jsonDecode(encodeBackup(backup)) as Map<String, Object?>;
     expect(json['format'], 'gymlog-backup');
-    expect(json['formatVersion'], 1);
+    expect(json['formatVersion'], 2);
     expect(json['schemaVersion'], 1);
     expect(json['appVersion'], '1.0.0+12');
     expect(json['exportedAt'], isA<String>());
@@ -35,8 +35,10 @@ void main() {
       'exercises',
       'plans',
       'planExercises',
+      'planGroups',
       'sessions',
       'sessionExercises',
+      'sessionSupersets',
       'sets',
       'bodyWeights',
       'settings',
@@ -49,12 +51,37 @@ void main() {
     expect(d.exercises, demo.exercises);
     expect(d.plans, demo.plans);
     expect(d.planExercises, demo.planExercises);
+    expect(d.planGroups, demo.planGroups);
+    expect(d.planGroups, isNotEmpty, reason: 'demo has groups');
     expect(d.sessions, demo.sessions);
     expect(d.sessionExercises, demo.sessionExercises);
+    expect(d.sessionSupersets, demo.sessionSupersets);
+    expect(d.sessionSupersets, isNotEmpty, reason: 'demo has supersets');
     expect(d.sets, demo.sets);
     expect(d.bodyWeights, demo.bodyWeights);
     expect(decoded.settings, settings);
     expect(decoded.exportedAt, testNow);
+  });
+
+  test('format 1 backups (before M9) are still read, without groups', () {
+    final j = jsonDecode(encodeBackup(backup)) as Map<String, Object?>;
+    j['formatVersion'] = 1;
+    final data = j['data']! as Map<String, Object?>;
+    data
+      ..remove('planGroups')
+      ..remove('sessionSupersets');
+    for (final p in data['planExercises']! as List<Object?>) {
+      (p! as Map<String, Object?>).remove('groupId');
+    }
+    for (final x in data['sessionExercises']! as List<Object?>) {
+      (x! as Map<String, Object?>).remove('supersetId');
+    }
+    final d = decodeBackup(jsonEncode(j)).dataset;
+    expect(d.planGroups, isEmpty);
+    expect(d.sessionSupersets, isEmpty);
+    expect(d.planExercises.every((p) => p.groupId == null), isTrue);
+    expect(d.sessionExercises.every((x) => x.supersetId == null), isTrue);
+    expect(d.sets, demo.sets);
   });
 
   test('preview: trainings, period, body weights', () {
@@ -89,7 +116,7 @@ void main() {
       (
         'newer version',
         () {
-          final j = json()..['formatVersion'] = 2;
+          final j = json()..['formatVersion'] = 3;
           return jsonEncode(j);
         },
         BackupError.newerVersion,
@@ -138,6 +165,55 @@ void main() {
           return jsonEncode(j);
         },
         BackupError.brokenReference,
+      ),
+      (
+        'plan exercise in a missing group',
+        () {
+          final j = json();
+          first(j, 'planExercises')['groupId'] = 99999;
+          return jsonEncode(j);
+        },
+        BackupError.brokenReference,
+      ),
+      (
+        'plan exercise in a group of another plan',
+        () {
+          final j = json();
+          final group = first(j, 'planGroups');
+          final other = list(j, 'planExercises')
+              .cast<Map<String, Object?>>()
+              .firstWhere((p) => p['planId'] != group['planId']);
+          other['groupId'] = group['id'];
+          return jsonEncode(j);
+        },
+        BackupError.brokenReference,
+      ),
+      (
+        'session exercise in a missing superset',
+        () {
+          final j = json();
+          first(j, 'sessionExercises')['supersetId'] = 99999;
+          return jsonEncode(j);
+        },
+        BackupError.brokenReference,
+      ),
+      (
+        'missing group list in format 2',
+        () {
+          final j = json();
+          data(j).remove('planGroups');
+          return jsonEncode(j);
+        },
+        BackupError.invalidField,
+      ),
+      (
+        'unknown group kind',
+        () {
+          final j = json();
+          first(j, 'planGroups')['kind'] = 'circuit';
+          return jsonEncode(j);
+        },
+        BackupError.invalidField,
       ),
       (
         'settings point to a missing plan',

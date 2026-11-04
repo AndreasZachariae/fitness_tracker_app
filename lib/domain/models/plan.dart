@@ -45,11 +45,15 @@ final class PlanExercise {
     required this.targetReps,
     required this.targetDurationSec,
     required this.restSec,
+    this.groupId,
   });
 
   final int id;
   final int planId;
   final int exerciseId;
+
+  /// Superset or rotation this entry belongs to (M9); `null` = single.
+  final int? groupId;
   final int position;
 
   /// 1–10.
@@ -66,6 +70,7 @@ final class PlanExercise {
     Object? targetReps = unset,
     Object? targetDurationSec = unset,
     Object? restSec = unset,
+    Object? groupId = unset,
   }) {
     return PlanExercise(
       id: id,
@@ -76,6 +81,7 @@ final class PlanExercise {
       targetReps: pick<int?>(targetReps, this.targetReps),
       targetDurationSec: pick<int?>(targetDurationSec, this.targetDurationSec),
       restSec: pick<int?>(restSec, this.restSec),
+      groupId: pick<int?>(groupId, this.groupId),
     );
   }
 
@@ -89,7 +95,8 @@ final class PlanExercise {
       other.targetSets == targetSets &&
       other.targetReps == targetReps &&
       other.targetDurationSec == targetDurationSec &&
-      other.restSec == restSec;
+      other.restSec == restSec &&
+      other.groupId == groupId;
 
   @override
   int get hashCode => Object.hash(
@@ -101,6 +108,7 @@ final class PlanExercise {
     targetReps,
     targetDurationSec,
     restSec,
+    groupId,
   );
 
   @override

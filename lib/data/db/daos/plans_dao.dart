@@ -6,7 +6,7 @@ import '../tables.dart';
 
 part 'plans_dao.g.dart';
 
-@DriftAccessor(tables: [Plans, PlanExercises, Exercises])
+@DriftAccessor(tables: [Plans, PlanExercises, PlanGroups, Exercises])
 class PlansDao extends DatabaseAccessor<AppDatabase> with _$PlansDaoMixin {
   PlansDao(super.attachedDatabase);
 
@@ -124,5 +124,31 @@ class PlansDao extends DatabaseAccessor<AppDatabase> with _$PlansDaoMixin {
   Future<void> setEntryPosition(int id, int position) =>
       (update(planExercises)..where((p) => p.id.equals(id))).write(
         PlanExercisesCompanion(position: Value(position)),
+      );
+
+  // Groups (M9)
+
+  SimpleSelectStatement<$PlanGroupsTable, PlanGroup> _groups(int planId) =>
+      select(planGroups)..where((g) => g.planId.equals(planId));
+
+  Stream<List<PlanGroup>> watchGroups(int planId) => _groups(planId).watch();
+
+  Future<List<PlanGroup>> getGroups(int planId) => _groups(planId).get();
+
+  Future<PlanGroup?> findGroup(int id) =>
+      (select(planGroups)..where((g) => g.id.equals(id))).getSingleOrNull();
+
+  Future<int> insertGroup(PlanGroupsCompanion row) =>
+      into(planGroups).insert(row);
+
+  Future<void> updateGroup(PlanGroup group) =>
+      update(planGroups).replace(group.toInsertable());
+
+  Future<int> deleteGroup(int id) =>
+      (delete(planGroups)..where((g) => g.id.equals(id))).go();
+
+  Future<void> setEntryGroup(int entryId, int? groupId) =>
+      (update(planExercises)..where((p) => p.id.equals(entryId))).write(
+        PlanExercisesCompanion(groupId: Value(groupId)),
       );
 }

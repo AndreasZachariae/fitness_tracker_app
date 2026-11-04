@@ -70,8 +70,12 @@ void main() {
     expect(d2.exercises, d1.exercises);
     expect(d2.plans, d1.plans);
     expect(d2.planExercises, d1.planExercises);
+    expect(d2.planGroups, d1.planGroups);
+    expect(d2.planGroups, isNotEmpty, reason: 'demo has a superset/rotation');
     expect(d2.sessions, d1.sessions);
     expect(d2.sessionExercises, d1.sessionExercises);
+    expect(d2.sessionSupersets, d1.sessionSupersets);
+    expect(d2.sessionSupersets, isNotEmpty);
     expect(d2.sets, d1.sets);
     expect(d2.bodyWeights, d1.bodyWeights);
     expect(s2, s1);
