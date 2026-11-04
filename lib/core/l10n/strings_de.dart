@@ -98,7 +98,18 @@ abstract final class S {
 
   // Exercises (settings)
   static const exercisesTitle = 'Übungen';
-  static const exercisesEmpty = 'Noch keine Übungen. Lege deine erste an.';
+  static const exercisesEmpty =
+      'Noch keine Übungen. Lege deine erste an oder füge oben die '
+      'Standardübungen hinzu.';
+  static const addLibrary = 'Standardübungen hinzufügen';
+  static String addLibraryBody(int n) =>
+      '${n == 1 ? '1 Übung' : '$n Übungen'} aus der mitgelieferten Bibliothek '
+      'fehlen noch. Deine eigenen Übungen bleiben unverändert.';
+  static const addLibraryConfirm = 'Hinzufügen';
+  static const libraryComplete =
+      'Alle Standardübungen sind schon vorhanden (auch archivierte zählen).';
+  static String libraryAdded(int n) =>
+      n == 1 ? '1 Übung hinzugefügt.' : '$n Übungen hinzugefügt.';
   static const exercisesNoMatch = 'Keine Übung passt zur Suche.';
   static const allCategories = 'Alle';
   static const newExercise = 'Neue Übung';
@@ -194,7 +205,9 @@ abstract final class S {
   static const recentlyUsed = 'Zuletzt verwendet';
   static const alreadyAdded = 'Bereits enthalten';
   static const createExercise = 'Neue Übung anlegen';
-  static const pickerEmpty = 'Noch keine Übungen in der Bibliothek.';
+  static const pickerEmpty =
+      'Noch keine Übungen in der Bibliothek. Lege eine an oder füge in den '
+      'Einstellungen bei „Übungen“ die Standardübungen hinzu.';
 
   // Active session (SPEC §6.2)
   static const finishTraining = 'Beenden';

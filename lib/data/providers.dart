@@ -20,7 +20,7 @@ import 'repositories/stats_repository.dart';
 
 /// The app database. Tests override this with an in-memory database.
 final databaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase.open();
+  final db = AppDatabase.open(clock: ref.watch(clockProvider));
   ref.onDispose(db.close);
   return db;
 });

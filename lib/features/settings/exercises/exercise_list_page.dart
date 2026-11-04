@@ -7,8 +7,10 @@ import '../../../core/router.dart';
 import '../../../data/providers.dart';
 import '../../../domain/models/models.dart';
 import '../../../domain/names.dart';
+import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/exercise_type_icon.dart';
+import '../../../widgets/snackbars.dart';
 import 'exercise_form_page.dart';
 
 /// Whether [exercise] matches a search [query] (case and umlauts ignored).
@@ -44,6 +46,11 @@ class _ExerciseListPageState extends ConsumerState<ExerciseListPage> {
       appBar: AppBar(
         title: const Text(S.exercisesTitle),
         actions: [
+          IconButton(
+            tooltip: S.addLibrary,
+            icon: const Icon(Icons.library_add_outlined),
+            onPressed: _addLibrary,
+          ),
           IconButton(
             tooltip: S.openArchive,
             icon: Badge(
@@ -127,5 +134,29 @@ class _ExerciseListPageState extends ConsumerState<ExerciseListPage> {
         ],
       ),
     );
+  }
+
+  /// Adds the missing exercises of the built-in library after asking.
+  Future<void> _addLibrary() async {
+    final repo = ref.read(exerciseRepositoryProvider);
+    try {
+      final missing = await repo.missingLibraryCount();
+      if (!mounted) return;
+      if (missing == 0) {
+        showMessage(context, S.libraryComplete);
+        return;
+      }
+      final ok = await showConfirmDialog(
+        context,
+        title: S.addLibrary,
+        body: S.addLibraryBody(missing),
+        confirmLabel: S.addLibraryConfirm,
+      );
+      if (!ok) return;
+      final added = await repo.addLibrary();
+      if (mounted) showMessage(context, S.libraryAdded(added));
+    } on Object catch (e) {
+      if (mounted) showError(context, e);
+    }
   }
 }

@@ -9,6 +9,7 @@ STATUS: FINISHED
 Version 1.0.0 (Meilenstein M10)
 STATUS: IN PROGRESS
     - Wie definiert im SPEC.md
+    - Initiale library von Übungen. Erstelle eine Liste von Übungen die schon vorher eingerichtet sind ohne, dass man jede übung einzeln erstellen muss. Erstelle alle klassischen Übungen die man im Fitnessstudio an geräten machen kann. Erstelle auch einige Übungen mit Eigengewicht und Zeitübungen wie Plank usw. Orne in die korrekten Kategorien ein.
 Version 1.1.0 (Notifications)
 STATUS: PLANNED
     - Notifications for training sessions, reminders, and progress updates.

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../../domain/exercise_library.dart';
 import '../../../domain/models/models.dart';
 import '../database.dart';
 import '../tables.dart';
@@ -35,6 +36,31 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
 
   Future<int> insertExercise(ExercisesCompanion row) =>
       into(exercises).insert(row);
+
+  /// Inserts the library exercises whose names are not taken yet
+  /// (archived exercises count as taken) and returns how many. [createdAt]
+  /// in UTC; the caller provides the transaction.
+  Future<int> addMissingLibraryExercises(DateTime createdAt) async {
+    final missing = missingLibraryExercises(
+      (await getAll()).map((e) => e.name),
+    );
+    await batch(
+      (b) => b.insertAll(exercises, [
+        for (final d in missing)
+          ExercisesCompanion.insert(
+            name: d.name,
+            type: d.type,
+            category: Value(d.category),
+            incrementKg: Value(d.incrementKg),
+            restSec: Value(d.restSec),
+            includeInStrengthIndex: d.includeInStrengthIndex,
+            notes: Value(d.notes),
+            createdAt: createdAt,
+          ),
+      ]),
+    );
+    return missing.length;
+  }
 
   Future<void> updateExercise(Exercise exercise) =>
       update(exercises).replace(exercise.toInsertable());

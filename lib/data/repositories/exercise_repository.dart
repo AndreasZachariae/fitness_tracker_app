@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../core/clock.dart';
+import '../../domain/exercise_library.dart';
 import '../../domain/models/models.dart';
 import '../../domain/names.dart';
 import '../db/database.dart';
@@ -72,6 +73,18 @@ class ExerciseRepository {
       ),
     );
   });
+
+  /// Number of library exercises that [addLibrary] would add.
+  Future<int> missingLibraryCount() async => missingLibraryExercises(
+    (await _db.exercisesDao.getAll()).map((e) => e.name),
+  ).length;
+
+  /// Adds the library exercises whose names are not taken yet; existing
+  /// exercises stay unchanged. Returns how many were added.
+  Future<int> addLibrary() => _db.transaction(
+    () =>
+        _db.exercisesDao.addMissingLibraryExercises(storageTime(_clock.now())),
+  );
 
   /// Saves changed fields of an existing exercise.
   Future<void> update(Exercise exercise) => _db.transaction(() async {

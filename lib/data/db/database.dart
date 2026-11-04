@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../../core/clock.dart';
 import '../../domain/models/models.dart';
 import 'converters.dart';
 import 'daos/body_weight_dao.dart';
@@ -9,6 +10,7 @@ import 'daos/plans_dao.dart';
 import 'daos/sessions_dao.dart';
 import 'daos/settings_dao.dart';
 import 'database.steps.dart';
+import 'storage_time.dart';
 import 'tables.dart';
 
 part 'database.g.dart';
@@ -30,11 +32,17 @@ part 'database.g.dart';
   daos: [ExercisesDao, PlansDao, SessionsDao, BodyWeightDao, SettingsDao],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase(super.executor);
+  /// With [libraryClock] a newly created database starts with the exercise
+  /// library (v1.0.0); without it (tests) the database starts empty.
+  AppDatabase(super.executor, {this.libraryClock});
 
   /// Opens the database file of the app (in the app documents directory,
   /// separate per package, so the DEV app has its own data).
-  factory AppDatabase.open() => AppDatabase(driftDatabase(name: 'gymlog'));
+  factory AppDatabase.open({required Clock clock}) =>
+      AppDatabase(driftDatabase(name: 'gymlog'), libraryClock: clock);
+
+  /// Clock for the creation time of the library exercises.
+  final Clock? libraryClock;
 
   /// Current schema version. Changes only via migration (CLAUDE.md, rule 4).
   static const currentSchemaVersion = 2;
@@ -47,6 +55,11 @@ class AppDatabase extends _$AppDatabase {
     onCreate: (m) async {
       await m.createAll();
       await into(appSettingsTable).insert(AppSettings.defaults.toInsertable());
+      // Only on the very first start; existing databases are never changed
+      // (Settings → Übungen can add the library later).
+      if (libraryClock case final clock?) {
+        await exercisesDao.addMissingLibraryExercises(storageTime(clock.now()));
+      }
     },
     // Only additive steps (CLAUDE.md, rule 4); each step has a data
     // integrity test in test/data/db/migrations/gymlog/.

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gymlog/domain/exercise_library.dart';
 
 /// Code points of a TrueType font (cmap formats 4 and 12).
 Set<int> _codePoints(String path) {
@@ -43,13 +44,16 @@ Set<int> _codePoints(String path) {
   return result;
 }
 
-/// Every character of the UI texts must exist in the bundled fonts, or it
-/// shows as a box (M9: "→" was missing in Barlow).
+/// Every character of the UI texts and of the built-in exercise names must
+/// exist in the bundled fonts, or it shows as a box (M9: "→" was missing in
+/// Barlow).
 void main() {
-  final text = File('lib/core/l10n/strings_de.dart')
-      .readAsLinesSync()
-      .where((l) => !l.trimLeft().startsWith('//'))
-      .join('\n');
+  final text = [
+    ...File('lib/core/l10n/strings_de.dart')
+        .readAsLinesSync()
+        .where((l) => !l.trimLeft().startsWith('//')),
+    for (final e in exerciseLibrary) e.name,
+  ].join('\n');
   final used = {
     for (final r in text.runes)
       if (r > 127) r,
@@ -61,7 +65,7 @@ void main() {
     'Barlow-Bold.ttf',
     'BarlowSemiCondensed-SemiBold.ttf',
   ]) {
-    test('$font has every character of strings_de.dart', () {
+    test('$font has every character of the texts', () {
       final available = _codePoints('assets/fonts/$font');
       final missing = [
         for (final r in used)

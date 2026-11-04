@@ -169,7 +169,7 @@ void main() {
               dataset: dataset,
               settings: AppSettings.defaults,
               schemaVersion: AppDatabase.currentSchemaVersion,
-              appVersion: '1.0.0+11',
+              appVersion: '1.0.0+12',
               exportedAt: testNow,
             ),
           ),

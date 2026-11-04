@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/core/l10n/strings_de.dart';
 import 'package:gymlog/data/db/database.dart';
+import 'package:gymlog/domain/exercise_library.dart';
 import 'package:gymlog/domain/models/models.dart';
 
 import '../../helpers/pump_app.dart';
@@ -72,6 +73,51 @@ void main() {
       await tester.tap(find.text(S.allCategories));
       await tester.pumpAndSettle();
       expect(find.text('Bankdrücken'), findsOneWidget);
+      await disposeApp(tester, db);
+    });
+
+    testWidgets('adds the built-in library once', (tester) async {
+      await dbWork(
+        tester,
+        () => addExercise(
+          r,
+          'Bankdrücken',
+          ExerciseType.bodyweight,
+          ExerciseCategory.other,
+        ),
+      );
+      await openSettings(tester, S.settingsExercises);
+      await tester.tap(find.byTooltip(S.addLibrary));
+      await settle(tester);
+      final missing = exerciseLibrary.length - 1;
+      expect(find.text(S.addLibraryBody(missing)), findsOneWidget);
+      await tester.tap(find.text(S.addLibraryConfirm));
+      await settle(tester);
+      expect(find.text(S.libraryAdded(missing)), findsOneWidget);
+      expect(find.text('Abduktoren (Maschine)'), findsOneWidget);
+      final all = await dbWork(tester, () => db.exercisesDao.getAll());
+      expect(all, hasLength(exerciseLibrary.length));
+      expect(
+        all.singleWhere((e) => e.name == 'Bankdrücken').type,
+        ExerciseType.bodyweight,
+        reason: 'own exercise unchanged',
+      );
+
+      await tester.tap(find.byTooltip(S.addLibrary));
+      await settle(tester);
+      expect(find.text(S.libraryComplete), findsOneWidget);
+      expect(find.text(S.addLibraryConfirm), findsNothing);
+      await disposeApp(tester, db);
+    });
+
+    testWidgets('cancelling the library dialog adds nothing', (tester) async {
+      await openSettings(tester, S.settingsExercises);
+      expect(find.text(S.exercisesEmpty), findsOneWidget);
+      await tester.tap(find.byTooltip(S.addLibrary));
+      await settle(tester);
+      await tester.tap(find.text(S.cancel));
+      await settle(tester);
+      expect(find.text(S.exercisesEmpty), findsOneWidget);
       await disposeApp(tester, db);
     });
 

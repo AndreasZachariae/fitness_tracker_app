@@ -121,6 +121,9 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         (debug/profile-Ressourcen), Generator `tool/icons/generate_launcher_icons_test.dart`
   - [x] Performance-Check mit 1 Jahr Demo-Daten (`test/data/performance_test.dart`, Messwerte unter „Annahmen“)
   - [x] Gesamt-Testliste fürs Handy, Version 1.0.0+11
+  - [x] Nachtrag aus `docs/ROADMAP.md` (1.0.0+12): mitgelieferte Übungsbibliothek mit 94 Übungen (Geräte, Kabel,
+        Lang-/Kurzhantel, Eigengewicht, Zeitübungen, Ausdauergeräte) in allen acht Kategorien; neue Datenbank startet
+        damit, Einstellungen → Übungen → „Standardübungen hinzufügen“ ergänzt fehlende; Tests
 
 ## Annahmen
 
@@ -414,6 +417,21 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   geöffnet war (Tabs bleiben erhalten) – mit ~40 ms unkritisch, sonst wäre das der erste Hebel.
 - **M10 Leerzustände:** Neu „Noch keine Übungen in diesem Training …“ (leeres freies Training) und „Dieses Training
   enthält keine Übungen mehr.“ (Verlaufsdetail); alle übrigen bestanden schon und sind jetzt gemeinsam getestet.
+- **1.0.0 Übungsbibliothek:** Die Liste steht als reines Dart in `lib/domain/exercise_library.dart` (Daten, keine
+  UI-Texte, daher nicht in `strings_de.dart`; der Schriftzeichen-Test prüft die Namen mit). Nur eine **neu angelegte**
+  Datenbank startet damit (`onCreate`); eine bestehende wird beim Öffnen nie verändert – also auch nicht die DEV-App
+  auf dem Handy. Dafür gibt es in Einstellungen → Übungen das Symbol „Standardübungen hinzufügen“: fügt nur Übungen
+  hinzu, deren Name noch nicht vergeben ist (Groß-/Kleinschreibung egal, archivierte zählen mit), eigene Übungen
+  bleiben unverändert. Keine Schemaänderung, keine Migration. „Alle Daten löschen“ (DEV) leert auch die Bibliothek,
+  „Backup wiederherstellen“ und „Demo-Daten erzeugen“ ersetzen sie wie bisher vollständig.
+- **1.0.0 Bibliotheksinhalt:** Namen so, wie man sie im deutschen Studio sagt (teils englisch: „Hip Thrust“, „Face
+  Pulls“), Gerät in Klammern, wo es mehrere Varianten gibt. Kategorien: Kreuzheben → Rücken, Rumänisches Kreuzheben,
+  Hip Thrust und Kickbacks → Beine, Dips → Brust (Bankdips/Trizeps-Dips → Arme), Face Pulls/Reverse Butterfly →
+  Schultern, Shrugs → Rücken, Ausdauergeräte (Laufband, Crosstrainer, Ergometer, Rudergerät, Stepper, Seilspringen)
+  als Zeitübungen → Sonstiges. Unterstützte Klimmzüge/Dips am Gerät sind keine eigene Übung: Körpergewicht-Übung mit
+  negativem Zusatzgewicht. Gewichtsschritte: Langhantel/SZ 2,5 kg, Kurzhantel 2 kg, Maschine 5 kg, Kabel 2,5 kg,
+  Kettlebell 4 kg (je Übung änderbar). Keine eigene Pause, keine Notizen; Kraftindex nach Standardregel (Zeitübungen
+  nicht). Ungenutzte Übungen beeinflussen Statistik und Kraftindex nicht.
 
 ## Datenbank-Migrationen (ab Schema 2)
 
@@ -453,6 +471,9 @@ Daten (keine Migration nötig); sie wird erst nach bestandener Liste installiert
   Training starten → Hinweis, „Beenden“ → „Keine Sätze erfasst. Training verwerfen?“.
 - [ ] Einstellungen → Übungen/Archiv/Pläne leer mit Hinweis; „+ Übung hinzufügen“ → „Noch keine Übungen …“ + „Neue
   Übung anlegen“.
+- [ ] Einstellungen → Übungen → Symbol „Standardübungen hinzufügen“ (oben, neben dem Archiv) → „94 Übungen …“ →
+  „Hinzufügen“: Liste gefüllt, Kategorie-Filter zeigen jeweils passende Übungen; erneut antippen → „Alle
+  Standardübungen sind schon vorhanden“.
 
 **Mit Demo-Daten** („Demo-Daten erzeugen“)
 - [ ] Pläne: Chips ohne Haken, sofortiger Wechsel; Reihenfolge ziehen, wischen + Rückgängig, „Im Plan bearbeiten“,
@@ -477,11 +498,24 @@ Daten (keine Migration nötig); sie wird erst nach bestandener Liste installiert
 - [ ] CSV exportieren (Teilen und „Speichern unter …“), Backup erstellen → „Letztes Backup“, „Alle Daten löschen“ →
   Backup wiederherstellen (Vorschau) → alles inkl. Supersets/Rotationen zurück; fremde Datei → Meldung, nichts ändert
   sich; während eines Trainings gesperrt.
-- [ ] „Über“: Version 1.0.0, Build 11, Schemaversion 2, Lizenzen.
+- [ ] „Über“: Version 1.0.0, Build 12, Schemaversion 2, Lizenzen.
 
 **Erste Installation der Release-App** (nach bestandener Liste, durch dich mit `scripts/install-release.sh`)
-- [ ] Icon blau „GymLog“ neben „GymLog DEV“; Start ohne Daten; Einstellungen ohne Entwickler-Bereich; „Über“ zeigt
+- [ ] Icon blau „GymLog“ neben „GymLog DEV“; Start ohne Trainings und Pläne, aber mit den 94 Standardübungen
+  (Einstellungen → Übungen, „+ Übung hinzufügen“); Einstellungen ohne Entwickler-Bereich; „Über“ zeigt
   Version 1.0.0. Ein Backup aus der DEV-App lässt sich hier wiederherstellen (z. B. selbst angelegte Übungen/Pläne).
+
+### 1.0.0 Übungsbibliothek (Nachtrag)
+Die DEV-App hat schon eine Datenbank und bekommt die Bibliothek deshalb nicht automatisch.
+- [ ] Mit deinen bisherigen DEV-Daten: Einstellungen → Übungen → „Standardübungen hinzufügen“ → Dialog nennt die Zahl
+  der fehlenden Übungen → „Hinzufügen“ → Snackbar „… Übungen hinzugefügt.“; eigene Übungen mit gleichem Namen
+  (z. B. „Bankdrücken“) sind nicht doppelt und unverändert; archivierte tauchen nicht wieder auf.
+- [ ] Kategorien durchklicken (Brust … Sonstiges): Zuordnung und Typ-Symbol (Gewicht/Körpergewicht/Uhr) passen; fehlt
+  dir eine Übung oder heißt sie im Studio anders, einfach melden oder selbst umbenennen.
+- [ ] „+ Übung hinzufügen“ im Plan: Suche „curl“ findet alle Curl-Varianten; „Plank“ startet mit Stoppuhr,
+  „Laufband“ ebenso.
+- [ ] Eine Standardübung bearbeiten (z. B. Gewichtsschritt 1,25 kg) und eine ungenutzte löschen → „Standardübungen
+  hinzufügen“ bietet genau diese eine wieder an.
 
 ### M10 Feinschliff
 - [ ] Siehe Gesamt-Testliste; zusätzlich gezielt: Start hell/dunkel, beide Icons, Systemschrift auf Maximum
