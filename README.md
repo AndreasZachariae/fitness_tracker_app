@@ -1,197 +1,173 @@
 # GymLog
 
-Deine private Trainings-App für Android: Pläne abarbeiten, Sätze erfassen, Fortschritt sehen, Daten exportieren.
-Alles bleibt auf deinem Handy. Entwickelt wird mit Flutter, komplett in einem Docker-Container, umgesetzt von Claude Code.
+Private Android-App fürs Krafttraining: Pläne, Sätze, Pausentimer, Statistik, Körpergewicht, Backup.
+Alles bleibt auf dem Handy, ohne Konto und ohne Internet. Entwickelt wird mit Flutter in einem Docker-Container
+zusammen mit Claude Code.
 
-Diese Anleitung setzt keine Android-Erfahrung voraus.
+| | |
+|---|---|
+| **GymLog** (blaues Icon) | die echte App fürs Studio, Paket `de.gymlog.app` |
+| **GymLog DEV** (gelbes Icon) | Entwicklungsversion zum Ausprobieren, eigene Daten, Paket `de.gymlog.app.dev` |
+| `docs/ROADMAP.md` | deine Ideen für neue Versionen |
+| `docs/SPEC.md` | Spezifikation der App (Stand 1.0) |
+| `docs/PROGRESS.md` | Annahmen, Entscheidungen, Testlisten fürs Handy |
+| `CLAUDE.md` | Regeln für Claude Code |
 
 ---
 
-## Überblick: Was passiert hier?
+## Einmalige Einrichtung
 
-- Auf deinem **PC** läuft ein Docker-Container mit allem, was man zum Bauen der App braucht (Flutter, Android SDK, Java, adb,
-  Claude Code). Auf dem PC selbst installierst du nur Docker.
-- **Claude Code** schreibt die App im Container, Meilenstein für Meilenstein, nach `CLAUDE.md` und `docs/SPEC.md`.
-- Dein **Handy** verbindet sich per WLAN mit dem Container. Darauf gibt es zwei Apps:
-  - **GymLog DEV** – die Entwicklungsversion zum Ausprobieren, mit eigenen Testdaten.
-  - **GymLog** – die echte App fürs Studio mit deinen echten Daten.
-- Die installierte App braucht danach weder PC noch WLAN.
-
-## 1. Voraussetzungen
-
-- PC mit **x86_64-Prozessor** (Intel/AMD) und ca. **20 GB freiem Speicher**. Apple-Silicon-Macs werden vom verwendeten Image nicht unterstützt.
-- **Docker:** unter Linux Docker Engine mit Compose-Plugin, unter Windows/macOS Docker Desktop.
-  Unter Windows den Projektordner **im WSL2-Dateisystem** ablegen (z. B. `~/gymlog` in Ubuntu-WSL), nicht unter `C:\` – das ist
-  deutlich schneller und vermeidet Rechteprobleme. Alle Befehle dann im WSL-Terminal.
-- **Android-Handy mit Android 11 oder neuer**, im selben WLAN wie der PC.
-- Ein **Claude-Abo mit Claude Code** (Pro, Max, Team oder Enterprise) oder ein Console-Konto.
-- Empfohlen: `git` auf dem PC, damit du jede Änderung nachvollziehen kannst.
-
-## 2. Projekt einrichten (auf dem PC)
+**Voraussetzungen:** PC mit Intel/AMD-Prozessor und Docker (Linux: Docker Engine + Compose, Windows/macOS: Docker
+Desktop; unter Windows das Projekt im WSL2-Dateisystem ablegen und alle Befehle im WSL-Terminal ausführen),
+Android-Handy (Android 11+), Claude-Abo mit Claude Code.
 
 ```bash
-cd gymlog
-git init                      # empfohlen: Claude Code committet nach jedem Meilenstein
-./scripts/setup-host.sh       # legt .secrets/ an, unter Linux/WSL zusätzlich .env mit deiner User-ID
+# auf dem PC, im Projektordner
+./scripts/host-setup.sh            # legt .secrets/ und (Linux) .env mit deiner User-ID an
+docker compose up -d --build       # beim ersten Mal 10–30 min
+docker compose exec dev bash       # in den Container; alle weiteren Befehle laufen dort in /workspace
 ```
 
-Falls „Permission denied“ erscheint: `chmod +x scripts/*.sh` und nochmal.
-
-## 3. Container bauen und starten
+### Signaturschlüssel – wichtig
 
 ```bash
-docker compose up -d --build
+./scripts/create-keystore.sh       # einmalig, im Container
 ```
 
-Beim ersten Mal lädt Docker mehrere GB und baut das Image – je nach Leitung 10–30 Minuten.
-Unter Linux mit einer User-ID ungleich 1001 wird das Image einmalig noch größer, weil die SDKs auf deinen User umgeschrieben werden.
+Android aktualisiert eine App nur, wenn das Update mit **demselben Schlüssel** signiert ist. Ohne diesen Schlüssel
+lässt sich GymLog nur noch per Deinstallieren ersetzen, und **Deinstallieren löscht alle Trainingsdaten**.
 
-In den Container wechseln:
+- Den Ordner **`.secrets/` sofort an einem zweiten Ort sichern** (USB-Stick, Passwort-Manager). Er ist absichtlich
+  nicht in git.
+- Das Skript überschreibt einen vorhandenen Schlüssel nie. Keinen neuen erzeugen, sobald die App installiert ist.
+
+### Handy vorbereiten
+
+1. Einstellungen → Über das Telefon → 7× auf **Build-Nummer** tippen (schaltet die Entwickleroptionen frei).
+2. Einstellungen → System → **Entwickleroptionen** → **USB-Debugging** (für Kabel) bzw. **Kabelloses Debugging**
+   (für WLAN) einschalten.
+
+### Nur für USB, nur Linux-PC
 
 ```bash
-docker compose exec dev bash
+./scripts/host-setup-usb.sh        # auf dem PC (nicht im Container), fragt nach dem sudo-Passwort
 ```
 
-Du bist jetzt im Ordner `/workspace` – das ist dein Projektordner. Alles, was dort entsteht, siehst du auch auf dem PC.
-Test: `flutter --version` und `claude --version` sollten Versionsnummern ausgeben.
+Danach Kabel ab- und wieder anstecken und `docker compose up -d`. Unter Windows/macOS geht nur WLAN; dann in
+`docker-compose.yml` die Zeile `/dev/bus/usb…` und den Block `device_cgroup_rules` auskommentieren.
 
-**Alternative mit VS Code:** Erweiterung „Dev Containers“ installieren, Projektordner öffnen, „Reopen in Container“ wählen.
-Das Terminal in VS Code läuft dann automatisch im Container.
+---
 
-## 4. Signaturschlüssel erzeugen (einmalig, im Container)
+## Weiterentwickeln (jedes Mal)
 
 ```bash
-./scripts/create-keystore.sh
+docker compose up -d               # auf dem PC: Container starten
+docker compose exec dev bash       # in den Container
+claude --continue                  # Claude Code mit dem letzten Gespräch fortsetzen (oder nur: claude)
 ```
 
-Warum: Android installiert ein Update nur, wenn es mit **demselben Schlüssel** signiert ist wie die installierte App.
-Geht der Schlüssel verloren, kannst du die App nicht mehr aktualisieren, ohne sie zu deinstallieren – und Deinstallieren löscht alle Daten.
-
-**Sichere jetzt den Ordner `.secrets/`** (USB-Stick, Passwort-Manager, verschlüsseltes Cloud-Backup). Er wird absichtlich nicht in git aufgenommen.
-
-## 5. Claude Code starten (im Container)
+### Handy verbinden – Option A: USB-Kabel (Linux)
 
 ```bash
-claude
+./scripts/phone-connect-usb.sh
 ```
 
-Beim ersten Start meldest du dich an: Claude Code zeigt einen Link. Öffne ihn im Browser auf dem PC, melde dich an.
-Wird die Anmeldung nicht automatisch übernommen, kopiere den angezeigten Code und füge ihn im Terminal ein.
-Der Login bleibt im Docker-Volume gespeichert. Den Ordner bestätigst du beim ersten Start als vertrauenswürdig – erst dann gelten
-die vorbereiteten Freigaben aus `.claude/settings.json`.
+Handy entsperren und „USB-Debugging zulassen?“ bestätigen. Das Skript erklärt bei Problemen, was fehlt.
 
-Erster Auftrag:
-
-```
-Lies CLAUDE.md, docs/SPEC.md und docs/PROGRESS.md. Setze Meilenstein M0 um.
-```
-
-Claude Code stoppt nach jedem Meilenstein und sagt dir, was du am Handy testen sollst. Danach einfach:
-
-```
-Weiter mit M1.
-```
-
-Tipps:
-- Für große Meilensteine (M3, M7) vorher in den Planmodus wechseln (`Shift+Tab`), den Plan prüfen, dann umsetzen lassen.
-- `docs/PROGRESS.md` zeigt jederzeit den Stand, die getroffenen Annahmen und die Testlisten.
-- Änderungswünsche an der App: zuerst in `docs/SPEC.md` eintragen (oder Claude bitten, das zu tun), dann umsetzen lassen.
-
-## 6. Handy vorbereiten (einmalig)
-
-**Entwickleroptionen freischalten**
-1. Einstellungen → **Über das Telefon** → siebenmal auf **Build-Nummer** tippen.
-   Bei Samsung: Einstellungen → Telefoninfo → Softwareinformationen → Buildnummer.
-2. Ggf. PIN eingeben. Es erscheint „Sie sind jetzt Entwickler“.
-
-**Kabelloses Debugging einschalten**
-1. Einstellungen → System → **Entwickleroptionen** (bei Samsung direkt unter Einstellungen, ganz unten).
-2. **Kabelloses Debugging** einschalten (je nach Hersteller auch „Debugging über WLAN“ oder „Wireless debugging“) und das
-   aktuelle WLAN bestätigen.
-3. Auf den Namen des Eintrags tippen (nicht nur auf den Schalter) – dieser Bildschirm zeigt **IP-Adresse und Port**.
-
-## 7. Handy mit dem Container verbinden
-
-Im Container:
+### Handy verbinden – Option B: WLAN
 
 ```bash
-./scripts/connect-phone.sh
+./scripts/phone-connect-wifi.sh
 ```
 
-- Beim ersten Mal „j“ für Koppeln wählen. Auf dem Handy **„Gerät über Kopplungscode koppeln“** (Wortlaut kann abweichen) antippen und die dort angezeigte
-  IP:Port und den sechsstelligen Code eingeben.
-- Danach fragt das Skript nach IP:Port vom **Hauptbildschirm** „Kabelloses Debugging“. Achtung: Das ist ein **anderer Port** als
-  beim Koppeln.
-- Erfolg: Die Liste am Ende zeigt dein Gerät mit `device`.
+Handy und PC im selben WLAN, auf dem Handy „Kabelloses Debugging“ öffnen. Beim ersten Mal koppeln: „Gerät über
+Kopplungscode koppeln“, IP:Port und Code eingeben. Danach IP:Port vom **Hauptbildschirm** „Kabelloses Debugging“
+eingeben (ein anderer Port als beim Koppeln). Nach Neustart von Handy oder Container nur noch verbinden.
 
-Koppeln ist nur einmal nötig. Nach einem Neustart des Handys oder des Containers ändert sich der Port – dann nur das Skript erneut
-ausführen und das Koppeln überspringen.
+Kontrolle in beiden Fällen: `adb devices` zeigt das Gerät mit `device`.
 
-**Linux-Alternative per USB-Kabel:** In `docker-compose.yml` den `devices`-Block einkommentieren, Container neu starten
-(`docker compose up -d`), auf dem Handy „USB-Debugging“ aktivieren und die Abfrage bestätigen.
-
-## 8. Entwickeln mit Live-Vorschau (DEV-App)
+### DEV-App aufs Handy
 
 ```bash
-flutter run
+./scripts/install-dev.sh           # bauen, installieren, starten
+flutter run                        # alternativ mit Live-Vorschau: r = neu laden, R = neu starten, q = beenden
 ```
 
-Installiert **GymLog DEV** und startet sie. Im Terminal:
-`r` = Änderungen sofort übernehmen (Hot Reload), `R` = App neu starten, `q` = beenden.
-Die DEV-App hat eigene Daten. Probier darin alles aus – auch „Demo-Daten erzeugen“ in den Einstellungen.
+In der DEV-App gibt es unter Einstellungen → „Entwicklung (nur GymLog DEV)“ „Demo-Daten erzeugen“ und „Alle Daten löschen“.
 
-Claude Code kann die DEV-App selbst installieren und Screenshots ansehen, solange das Handy verbunden ist.
+### Neue Funktionen: über `docs/ROADMAP.md`
 
-## 9. Die echte App installieren und aktualisieren
+1. Ideen unter einer Versionsnummer in `docs/ROADMAP.md` eintragen, Status `PLANNED`.
+2. Claude Code beauftragen, zum Beispiel:
+   ```
+   Lies docs/ROADMAP.md. Setze jetzt Version 1.1.0 um.
+   ```
+3. Claude Code plant, setzt mit Tests um, committet und schreibt eine Testliste fürs Handy in `docs/PROGRESS.md`.
+4. Testliste am Handy mit der DEV-App abarbeiten; danach steht die Version in der Roadmap auf `FINISHED`.
+
+Ohne diesen Auftrag setzt Claude Code nichts aus der Roadmap um.
+
+### Container stoppen
 
 ```bash
-./scripts/install-release.sh
+docker compose down                # auf dem PC; NICHT "down -v" (löscht Claude-Login, Gesprächsverlauf und Caches)
 ```
 
-Installiert bzw. aktualisiert **GymLog**. Deine Trainingsdaten bleiben bei Updates erhalten.
-Beim ersten Mal fragt Google Play Protect evtl., ob die App gescannt werden soll – bestätigen.
+---
 
-**Ohne Debug-Verbindung** (z. B. für ein zweites Gerät):
+## Die echte App (GymLog)
+
+### Aufs eigene Handy installieren oder aktualisieren
 
 ```bash
-flutter build apk --release
+./scripts/install-release.sh       # Handy vorher verbinden (USB oder WLAN)
 ```
 
-Die Datei `build/app/outputs/flutter-apk/app-release.apk` per Kabel, Cloud oder Mail aufs Handy bringen, in der Dateien-App antippen
-und **„Aus dieser Quelle zulassen“** erlauben. Warnt Play Protect vor einem unbekannten Entwickler: Das bist du –
-„Trotzdem installieren“ (Wortlaut je nach Hersteller).
+Updates behalten alle Daten. Dieses Skript führst du selbst aus, Claude Code darf es nicht.
 
-## 10. Deine Daten schützen
+### APK-Datei zum Weitergeben oder ohne Verbindung installieren
 
-- **Niemals die App GymLog deinstallieren** und nie „Speicher löschen“ in den App-Einstellungen – das löscht alle Trainings.
-- In der App unter Einstellungen → Daten regelmäßig **„Backup erstellen“** und die Datei in Drive, Nextcloud o. Ä. sichern.
-  Die App erinnert dich, wenn das letzte Backup zu alt ist.
-- Für Auswertungen am PC: **„CSV exportieren“** liefert ein ZIP mit `sets.csv`, `sessions.csv`, `body_weight.csv`, `exercises.csv`
-  (Komma-getrennt, Dezimalpunkt; in Python direkt mit `pandas.read_csv`, in Excel über Daten → Aus Text/CSV).
-- Den Ordner `.secrets/` (Signaturschlüssel) separat sichern.
+```bash
+./scripts/build-release-apk.sh     # erzeugt dist/gymlog-<version>.apk
+```
+
+Datei per Kabel, Cloud oder Mail aufs Handy bringen, in der Dateien-App antippen und „Aus dieser Quelle zulassen“
+erlauben. Warnt Play Protect vor einem unbekannten Entwickler: „Trotzdem installieren“. Ein Update über eine neuere
+APK-Datei funktioniert genauso und behält die Daten (gleicher Schlüssel).
+
+### Daten schützen
+
+- **GymLog nie deinstallieren** und nie „Speicher löschen“; das löscht alle Trainings.
+- In der App unter Einstellungen → Daten regelmäßig **„Backup erstellen“** und die Datei extern sichern. Die App erinnert
+  dich daran. „Backup wiederherstellen“ spielt es wieder ein (auch auf einem neuen Handy).
+- „CSV exportieren“ liefert ein ZIP mit Tabellen für Excel oder Python.
+- `.secrets/` (Signaturschlüssel) separat sichern, siehe oben.
+
+---
+
+## Alle Skripte
+
+| Skript | Wo | Wozu |
+|---|---|---|
+| `scripts/host-setup.sh` | PC | einmalig: `.secrets/` und `.env` anlegen |
+| `scripts/host-setup-usb.sh` | PC (Linux) | einmalig: USB-Zugriff für den Container erlauben |
+| `scripts/create-keystore.sh` | Container | einmalig: Signaturschlüssel erzeugen |
+| `scripts/phone-connect-usb.sh` | Container | Handy per USB verbinden |
+| `scripts/phone-connect-wifi.sh` | Container | Handy per WLAN koppeln/verbinden |
+| `scripts/install-dev.sh` | Container | DEV-App bauen, installieren, starten |
+| `scripts/install-release.sh` | Container | echte App installieren/aktualisieren |
+| `scripts/build-release-apk.sh` | Container | echte App als APK-Datei nach `dist/` |
+| `scripts/check.sh` | Container | Formatierung, Analyse, alle Tests |
+| `scripts/screenshot.sh` | Container | Screenshot vom Handy nach `build/screenshots/` |
 
 ## Probleme
 
 | Problem | Lösung |
 |---|---|
-| `adb devices` zeigt nichts | Kabelloses Debugging auf dem Handy noch an? Gleiches WLAN? `./scripts/connect-phone.sh` erneut ausführen. |
-| Gerät steht auf `unauthorized` | Handy entsperren und die Abfrage bestätigen; ggf. neu koppeln. |
-| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | Die installierte App hat einen anderen Signaturschlüssel. **Nicht deinstallieren.** Erst in der App ein Backup erstellen und sichern. Dann deinstallieren, neu installieren, Backup wiederherstellen. |
-| Dateien im Projekt gehören plötzlich „1001“ oder root (Linux) | `.env` fehlt oder ist falsch: `./scripts/setup-host.sh`, dann `docker compose build --no-cache && docker compose up -d`. |
-| „Permission denied“ in Caches nach Änderung von `.env` | Die Volumes gehören noch der alten User-ID: `docker compose down -v` (löscht Caches und Claude-Login, nicht deine App-Daten und nicht `.secrets/`), dann neu bauen. |
-| Erster Build dauert sehr lange | Normal; Gradle lädt beim ersten Mal viele Abhängigkeiten. Danach liegen sie im Volume. |
-| Skripte laufen unter Windows nicht (`\r`-Fehler) | Zeilenenden sind CRLF geworden. Projekt im WSL-Dateisystem ablegen; `.gitattributes` erzwingt LF bei git-Checkouts. |
-
-## Projektstruktur
-
-```
-CLAUDE.md                 Regeln und Arbeitsweise für Claude Code
-docs/SPEC.md              Vollständige Spezifikation der App
-docs/PROGRESS.md          Fortschritt, Annahmen, Testlisten
-docker/Dockerfile         Entwicklungsumgebung
-docker-compose.yml        Container + Volumes
-.devcontainer/            Für VS Code „Reopen in Container“
-.claude/settings.json     Freigaben/Sperren für Claude Code (z. B. kein Zugriff auf .secrets/ und die echte App)
-scripts/                  Hilfsskripte (siehe Kopfzeilen der Dateien)
-.secrets/                 Signaturschlüssel (nicht in git, separat sichern)
-```
+| `adb devices` zeigt nichts | USB: Kabel/Debugging prüfen, `./scripts/phone-connect-usb.sh` erneut. WLAN: gleiches Netz? Kabelloses Debugging noch an? `./scripts/phone-connect-wifi.sh` erneut. |
+| Gerät steht auf `unauthorized` | Handy entsperren und Abfrage bestätigen. |
+| USB und WLAN gleichzeitig verbunden | `install-dev.sh` braucht genau ein Gerät: `adb disconnect` trennt WLAN. |
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | Die installierte App hat einen anderen Schlüssel. **Nicht deinstallieren**, erst in der App ein Backup erstellen und sichern; dann deinstallieren, neu installieren, Backup wiederherstellen. |
+| Dateien gehören plötzlich „1001“ oder root (Linux) | `./scripts/host-setup.sh`, dann `docker compose build --no-cache && docker compose up -d`. |
+| „Permission denied“ in Caches nach Änderung von `.env` | `docker compose down -v` (löscht Caches und Claude-Login, nicht `.secrets/`), dann neu bauen. |
+| Skripte melden `\r`-Fehler (Windows) | Projekt im WSL-Dateisystem ablegen; `.gitattributes` erzwingt LF. |

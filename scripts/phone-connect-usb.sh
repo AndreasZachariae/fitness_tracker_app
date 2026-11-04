@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # IM CONTAINER ausführen. Verbindet das Handy per USB-Kabel mit adb und prüft unterwegs alle typischen Hürden.
-# Voraussetzung (einmalig): scripts/setup-usb-host.sh auf dem Host und die USB-Einträge in docker-compose.yml.
+# Voraussetzung (einmalig): scripts/host-setup-usb.sh auf dem Host und die USB-Einträge in docker-compose.yml.
 # Installiert nichts und berührt keine App.
 set -euo pipefail
 
@@ -40,7 +40,7 @@ for node in "${nodes[@]}"; do
     "Der Container nutzt noch die alte Konfiguration ('devices:' sieht nur Geräte vom Startzeitpunkt)." \
     "Auf dem Host im Projektordner: docker compose up -d   (übernimmt die neue docker-compose.yml)"
   [ -r "$node" ] && [ -w "$node" ] || fail "Keine Zugriffsrechte auf $node ($(stat -c '%U:%G %a' "$node"))." \
-    "Auf dem Host einmalig: ./scripts/setup-usb-host.sh" \
+    "Auf dem Host einmalig: ./scripts/host-setup-usb.sh" \
     "Danach USB-Kabel ab- und wieder anstecken und dieses Skript erneut starten."
 done
 echo "    Zugriffsrechte ok"
@@ -59,7 +59,7 @@ for _ in $(seq 1 30); do
       [ "${asked:-}" ] || echo "    Bitte am Handy 'USB-Debugging zulassen?' bestätigen (Haken bei 'Immer von diesem Computer zulassen')."
       asked=1
       ;;
-    "no permissions"* | no) fail "adb meldet 'no permissions'." "Auf dem Host: ./scripts/setup-usb-host.sh, dann Kabel neu anstecken." ;;
+    "no permissions"* | no) fail "adb meldet 'no permissions'." "Auf dem Host: ./scripts/host-setup-usb.sh, dann Kabel neu anstecken." ;;
   esac
   sleep 1
 done
@@ -73,8 +73,8 @@ adb devices -l
 
 if [ "$(adb devices | awk 'NR>1 && NF>=2' | wc -l)" -gt 1 ]; then
   echo
-  echo "Hinweis: Es sind mehrere Geräte verbunden (USB und WLAN). scripts/dev-install.sh braucht genau eins."
+  echo "Hinweis: Es sind mehrere Geräte verbunden (USB und WLAN). scripts/install-dev.sh braucht genau eins."
   echo "WLAN-Verbindung trennen mit: adb disconnect"
 fi
 echo
-echo "✓ Handy per USB verbunden. Weiter mit ./scripts/dev-install.sh oder flutter run."
+echo "✓ Handy per USB verbunden. Weiter mit ./scripts/install-dev.sh oder flutter run."

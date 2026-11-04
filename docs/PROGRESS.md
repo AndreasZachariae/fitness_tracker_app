@@ -152,7 +152,7 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   Grund, bis Flutter übernimmt. Erledigt in M10.
 - **USB-Debugging im Container:** `/dev/bus/usb` als Bind-Mount plus `device_cgroup_rules: c 189:* rmw` statt `devices:`,
   weil Android sich bei jedem Einstecken mit neuer Gerätenummer anmeldet. Zugriffsrechte über eine udev-Regel auf dem Host
-  (`scripts/setup-usb-host.sh`, Gruppe = Host-GID = Container-GID).
+  (`scripts/host-setup-usb.sh`, Gruppe = Host-GID = Container-GID).
 
 **M1**
 - **Domain-Modelle sind die drift-Zeilen** (`@UseRowClass`, reines Dart in `lib/domain/models`): kein doppeltes Modell,
@@ -193,7 +193,7 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 - **SQLite-Bibliothek:** `sqlite3` 3.x bindet über einen Build-Hook eine vorkompilierte, per SHA-256 geprüfte
   `libsqlite3.so` beim **Build** ein (im APK für arm64/armv7/x86_64 geprüft). Zur Laufzeit wird nichts geladen.
 - `build_runner` 2.17 ignoriert `--delete-conflicting-outputs` (Hinweis beim Lauf); der Befehl aus CLAUDE.md funktioniert trotzdem.
-- `scripts/dev-install.sh` weckt das Display nicht: Bei gesperrtem Handy zeigen Screenshots den Sperrbildschirm und sind
+- `scripts/install-dev.sh` weckt das Display nicht: Bei gesperrtem Handy zeigen Screenshots den Sperrbildschirm und sind
   für die Prüfung unbrauchbar. Solche Screenshots werden sofort gelöscht (persönliche Benachrichtigungen).
 
 **M2**
@@ -384,6 +384,10 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   starten“ verdecken; der Rahmen zeigt das Ergebnis).
 - **M9 Farben:** Superset Orange (hell `#9E420A` auf `#FCE7D8`, dunkel `#F5A066` auf `#3B2A1E`), Rotation Grün
   (Platten-Grün-Familie); Kontraste per Test ≥ 4,5:1. Symbole: Kette (Superset), Kreispfeile (Rotation).
+- **Ab 1.0:** Neue Funktionen sammelt der Nutzer in `docs/ROADMAP.md` (Versionen mit Status PLANNED/IN PROGRESS/
+  FINISHED); umgesetzt wird eine Version erst auf ausdrücklichen Auftrag. Die Release-App war vor 1.0 nie installiert.
+- **Skripte umbenannt (nach 1.0):** `host-setup.sh`, `host-setup-usb.sh` (PC), `phone-connect-wifi.sh`,
+  `phone-connect-usb.sh`, `install-dev.sh`, `install-release.sh`, neu `build-release-apk.sh` (APK nach `dist/`).
 - **Meilensteine:** Auf Wunsch eingeschoben als M9; der bisherige M9 (Feinschliff, 1.0.0) heißt jetzt M10.
 
 - **M10 Startbild:** `LaunchTheme`/`NormalTheme` mit App-Hintergrund (`#E9ECEF` hell, `#1B1E21` dunkel) als Fenster-,
@@ -432,9 +436,9 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
 
-### Gesamt-Testliste Version 1.0 (vor dem Umstieg auf die Release-App)
-Zuerst in der **DEV-App** (gelbes Icon „GymLog DEV“); die Release-App mit echten Daten erst danach aktualisieren.
-Schema 2 wird beim ersten Start automatisch migriert; vorher in der Release-App ein Backup erstellen.
+### Gesamt-Testliste Version 1.0 (vor der ersten Installation der Release-App)
+Zuerst in der **DEV-App** (gelbes Icon „GymLog DEV“). Die Release-App war noch nie installiert und startet daher ohne
+Daten (keine Migration nötig); sie wird erst nach bestandener Liste installiert.
 
 **Installation und Aussehen**
 - [ ] Launcher: „GymLog DEV“ gelb mit dunkler Hantel und „DEV“, neben „GymLog“ (blau, weiße Hantel); Android 13+ mit
@@ -473,11 +477,11 @@ Schema 2 wird beim ersten Start automatisch migriert; vorher in der Release-App 
 - [ ] CSV exportieren (Teilen und „Speichern unter …“), Backup erstellen → „Letztes Backup“, „Alle Daten löschen“ →
   Backup wiederherstellen (Vorschau) → alles inkl. Supersets/Rotationen zurück; fremde Datei → Meldung, nichts ändert
   sich; während eines Trainings gesperrt.
-- [ ] Ein Backup aus der Release-App (Format 1) in der DEV-App wiederherstellen → wird gelesen.
 - [ ] „Über“: Version 1.0.0, Build 11, Schemaversion 2, Lizenzen.
 
-**Umstieg der Release-App** (nach bestandener Liste, durch dich mit `scripts/install-release.sh`)
-- [ ] Vorher Backup in der Release-App; danach Verlauf/Pläne/Körpergewicht unverändert, Icon blau, Schemaversion 2.
+**Erste Installation der Release-App** (nach bestandener Liste, durch dich mit `scripts/install-release.sh`)
+- [ ] Icon blau „GymLog“ neben „GymLog DEV“; Start ohne Daten; Einstellungen ohne Entwickler-Bereich; „Über“ zeigt
+  Version 1.0.0. Ein Backup aus der DEV-App lässt sich hier wiederherstellen (z. B. selbst angelegte Übungen/Pläne).
 
 ### M10 Feinschliff
 - [ ] Siehe Gesamt-Testliste; zusätzlich gezielt: Start hell/dunkel, beide Icons, Systemschrift auf Maximum
@@ -485,9 +489,9 @@ Schema 2 wird beim ersten Start automatisch migriert; vorher in der Release-App 
 
 
 ### M0 Grundgerüst
-Am Pixel 4a (5G) per USB geprüft (`dev-install.sh` + Screenshot): Training-Tab im hellen Design, Barlow, Statusleiste lesbar.
-Handy verbinden: per USB `./scripts/connect-usb.sh` (einmalig vorher `./scripts/setup-usb-host.sh` auf dem Host),
-per WLAN `./scripts/connect-phone.sh`; danach `./scripts/dev-install.sh`.
+Am Pixel 4a (5G) per USB geprüft (`install-dev.sh` + Screenshot): Training-Tab im hellen Design, Barlow, Statusleiste lesbar.
+Handy verbinden: per USB `./scripts/phone-connect-usb.sh` (einmalig vorher `./scripts/host-setup-usb.sh` auf dem Host),
+per WLAN `./scripts/phone-connect-wifi.sh`; danach `./scripts/install-dev.sh`.
 - [ ] App heißt im Launcher **„GymLog DEV“** und ist eine eigene App neben „GymLog“ (falls installiert, bleibt diese unberührt).
 - [ ] Vier Tabs unten: Training, Verlauf, Statistik, Körper. Jeder zeigt Titel + Leerzustand; Wechsel ist sofort.
 - [ ] Zahnrad oben rechts öffnet „Einstellungen“ ohne Tableiste; Zurück (Pfeil und Systemgeste) führt zum vorherigen Tab.
@@ -500,7 +504,7 @@ per WLAN `./scripts/connect-phone.sh`; danach `./scripts/dev-install.sh`.
 
 ### M1 Datenbank
 Daten sind in den Tabs noch nicht sichtbar (ab M2). Geprüft wird, dass die Datenbank auf dem Handy funktioniert.
-Vorher: Handy entsperren, dann `./scripts/connect-usb.sh` und `./scripts/dev-install.sh`.
+Vorher: Handy entsperren, dann `./scripts/phone-connect-usb.sh` und `./scripts/install-dev.sh`.
 - [ ] App startet wie bisher im Training-Tab, ohne Fehlermeldung oder Absturz.
 - [ ] Zahnrad → Einstellungen zeigt den Abschnitt „Entwicklung (nur GymLog DEV)“ mit „Demo-Daten erzeugen“ und
   „Alle Daten löschen“ (rot).
@@ -512,7 +516,7 @@ Vorher: Handy entsperren, dann `./scripts/connect-usb.sh` und `./scripts/dev-ins
 - [ ] „Alle Daten löschen“ → Dialog mit rotem „Löschen“ → Snackbar „Alle Daten gelöscht.“
 
 ### M2 Übungen und Pläne
-Vorher: Handy entsperren, `./scripts/connect-usb.sh`, `./scripts/dev-install.sh`, in den Einstellungen „Demo-Daten erzeugen“.
+Vorher: Handy entsperren, `./scripts/phone-connect-usb.sh`, `./scripts/install-dev.sh`, in den Einstellungen „Demo-Daten erzeugen“.
 - [ ] Training-Tab: Chips „Oberkörper“, „Unterkörper“, „Frei“, „+ Plan“. Ein Tap wählt; nach App-Neustart ist dieselbe Auswahl aktiv.
 - [ ] Plan-Kacheln zeigen Typ-Symbol, Name, Ziel („3 × 8“, „3 × 60 s“) und „Zuletzt: …“ mit sinnvollen Werten.
 - [ ] Griff rechts ziehen → Reihenfolge ändert sich und bleibt nach Neustart erhalten.
@@ -537,7 +541,7 @@ Vorher: Handy entsperren, `./scripts/connect-usb.sh`, `./scripts/dev-install.sh`
 - [ ] Systemschrift groß: Stepper-Werte und Kacheln bleiben lesbar, nichts überlappt.
 
 ### M3 Session-Kern
-Vorher: `./scripts/dev-install.sh`, in den Einstellungen „Demo-Daten erzeugen“, Plan „Oberkörper“ wählen, „Training starten“.
+Vorher: `./scripts/install-dev.sh`, in den Einstellungen „Demo-Daten erzeugen“, Plan „Oberkörper“ wählen, „Training starten“.
 - [ ] AppBar: „Oberkörper“, Timer läuft (h:mm:ss, Ziffern springen nicht), „Beenden“.
 - [ ] Erste Übung ist aufgeklappt mit blauer Kante: „Satz 1 von 3“, Punkte, „Letztes Mal (…): …“, Gewicht und Wdh sind
   aus dem letzten Training vorbefüllt.

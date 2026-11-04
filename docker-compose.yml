@@ -25,7 +25,7 @@ services:
       - gradle-cache:/home/flutter/.gradle
       # adb-Schlüssel (Handy bleibt gekoppelt) und Debug-Keystore der DEV-App
       - android-home:/home/flutter/.android
-      # Nur Linux, optional: Handy per USB-Kabel (Anleitung: scripts/setup-usb-host.sh, dann scripts/connect-usb.sh).
+      # Nur Linux, optional: Handy per USB-Kabel (Anleitung: scripts/host-setup-usb.sh, dann scripts/phone-connect-usb.sh).
       # Bind-Mount statt "devices:", damit auch nach dem Start eingesteckte Geräte sichtbar sind – Android meldet sich
       # bei jedem Einstecken und Wechsel des USB-Modus mit neuer Gerätenummer an.
       # Ohne USB-Handy (Docker Desktop unter Windows/macOS): diese Zeile und "device_cgroup_rules" auskommentieren.

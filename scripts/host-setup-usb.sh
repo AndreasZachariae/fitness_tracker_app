@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 
 if [ "$(uname -s)" != "Linux" ] || grep -qi microsoft /proc/version 2>/dev/null; then
   echo "USB-Debugging im Container wird nur auf einem Linux-Host unterstützt (nicht WSL/Windows/macOS)." >&2
-  echo "Nutze stattdessen WLAN: ./scripts/connect-phone.sh im Container." >&2
+  echo "Nutze stattdessen WLAN: ./scripts/phone-connect-wifi.sh im Container." >&2
   exit 1
 fi
 if [ "$(id -u)" = "0" ]; then
@@ -34,7 +34,7 @@ RULE='SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ENV{ID_USB_INTERFACES}=="*:f
 echo "Schreibe $RULE_FILE (Gruppe: $GROUP_NAME, GID $GROUP_ID) …"
 printf '%s\n%s\n%s\n' \
   "# GymLog-Dev-Container: Android-Geräte mit USB-Debugging (adb-Schnittstelle ff/42/01)" \
-  "# für die Gruppe des Entwickler-Users freigeben. Angelegt von scripts/setup-usb-host.sh." \
+  "# für die Gruppe des Entwickler-Users freigeben. Angelegt von scripts/host-setup-usb.sh." \
   "$RULE" | sudo tee "$RULE_FILE" >/dev/null
 sudo udevadm control --reload-rules
 sudo udevadm trigger --subsystem-match=usb --action=change
@@ -55,4 +55,4 @@ echo
 echo "Fertig. Jetzt:"
 echo "  1. USB-Kabel einmal ab- und wieder anstecken."
 echo "  2. Container mit der neuen docker-compose.yml starten: docker compose up -d"
-echo "  3. Im Container: ./scripts/connect-usb.sh"
+echo "  3. Im Container: ./scripts/phone-connect-usb.sh"

@@ -25,7 +25,7 @@ aus dem Gedächtnis an: Bei Unsicherheit im lokalen SDK (`/home/flutter/sdks/flu
 | Format + Analyse + Tests (muss grün sein) | `./scripts/check.sh` |
 | Code-Generierung (drift) | `dart run build_runner build --delete-conflicting-outputs` |
 | Debug-APK bauen | `flutter build apk --debug` |
-| DEV-App aufs Handy + starten | `./scripts/dev-install.sh` |
+| DEV-App aufs Handy + starten | `./scripts/install-dev.sh` |
 | Screenshot vom Handy | `./scripts/screenshot.sh <name>` → gibt Pfad zur PNG aus, die du dir ansehen kannst |
 
 `flutter run` ist interaktiv und blockiert – das startet nur der Mensch.
@@ -36,7 +36,7 @@ aus dem Gedächtnis an: Bei Unsicherheit im lokalen SDK (`/home/flutter/sdks/flu
 2. Vor jedem Meilenstein: kurzer Plan als Unterpunkte in `docs/PROGRESS.md`.
 3. Nach jedem Meilenstein:
    - `./scripts/check.sh` grün, `flutter build apk --debug` erfolgreich,
-   - wenn ein Gerät verbunden ist: `./scripts/dev-install.sh`, Screenshots der neuen Screens prüfen,
+   - wenn ein Gerät verbunden ist: `./scripts/install-dev.sh`, Screenshots der neuen Screens prüfen,
    - `docs/PROGRESS.md` aktualisieren (Häkchen, Annahmen, neue Abhängigkeiten, **manuelle Testliste fürs Handy**),
    - Commit (Conventional Commits, Englisch),
    - **Stopp:** dem Menschen berichten, was fertig ist und was er am Handy testen soll. Auf „weiter“ warten.
@@ -49,8 +49,9 @@ Auf dem Handy liegen echte Trainingsdaten in der Release-App `de.gymlog.app`. De
 
 1. **Niemals** `applicationId`/`namespace` (`de.gymlog.app`), den Debug-Suffix `.dev`, die Signatur-Konfiguration oder den
    Keystore ändern, neu erzeugen oder entfernen.
-2. **Niemals** `adb uninstall`, `adb shell pm …`, `adb install …`, `flutter install` oder `scripts/install-release.sh` ausführen.
-   Interaktion mit dem Handy ausschließlich über `scripts/dev-install.sh` und `scripts/screenshot.sh` (nur Paket `de.gymlog.app.dev`).
+2. **Niemals** `adb uninstall`, `adb shell pm …`, `adb install …`, `flutter install`, `scripts/install-release.sh`,
+   `scripts/build-release-apk.sh` oder `flutter build apk --release` ausführen (Release-Builds nutzen `.secrets/`).
+   Interaktion mit dem Handy ausschließlich über `scripts/install-dev.sh` und `scripts/screenshot.sh` (nur Paket `de.gymlog.app.dev`).
 3. `.secrets/` weder lesen noch schreiben.
 4. Datenbankschema nur per Migration ändern: `schemaVersion` + 1, Schema-Dump (`drift_dev schema dump`), Migrationstest.
    Keine destruktiven Migrationen, kein Drop/Recreate von Tabellen mit Nutzerdaten.

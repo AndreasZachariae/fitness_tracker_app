@@ -8,7 +8,7 @@ DEV_PKG="de.gymlog.app.dev"
 APK="build/app/outputs/flutter-apk/app-debug.apk"
 
 if ! adb get-state >/dev/null 2>&1; then
-  echo "Kein Handy verbunden. Erst ./scripts/connect-phone.sh ausführen." >&2
+  echo "Kein Handy verbunden. Erst ./scripts/phone-connect-usb.sh (Kabel) oder ./scripts/phone-connect-wifi.sh (WLAN) ausführen." >&2
   exit 1
 fi
 

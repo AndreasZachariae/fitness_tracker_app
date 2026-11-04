@@ -9,7 +9,7 @@ FROM ghcr.io/gmeligio/flutter-android:3.47.9
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
 # UID/GID des Host-Users. Nur unter Linux (inkl. WSL2) relevant, damit Dateien im
-# Projektordner dir gehören. Wird von scripts/setup-host.sh in .env geschrieben.
+# Projektordner dir gehören. Wird von scripts/host-setup.sh in .env geschrieben.
 ARG HOST_UID=1001
 ARG HOST_GID=1001
 

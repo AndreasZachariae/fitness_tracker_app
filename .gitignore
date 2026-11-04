@@ -61,3 +61,6 @@ app.*.map.json
 # Speicherabbilder abgestürzter Prozesse (z. B. adb)
 /core
 /core.[0-9]*
+
+# Weitergebbare APKs (scripts/build-release-apk.sh)
+/dist/

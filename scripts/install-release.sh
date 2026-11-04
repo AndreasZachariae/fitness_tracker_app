@@ -5,11 +5,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 if [ ! -f .secrets/key.properties ]; then
-  echo "Kein Signaturschlüssel gefunden. Erst ./scripts/create-keystore.sh ausführen (README, Schritt 4)." >&2
+  echo "Kein Signaturschlüssel gefunden. Erst ./scripts/create-keystore.sh ausführen (README, Einrichtung)." >&2
   exit 1
 fi
 if ! adb get-state >/dev/null 2>&1; then
-  echo "Kein Handy verbunden. Erst ./scripts/connect-phone.sh ausführen." >&2
+  echo "Kein Handy verbunden. Erst ./scripts/phone-connect-usb.sh (Kabel) oder ./scripts/phone-connect-wifi.sh (WLAN) ausführen." >&2
   exit 1
 fi
 
