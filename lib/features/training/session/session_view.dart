@@ -476,9 +476,22 @@ class _SessionViewState extends ConsumerState<SessionView>
     ];
     final gym = GymColors.of(context);
 
+    final theme = Theme.of(context);
     return ReorderableListView.builder(
       buildDefaultDragHandles: false,
       padding: const EdgeInsets.only(top: 4, bottom: 24),
+      header: details.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
+              child: Text(
+                S.sessionEmpty,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            )
+          : null,
       footer: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
         child: Column(

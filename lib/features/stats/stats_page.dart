@@ -63,13 +63,17 @@ class _StatsPageState extends ConsumerState<StatsPage>
                     ),
                   ),
                 ),
-                TabBar(
-                  controller: _tabs,
-                  tabs: const [
-                    Tab(text: S.statsTabExercise),
-                    Tab(text: S.statsTabOverall),
-                    Tab(text: S.statsTabRecords),
-                  ],
+                // Three short tabs; beyond 150 % they would be cut (M10).
+                MediaQuery.withClampedTextScaling(
+                  maxScaleFactor: 1.5,
+                  child: TabBar(
+                    controller: _tabs,
+                    tabs: const [
+                      Tab(text: S.statsTabExercise),
+                      Tab(text: S.statsTabOverall),
+                      Tab(text: S.statsTabRecords),
+                    ],
+                  ),
                 ),
                 Expanded(
                   child: TabBarView(

@@ -545,6 +545,7 @@ class _CategoryBars extends StatelessWidget {
       );
     }
     final max = entries.first.value;
+    final scaler = MediaQuery.textScalerOf(context);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Padding(
@@ -560,7 +561,9 @@ class _CategoryBars extends StatelessWidget {
                 child: Row(
                   children: [
                     SizedBox(
-                      width: 100,
+                      // Grows with the system font, but leaves room for
+                      // the bars (M10).
+                      width: scaler.scale(90).clamp(90, 140),
                       child: Text(
                         S.category(e.key),
                         overflow: TextOverflow.ellipsis,
@@ -583,9 +586,11 @@ class _CategoryBars extends StatelessWidget {
                       ),
                     ),
                     SizedBox(
-                      width: 44,
+                      width: scaler.scale(40),
                       child: Text(
                         '${e.value}',
+                        maxLines: 1,
+                        softWrap: false,
                         textAlign: TextAlign.end,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontFeatures: const [FontFeature.tabularFigures()],

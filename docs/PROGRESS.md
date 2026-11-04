@@ -111,7 +111,16 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Laufende Session: Supersets anzeigen, befolgen und neu bilden; Pausentimer erst nach der Runde
   - [x] Demo-Daten mit Superset und Rotation, Tests (Domain, Migration, Repository, Widgets), Testliste
   - [x] Zusätzlich: Test, dass jedes Zeichen der UI-Texte in den gebündelten Schriften existiert („→“ fehlte)
-- [ ] M10 Feinschliff, Version 1.0.0 (bisher M9)
+- [x] M10 Feinschliff, Version 1.0.0 (SPEC §11 „M9“; nach dem eingeschobenen M9 jetzt M10) (1.0.0+11)
+  - [x] Leerzustände aller Screens geprüft; neu: leere Session und Verlaufsdetail ohne Übungen (Test mit leerer Datenbank)
+  - [x] Hell/Dunkel: Startbild und Statusleiste passend zum Theme (kein weißer Blitz, dunkle Symbole im hellen Modus),
+        Android-12-Splash mit farbigem Icon-Kreis
+  - [x] Schriftskalierung: alle Screens mit Demo-Daten bei 1,3/1,5/2,0 ohne Überlauf (automatischer Test mit den echten
+        Schriften); behoben: Snackbar, Verlaufsdetail „übersprungen“, Sätze pro Kategorie, Statistik-Tabs
+  - [x] Launcher-Icons: Hantel, adaptiv + themed (Android 13) + Legacy; Release blau/weiß, DEV gelb mit „DEV“
+        (debug/profile-Ressourcen), Generator `tool/icons/generate_launcher_icons_test.dart`
+  - [x] Performance-Check mit 1 Jahr Demo-Daten (`test/data/performance_test.dart`, Messwerte unter „Annahmen“)
+  - [x] Gesamt-Testliste fürs Handy, Version 1.0.0+11
 
 ## Annahmen
 
@@ -138,9 +147,9 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 - `themeMode` ist bis zur Einstellungs-Zeile (M1) fest „System“.
 - Zahleneingabe (`parseDecimal`) akzeptiert Komma und Punkt, aber keine Tausendertrennzeichen.
 - Analyzer zusätzlich mit `strict-casts`, `strict-inference`, `strict-raw-types` und einigen strengeren Lints.
-- Unterscheidbares DEV-Launcher-Icon folgt laut §11 in M9; bis dahin unterscheidet der Name „GymLog DEV“.
-- Beim App-Start zeigt das Startbild-Theme der Vorlage (`LaunchTheme`) kurz weiße Statusleisten-Symbole auf hellem Grund,
-  bis Flutter übernimmt. Wird in M9 (Feinschliff) mit dem Startbild angepasst.
+- Unterscheidbares DEV-Launcher-Icon: erledigt in M10 (gelb mit „DEV“).
+- Beim App-Start zeigte das Startbild-Theme der Vorlage (`LaunchTheme`) kurz weiße Statusleisten-Symbole auf hellem
+  Grund, bis Flutter übernimmt. Erledigt in M10.
 - **USB-Debugging im Container:** `/dev/bus/usb` als Bind-Mount plus `device_cgroup_rules: c 189:* rmw` statt `devices:`,
   weil Android sich bei jedem Einstecken mit neuer Gerätenummer anmeldet. Zugriffsrechte über eine udev-Regel auf dem Host
   (`scripts/setup-usb-host.sh`, Gruppe = Host-GID = Container-GID).
@@ -377,6 +386,31 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   (Platten-Grün-Familie); Kontraste per Test ≥ 4,5:1. Symbole: Kette (Superset), Kreispfeile (Rotation).
 - **Meilensteine:** Auf Wunsch eingeschoben als M9; der bisherige M9 (Feinschliff, 1.0.0) heißt jetzt M10.
 
+- **M10 Startbild:** `LaunchTheme`/`NormalTheme` mit App-Hintergrund (`#E9ECEF` hell, `#1B1E21` dunkel) als Fenster-,
+  Status- und Navigationsleistenfarbe und passend hellen/dunklen Systemsymbolen; Android 12+ zeigt das App-Icon auf
+  einem Kreis in Icon-Farbe (sonst wäre die weiße Hantel auf Hellgrau unsichtbar). Kein eigenes Splash-Bild.
+- **M10 Launcher-Icons:** eigenes Motiv (Hantel, „Platten und Eisen“). Release: weiß auf Plate Blue; DEV-App
+  (debug und profile): Eisen auf Plate Yellow mit Schriftzug „DEV“ – die DEV-Ressourcen liegen in
+  `android/app/src/debug/res` und `…/profile/res` und überschreiben nur Icon und Icon-Farbe. Adaptives Icon
+  (Android 8+), themed Icon (Android 13+, `mipmap-anydpi-v33`), PNG für Android 7. Erzeugt mit dart:ui ohne
+  zusätzliches Paket: `flutter test tool/icons/generate_launcher_icons_test.dart` (außerhalb von `test/`, läuft nicht in
+  `check.sh`). `applicationId`, Signatur und Manifest unverändert. Die Release-APK konnte ich nicht bauen (Signatur
+  aus `.secrets/`); geprüft per `aapt2` an der DEV-APK.
+- **M10 Schriftskalierung:** Android erlaubt bis 200 %. Ziel: bis 200 % kein Überlauf, keine mitten im Wort
+  umbrochenen Texte. Ausnahmen bewusst gedeckelt: Statistik-Tabs bei 150 % (drei kurze Wörter), Zahlen der großen
+  Stepper/Timer waren schon fest (`NumberStyles`). Bei großer Schrift steht „Rückgängig“ in der Snackbar in einer
+  eigenen Zeile (Flutter misst die Aktion ohne Skalierung). Der Test lädt die echten Barlow-Schriften; mit der breiten
+  Standard-Testschrift würden Überläufe gemeldet, die es am Handy nicht gibt.
+- **M10 Performance** (1 Jahr Demo-Daten, ~170 Trainings, Datenbankdatei mit WAL/`synchronous=FULL`, Container-CPU):
+  Satz speichern inkl. Rekordprüfung Median 6 ms (max. 9 ms), Training starten 17 ms, beenden inkl. Rotation 4 ms,
+  Session-Ansicht (Details + Rekordlabels) 10 ms, Zusammenfassung 11 ms, Verlaufsliste 40 ms, Statistik laden 38 ms
+  + Berechnung 9 ms, „Zuletzt“ 2 ms, Backup laden/kodieren/prüfen 39 ms, CSV 22 ms, Import aller Daten 280 ms. Am Handy
+  ist mit dem 3–5-Fachen zu rechnen; alles bleibt unter ~200 ms, Satz speichern unter ~50 ms. Kein Isolate nötig.
+  Beobachtung: Verlauf und Statistik rechnen nach jedem gespeicherten Satz im Hintergrund neu, sobald ihr Tab einmal
+  geöffnet war (Tabs bleiben erhalten) – mit ~40 ms unkritisch, sonst wäre das der erste Hebel.
+- **M10 Leerzustände:** Neu „Noch keine Übungen in diesem Training …“ (leeres freies Training) und „Dieses Training
+  enthält keine Übungen mehr.“ (Verlaufsdetail); alle übrigen bestanden schon und sind jetzt gemeinsam getestet.
+
 ## Datenbank-Migrationen (ab Schema 2)
 
 1. Tabellen in `lib/data/db/tables.dart` ändern, `AppDatabase.currentSchemaVersion` + 1.
@@ -397,6 +431,58 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### Gesamt-Testliste Version 1.0 (vor dem Umstieg auf die Release-App)
+Zuerst in der **DEV-App** (gelbes Icon „GymLog DEV“); die Release-App mit echten Daten erst danach aktualisieren.
+Schema 2 wird beim ersten Start automatisch migriert; vorher in der Release-App ein Backup erstellen.
+
+**Installation und Aussehen**
+- [ ] Launcher: „GymLog DEV“ gelb mit dunkler Hantel und „DEV“, neben „GymLog“ (blau, weiße Hantel); Android 13+ mit
+  „Designsymbole“: beide einfarbig, DEV mit „DEV“.
+- [ ] Start hell: kein weißer Blitz, Statusleisten-Symbole dunkel; Start dunkel: dunkler Hintergrund, helle Symbole.
+- [ ] Hell/Dunkel/System in den Einstellungen wirkt sofort; große Systemschrift (auch Maximum): nichts überlappt,
+  keine mitten im Wort getrennten Texte.
+- [ ] Hochformat bleibt; Schrift ist Barlow; Zahlen springen beim Zählen nicht.
+
+**Leerer Start** (Einstellungen → „Alle Daten löschen“)
+- [ ] Training „Füge Übungen hinzu oder starte direkt.“, Verlauf/Statistik/Körper mit Hinweistexten; leeres freies
+  Training starten → Hinweis, „Beenden“ → „Keine Sätze erfasst. Training verwerfen?“.
+- [ ] Einstellungen → Übungen/Archiv/Pläne leer mit Hinweis; „+ Übung hinzufügen“ → „Noch keine Übungen …“ + „Neue
+  Übung anlegen“.
+
+**Mit Demo-Daten** („Demo-Daten erzeugen“)
+- [ ] Pläne: Chips ohne Haken, sofortiger Wechsel; Reihenfolge ziehen, wischen + Rückgängig, „Im Plan bearbeiten“,
+  Long-Press-Menü (Umbenennen/Duplizieren/Löschen), „+ Plan“.
+- [ ] Superset (orange) und Rotation (grün) in „Oberkörper“: verschieben, innen umsortieren, ⋮-Menü, ⓘ, „Als Nächstes
+  trainieren“, neue Gruppen erstellen und auflösen.
+- [ ] Training „Oberkörper“: Timer, Vorbefüllung, „Letztes Mal“, Vorschlag-Chip, Satz speichern (Vibration, Snackbar,
+  Rückgängig), Rekord (rotes Aufleuchten), Superset-Wechsel ohne Pause, Pausenleiste nach der Runde (−15/+15,
+  Überspringen, „Pause vorbei“ mit Vibration), Display bleibt an, Notiz zur Übung, Stoppuhr bei Plank.
+- [ ] Andere Übung antippen, Reihenfolge ändern, „+1 Satz“, „Überspringen“, „Übung beenden“, „Wieder öffnen“,
+  Satz ändern/löschen, „+ Übung hinzufügen“, Superset in der Session bilden.
+- [ ] App wegwischen und neu öffnen: gleiche Session, aktive Übung, Pausenrest.
+- [ ] „Beenden“ → Zusammenfassung: Dauer, Sätze, Volumen ±%, Rekorde, Plan übernehmen, Notiz, Backup-Hinweis →
+  „Fertig“; die Rotation ist danach weitergerückt.
+- [ ] Verlauf: Monate, Rekord-Pokal, Detail (Zeiten ändern, Notiz, Sätze ändern, Übung entfernen, Training löschen).
+- [ ] Statistik: Zeitraum, Übung mit Metriken + ⓘ + Rekordpunkten + Kennzahlen, Gesamt (Kraftindex, Körpergewicht
+  einblenden, Wochenvolumen, Kalender, Dauer, Kategorien), Rekorde → Tippen öffnet Übung; Tab öffnet ohne Verzögerung.
+- [ ] Körper: Eintrag mit Komma, Überschreiben-Rückfrage, Diagramm mit Ø 7 Tage, Kennzahlen, wischen + Rückgängig.
+- [ ] Übung bearbeiten (Typ gesperrt nach Training, ⓘ Kraftindex), archivieren/wiederherstellen, löschen.
+
+**Daten**
+- [ ] CSV exportieren (Teilen und „Speichern unter …“), Backup erstellen → „Letztes Backup“, „Alle Daten löschen“ →
+  Backup wiederherstellen (Vorschau) → alles inkl. Supersets/Rotationen zurück; fremde Datei → Meldung, nichts ändert
+  sich; während eines Trainings gesperrt.
+- [ ] Ein Backup aus der Release-App (Format 1) in der DEV-App wiederherstellen → wird gelesen.
+- [ ] „Über“: Version 1.0.0, Build 11, Schemaversion 2, Lizenzen.
+
+**Umstieg der Release-App** (nach bestandener Liste, durch dich mit `scripts/install-release.sh`)
+- [ ] Vorher Backup in der Release-App; danach Verlauf/Pläne/Körpergewicht unverändert, Icon blau, Schemaversion 2.
+
+### M10 Feinschliff
+- [ ] Siehe Gesamt-Testliste; zusätzlich gezielt: Start hell/dunkel, beide Icons, Systemschrift auf Maximum
+  (Training mit Pausenleiste, Statistik → Gesamt, Verlaufsdetail mit übersprungener Übung, Snackbar „Rückgängig“).
+
 
 ### M0 Grundgerüst
 Am Pixel 4a (5G) per USB geprüft (`dev-install.sh` + Screenshot): Training-Tab im hellen Design, Barlow, Statusleiste lesbar.

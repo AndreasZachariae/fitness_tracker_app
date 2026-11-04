@@ -234,6 +234,17 @@ class _SessionDetailPageState extends ConsumerState<SessionDetailPage> {
                   onChanged: _onNotesChanged,
                 ),
                 const SizedBox(height: 12),
+                if (details.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Text(
+                      S.sessionDetailEmpty,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
                 for (final d in details)
                   _ExerciseCard(
                     detail: d,
@@ -279,10 +290,15 @@ class _ExerciseCard extends StatelessWidget {
                 ExerciseTypeIcon(e.type),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(e.name, style: theme.textTheme.titleMedium),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(e.name, style: theme.textTheme.titleMedium),
+                      if (skipped)
+                        Text(S.skippedLabel, style: theme.textTheme.bodySmall),
+                    ],
+                  ),
                 ),
-                if (skipped)
-                  Text(S.skippedLabel, style: theme.textTheme.bodySmall),
                 PopupMenuButton<void>(
                   tooltip: S.moreActions,
                   itemBuilder: (_) => [

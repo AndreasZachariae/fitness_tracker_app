@@ -170,6 +170,10 @@ abstract final class S {
   static const freeTrainingTitle = 'Freies Training';
   static const freeEmpty = 'Füge Übungen hinzu oder starte direkt.';
   static const planEmpty = 'Dieser Plan hat noch keine Übungen.';
+  static const sessionEmpty =
+      'Noch keine Übungen in diesem Training. Füge unten eine hinzu.';
+  static const sessionDetailEmpty =
+      'Dieses Training enthält keine Übungen mehr.';
   static const noPlansHint = 'Lege mit „+ Plan“ deinen ersten Plan an.';
   static const addExercise = 'Übung hinzufügen';
   static const startTraining = 'Training starten';

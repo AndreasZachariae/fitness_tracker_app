@@ -10,11 +10,16 @@ void showMessage(
   VoidCallback? onUndo,
   Duration duration = const Duration(seconds: 4),
 }) {
+  // SnackBar measures the action without the text scale; with large system
+  // fonts the action would squeeze the message (words broken mid-word), so
+  // it goes to its own line then (M10).
+  final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.4;
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
         content: Text(message),
+        actionOverflowThreshold: largeText ? 0 : null,
         duration: onUndo == null ? duration : const Duration(seconds: 5),
         action: onUndo == null
             ? null
