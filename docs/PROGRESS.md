@@ -95,7 +95,7 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         Erinnerung), Über (Version, Build, Schemaversion)
   - [x] Backup-Hinweis in der Zusammenfassung (§6.3)
   - [x] Tests
-- [x] M9 Verbesserungen aus `docs/IMPROVEMENTS.md` (0.10.0+10, zusätzlicher Meilenstein auf Wunsch, vor 1.0)
+- [x] M9 Verbesserungen aus `docs/ROADMAP.md` (Version 0.10.0) (0.10.0+10, zusätzlicher Meilenstein auf Wunsch, vor 1.0)
   - [x] Info-Symbole in der Statistik (Metriken, Kraftindex, Wochenvolumen, Kalender, Rekorde) und am Schalter
         „Im Kraftindex“ im Übungsformular (Erklärung inkl. rückwirkender Neuberechnung)
   - [x] Plan-Chips ohne Haken, farbig hervorgehoben, sofortige Auswahl ohne Ruckeln
