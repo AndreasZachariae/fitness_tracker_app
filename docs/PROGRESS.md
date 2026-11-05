@@ -432,6 +432,19 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   negativem Zusatzgewicht. Gewichtsschritte: Langhantel/SZ 2,5 kg, Kurzhantel 2 kg, Maschine 5 kg, Kabel 2,5 kg,
   Kettlebell 4 kg (je Übung änderbar). Keine eigene Pause, keine Notizen; Kraftindex nach Standardregel (Zeitübungen
   nicht). Ungenutzte Übungen beeinflussen Statistik und Kraftindex nicht.
+- **Releases auf GitHub (ab 1.0.0):** Entscheidungen des Menschen (2026-11-05): lokal bauen und signieren (Schlüssel
+  verlässt den PC nicht, kein GitHub Actions), nur 64-Bit-ARM-APK, Changelog deutsch für Nutzer plus automatische
+  Commit-Liste, nur finale Releases. `scripts/release.sh` (nur der Mensch) prüft Login, Schlüssel, Branch `main`, sauberen
+  Stand, neue Version/Build-Nummer, Roadmap-Status `FINISHED`, Changelog-Abschnitt und `check.sh`, baut die APK, prüft Paket,
+  Version, Architektur und Signatur, speichert beim ersten Release den Fingerabdruck des Zertifikats in
+  `.github/signing-certificate.sha256` (öffentlich unbedenklich, steht in jeder APK) und bricht später bei einem anderen
+  Schlüssel ab. Erst nach „ja“: Changelog-Datum + Commits, Commit `chore(release): vX.Y.Z`, annotierter Tag, `git push
+  --atomic`, `gh release create`. Die APK mit `--target-platform android-arm64` behält den `versionCode` (anders als
+  `--split-per-abi`, das ihn ändert); geprüft an einer Debug-APK. `release-notes.sh` ist lesend und von Claude Code
+  testbar; `release.sh` selbst konnte ich nicht ausführen (Schlüssel, GitHub-Login), nur Syntax und Teile geprüft.
+  GitHub zeigt Zeilenumbrüche im Release-Text an, daher stehen Changelog-Einträge in einer Zeile. Container: GitHub CLI
+  aus dem offiziellen Paket-Repository, Login im Volume `gh-config`; `gh`, `git push`, `git tag` und `release.sh` sind
+  für Claude Code verboten (CLAUDE.md Regel 2, `.claude/settings.json`).
 
 ## Datenbank-Migrationen (ab Schema 2)
 

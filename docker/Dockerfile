@@ -1,4 +1,4 @@
-# GymLog Dev-Container: Flutter + Android SDK + JDK 17 + adb + Claude Code
+# GymLog Dev-Container: Flutter + Android SDK + JDK 17 + adb + GitHub CLI + Claude Code
 #
 # Basis: rootless Flutter-Android-Image (Debian, User "flutter" mit UID/GID 1001,
 # Flutter- und Android-SDK unter /home/flutter/sdks, Gradle vorgewärmt).
@@ -22,6 +22,17 @@ RUN apt-get update \
         libsqlite3-dev sqlite3 tzdata jq less nano zip procps \
     && rm -rf /var/lib/apt/lists/*
 
+# GitHub CLI für scripts/release.sh (GitHub-Releases), aus dem offiziellen Paket-Repository von GitHub.
+RUN mkdir -p -m 755 /etc/apt/keyrings \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        -o /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+        > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends gh \
+    && rm -rf /var/lib/apt/lists/*
+
 # User "flutter" auf Host-UID/GID umstellen, falls abweichend.
 # Achtung: chown über die SDKs vergrößert das Image einmalig um einige GB.
 RUN if [ "$HOST_UID" != "1001" ] || [ "$HOST_GID" != "1001" ]; then \
@@ -35,7 +46,7 @@ ENV HOME=/home/flutter
 
 # Verzeichnisse für die Volumes vorab anlegen, damit sie dem User gehören.
 # Danach Claude Code installieren (nativer Installer, landet in ~/.local/bin).
-RUN mkdir -p "$HOME/.claude" "$HOME/.pub-cache" "$HOME/.gradle" "$HOME/.android" "$HOME/.local/bin" \
+RUN mkdir -p "$HOME/.claude" "$HOME/.pub-cache" "$HOME/.gradle" "$HOME/.android" "$HOME/.config/gh" "$HOME/.local/bin" \
     && git config --global --add safe.directory /workspace \
     && git config --global init.defaultBranch main \
     && curl -fsSL https://claude.ai/install.sh | bash

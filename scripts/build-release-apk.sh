@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # IM CONTAINER ausführen. Baut die ECHTE App (de.gymlog.app) als APK-Datei zum Weitergeben oder Installieren
 # ohne Kabel/WLAN-Verbindung. Ergebnis: dist/gymlog-<version>.apk. Installiert nichts.
+# Nur 64-Bit-ARM (~23 MB statt ~70 MB): läuft auf praktisch jedem Handy seit 2017. Die Versionsnummer (versionCode)
+# bleibt dieselbe wie beim vollen Build, Updates in beide Richtungen funktionieren.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -9,7 +11,7 @@ if [ ! -f .secrets/key.properties ]; then
   exit 1
 fi
 
-flutter build apk --release
+flutter build apk --release --target-platform android-arm64
 
 VERSION="$(sed -n 's/^version: *\([^+ ]*\).*/\1/p' pubspec.yaml)"
 mkdir -p dist

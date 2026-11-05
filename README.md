@@ -9,6 +9,7 @@ zusammen mit Claude Code.
 | **GymLog** (blaues Icon) | die echte App fürs Studio, Paket `de.gymlog.app` |
 | **GymLog DEV** (gelbes Icon) | Entwicklungsversion zum Ausprobieren, eigene Daten, Paket `de.gymlog.app.dev` |
 | `docs/ROADMAP.md` | deine Ideen für neue Versionen |
+| `CHANGELOG.md` | was sich in welcher Version geändert hat (wird zum Text der GitHub-Release) |
 | `docs/SPEC.md` | Spezifikation der App (Stand 1.0) |
 | `docs/PROGRESS.md` | Annahmen, Entscheidungen, Testlisten fürs Handy |
 | `CLAUDE.md` | Regeln für Claude Code |
@@ -63,7 +64,7 @@ Danach Kabel ab- und wieder anstecken und `docker compose up -d`. Unter Windows/
 ```bash
 docker compose up -d               # auf dem PC: Container starten
 docker compose exec dev bash       # in den Container
-claude --continue                  # Claude Code mit dem letzten Gespräch fortsetzen (oder nur: claude)
+claude --resume                    # Claude Code mit dem letzten Gespräch fortsetzen (oder nur: claude)
 ```
 
 ### Handy verbinden – Option A: USB-Kabel (Linux)
@@ -102,15 +103,16 @@ In der DEV-App gibt es unter Einstellungen → „Entwicklung (nur GymLog DEV)�
    ```
    Lies docs/ROADMAP.md. Setze jetzt Version 1.1.0 um.
    ```
-3. Claude Code plant, setzt mit Tests um, committet und schreibt eine Testliste fürs Handy in `docs/PROGRESS.md`.
-4. Testliste am Handy mit der DEV-App abarbeiten; danach steht die Version in der Roadmap auf `FINISHED`.
+3. Claude Code plant, setzt mit Tests um, erhöht die Version in `pubspec.yaml`, schreibt den Abschnitt in
+   `CHANGELOG.md`, eine Testliste fürs Handy in `docs/PROGRESS.md`, setzt die Roadmap auf `FINISHED` und committet.
+4. Testliste am Handy mit der DEV-App abarbeiten, dann veröffentlichen (siehe „Veröffentlichen auf GitHub“).
 
 Ohne diesen Auftrag setzt Claude Code nichts aus der Roadmap um.
 
 ### Container stoppen
 
 ```bash
-docker compose down                # auf dem PC; NICHT "down -v" (löscht Claude-Login, Gesprächsverlauf und Caches)
+docker compose down                # auf dem PC; NICHT "down -v" (löscht Claude-/GitHub-Login, Verlauf und Caches)
 ```
 
 ---
@@ -125,15 +127,46 @@ docker compose down                # auf dem PC; NICHT "down -v" (löscht Claude
 
 Updates behalten alle Daten. Dieses Skript führst du selbst aus, Claude Code darf es nicht.
 
-### APK-Datei zum Weitergeben oder ohne Verbindung installieren
+### Veröffentlichen auf GitHub (für dich und Freunde)
+
+Jede Version landet als Release mit APK-Datei und Changelog unter
+<https://github.com/AndreasZachariae/fitness_tracker_app/releases>. Zum Weitergeben reicht der Link
+**<https://github.com/AndreasZachariae/fitness_tracker_app/releases/latest>** – keine APK per Mail oder Teams nötig.
+
+Einmalig (im Container, nach dem Neubau mit `docker compose up -d --build` auf dem PC):
 
 ```bash
-./scripts/build-release-apk.sh     # erzeugt dist/gymlog-<version>.apk
+gh auth login                      # GitHub.com → HTTPS → "Login with a web browser", Code im Browser eingeben
 ```
 
-Datei per Kabel, Cloud oder Mail aufs Handy bringen, in der Dateien-App antippen und „Aus dieser Quelle zulassen“
-erlauben. Warnt Play Protect vor einem unbekannten Entwickler: „Trotzdem installieren“. Ein Update über eine neuere
-APK-Datei funktioniert genauso und behält die Daten (gleicher Schlüssel).
+Der Login bleibt im Volume `gh-config` gespeichert. Claude Code darf `gh`, `git push` und `release.sh` nicht ausführen.
+
+Für jede Version (nach bestandener Handy-Testliste, Roadmap-Status `FINISHED`):
+
+```bash
+./scripts/release.sh
+```
+
+Das Skript prüft alles (Login, Schlüssel, alles committet, Version neu, Roadmap, Changelog, Tests), baut und signiert
+`dist/gymlog-<version>.apk`, vergleicht den Signaturschlüssel mit den bisherigen Releases und zeigt den Release-Text.
+Erst nach Eingabe von `ja` trägt es Datum und Commits in `CHANGELOG.md` ein, setzt den Tag `vX.Y.Z`, pusht und
+erstellt die Release. Bei jeder anderen Antwort wird nichts veröffentlicht. Vorschau ohne Bauen:
+`./scripts/release-notes.sh notes 1.0.0`.
+
+Die APK enthält nur 64-Bit-ARM (~23 MB) und läuft auf praktisch jedem Handy ab Android 7. Freunde installieren sie
+wie unten beschrieben; mit der App [Obtainium](https://github.com/ImranR98/Obtainium) und der Repo-Adresse bekommen
+sie neue Versionen automatisch angezeigt. Das Repository ist öffentlich: Code, Doku und Commit-Verlauf sind sichtbar,
+`.secrets/` nicht (steht in `.gitignore`).
+
+### APK-Datei ohne Release
+
+```bash
+./scripts/build-release-apk.sh     # erzeugt dist/gymlog-<version>.apk, veröffentlicht nichts
+```
+
+Datei aufs Handy bringen, in der Dateien-App antippen und „Aus dieser Quelle zulassen“ erlauben. Warnt Play Protect
+vor einem unbekannten Entwickler: „Trotzdem installieren“. Ein Update über eine neuere APK-Datei funktioniert genauso
+und behält die Daten (gleicher Schlüssel).
 
 ### Daten schützen
 
@@ -157,6 +190,8 @@ APK-Datei funktioniert genauso und behält die Daten (gleicher Schlüssel).
 | `scripts/install-dev.sh` | Container | DEV-App bauen, installieren, starten |
 | `scripts/install-release.sh` | Container | echte App installieren/aktualisieren |
 | `scripts/build-release-apk.sh` | Container | echte App als APK-Datei nach `dist/` |
+| `scripts/release.sh` | Container | Version als GitHub-Release veröffentlichen (nur du) |
+| `scripts/release-notes.sh` | Container | Vorschau/Prüfung von Changelog und Release-Text |
 | `scripts/check.sh` | Container | Formatierung, Analyse, alle Tests |
 | `scripts/screenshot.sh` | Container | Screenshot vom Handy nach `build/screenshots/` |
 
@@ -170,4 +205,7 @@ APK-Datei funktioniert genauso und behält die Daten (gleicher Schlüssel).
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | Die installierte App hat einen anderen Schlüssel. **Nicht deinstallieren**, erst in der App ein Backup erstellen und sichern; dann deinstallieren, neu installieren, Backup wiederherstellen. |
 | Dateien gehören plötzlich „1001“ oder root (Linux) | `./scripts/host-setup.sh`, dann `docker compose build --no-cache && docker compose up -d`. |
 | „Permission denied“ in Caches nach Änderung von `.env` | `docker compose down -v` (löscht Caches und Claude-Login, nicht `.secrets/`), dann neu bauen. |
+| `release.sh`: „Nicht bei GitHub angemeldet“ | Im Container `gh auth login`. Fehlt `gh`: auf dem PC `docker compose up -d --build`. |
+| `release.sh`: „ANDEREN Schlüssel“ | `.secrets/` aus der Sicherung zurückholen; niemals mit einem neuen Schlüssel veröffentlichen. |
+| `release.sh`: Push oder Release fehlgeschlagen | Das Skript nennt den Befehl zum Zurücksetzen bzw. Wiederholen. |
 | Skripte melden `\r`-Fehler (Windows) | Projekt im WSL-Dateisystem ablegen; `.gitattributes` erzwingt LF. |

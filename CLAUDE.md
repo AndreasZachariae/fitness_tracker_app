@@ -27,6 +27,7 @@ aus dem Gedächtnis an: Bei Unsicherheit im lokalen SDK (`/home/flutter/sdks/flu
 | Debug-APK bauen | `flutter build apk --debug` |
 | DEV-App aufs Handy + starten | `./scripts/install-dev.sh` |
 | Screenshot vom Handy | `./scripts/screenshot.sh <name>` → gibt Pfad zur PNG aus, die du dir ansehen kannst |
+| Vorschau Release-Text (nur lesen) | `./scripts/release-notes.sh notes <version>`, Prüfung: `./scripts/release-notes.sh check <version>` |
 
 `flutter run` ist interaktiv und blockiert – das startet nur der Mensch.
 
@@ -40,7 +41,15 @@ aus dem Gedächtnis an: Bei Unsicherheit im lokalen SDK (`/home/flutter/sdks/flu
    - `docs/PROGRESS.md` aktualisieren (Häkchen, Annahmen, neue Abhängigkeiten, **manuelle Testliste fürs Handy**),
    - Commit (Conventional Commits, Englisch),
    - **Stopp:** dem Menschen berichten, was fertig ist und was er am Handy testen soll. Auf „weiter“ warten.
-4. Unklarheiten in der Spezifikation: Triff die Annahme, die Daten sicherer und die Bedienung einfacher macht, und dokumentiere
+4. **Ab Version 1.0 (Roadmap):** Neue Funktionen stehen in `docs/ROADMAP.md` unter Versionsnummern. Eine Version nur
+   umsetzen, wenn der Mensch es ausdrücklich sagt („Setze jetzt Version X um“). Ablauf wie bei einem Meilenstein (Plan,
+   Tests, Testliste in `docs/PROGRESS.md`, Commit, Stopp), zusätzlich:
+   - `version` in `pubspec.yaml` auf `X.Y.Z+N` setzen (Build-Nummer N immer + 1),
+   - in `CHANGELOG.md` oben einen Abschnitt `## [X.Y.Z] – unveröffentlicht` auf Deutsch für Nutzer schreiben
+     (Neu / Geändert / Behoben, ein Eintrag pro Zeile ohne Zeilenumbruch), `./scripts/release-notes.sh check X.Y.Z` grün,
+   - Status der Version in `docs/ROADMAP.md` auf `FINISHED` setzen.
+   Veröffentlichen (`scripts/release.sh`) macht nur der Mensch.
+5. Unklarheiten in der Spezifikation: Triff die Annahme, die Daten sicherer und die Bedienung einfacher macht, und dokumentiere
    sie unter „Annahmen“ in `docs/PROGRESS.md`. Nur bei grundlegenden Zielkonflikten nachfragen.
 
 ## Harte Regeln (Datensicherheit – keine Ausnahmen)
@@ -50,7 +59,8 @@ Auf dem Handy liegen echte Trainingsdaten in der Release-App `de.gymlog.app`. De
 1. **Niemals** `applicationId`/`namespace` (`de.gymlog.app`), den Debug-Suffix `.dev`, die Signatur-Konfiguration oder den
    Keystore ändern, neu erzeugen oder entfernen.
 2. **Niemals** `adb uninstall`, `adb shell pm …`, `adb install …`, `flutter install`, `scripts/install-release.sh`,
-   `scripts/build-release-apk.sh` oder `flutter build apk --release` ausführen (Release-Builds nutzen `.secrets/`).
+   `scripts/build-release-apk.sh`, `scripts/release.sh` oder `flutter build apk --release` ausführen (Release-Builds nutzen
+   `.secrets/`). Kein `git push`, kein `git tag`, keine `gh`-Befehle (der GitHub-Login im Container gehört dem Menschen).
    Interaktion mit dem Handy ausschließlich über `scripts/install-dev.sh` und `scripts/screenshot.sh` (nur Paket `de.gymlog.app.dev`).
 3. `.secrets/` weder lesen noch schreiben.
 4. Datenbankschema nur per Migration ändern: `schemaVersion` + 1, Schema-Dump (`drift_dev schema dump`), Migrationstest.
