@@ -1,21 +1,19 @@
 #!/usr/bin/env bash
-# IM CONTAINER ausführen – nur durch dich, nie durch Claude Code. Veröffentlicht die Version aus pubspec.yaml als
-# GitHub-Release:
-#   1. prüft: GitHub-Login, Schlüssel, Branch main, alles committet, Version/Tag neu, Roadmap-Status FINISHED,
-#      Changelog-Abschnitt vorhanden, ./scripts/check.sh grün
-#   2. baut und signiert dist/gymlog-<version>.apk (64-Bit-ARM) und prüft Paket, Version und Signaturschlüssel
+# AUF DEM PC ausführen (nicht im Container), im Projektordner, Container läuft. Nur durch dich.
+# Veröffentlicht die Version aus pubspec.yaml als GitHub-Release. Dein GitHub-Zugang (git, gh) bleibt auf dem PC;
+# der Container testet, baut und signiert nur (scripts/release-build.sh) und kommt nie an GitHub heran.
+#   1. prüft: Werkzeuge, GitHub-Login, Branch main, alles committet, Stand von GitHub, Version/Tag neu,
+#      Roadmap-Status FINISHED, Changelog-Abschnitt vorhanden
+#   2. im Container: Tests, APK bauen und signieren, Paket/Version/Signaturschlüssel prüfen
 #   3. zeigt den Release-Text und fragt nach – bis hierhin wird nichts veröffentlicht oder committet
 #   4. trägt Datum und Commits in CHANGELOG.md ein, committet "chore(release): vX.Y.Z", setzt den Tag vX.Y.Z,
 #      pusht main + Tag und erstellt die GitHub-Release mit der APK
+# Voraussetzungen auf dem PC: git mit Push-Rechten auf das Repo, GitHub CLI "gh" (angemeldet: gh auth status), Docker.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 REPO="AndreasZachariae/fitness_tracker_app"
-PACKAGE="de.gymlog.app"
 CERT_FILE=".github/signing-certificate.sha256"
-BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
-# git über den Login der GitHub CLI (keine Passwörter in git gespeichert).
-GIT_AUTH=(-c "credential.helper=" -c "credential.helper=!gh auth git-credential")
 
 fail() {
   echo >&2
@@ -26,16 +24,21 @@ step() {
   echo
   echo "==> $*"
 }
+sha256() {
+  if command -v sha256sum >/dev/null; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi
+}
 
 step "Voraussetzungen"
-command -v gh >/dev/null ||
-  fail "GitHub CLI 'gh' fehlt. Auf dem PC: docker compose up -d --build (README, Abschnitt Release)."
-gh auth status --hostname github.com >/dev/null 2>&1 ||
-  fail "Nicht bei GitHub angemeldet. Einmalig im Container: gh auth login (README, Abschnitt Release)."
-[ -f .secrets/key.properties ] || fail "Kein Signaturschlüssel (.secrets/key.properties)."
+[ ! -f /.dockerenv ] || fail "Dieses Skript läuft auf dem PC, nicht im Container (dort gibt es absichtlich keinen GitHub-Zugang)."
+command -v git >/dev/null || fail "git fehlt."
+command -v docker >/dev/null || fail "docker fehlt."
+command -v gh >/dev/null || fail "GitHub CLI 'gh' fehlt auf dem PC: https://cli.github.com (danach: gh auth login)."
+gh auth status --hostname github.com >/dev/null 2>&1 || fail "gh ist nicht angemeldet. Einmalig: gh auth login"
+docker compose ps --status running --services 2>/dev/null | grep -qx dev ||
+  fail "Der Container läuft nicht. Erst: docker compose up -d"
 [ "$(git rev-parse --abbrev-ref HEAD)" = main ] || fail "Releases nur vom Branch main."
 [ -z "$(git status --porcelain)" ] || fail "Es gibt nicht committete Änderungen (git status)."
-git "${GIT_AUTH[@]}" fetch --quiet --tags origin main
+git fetch --quiet --tags origin main
 git merge-base --is-ancestor origin/main HEAD ||
   fail "Auf GitHub (origin/main) gibt es Commits, die hier fehlen. Erst: git pull"
 
@@ -70,33 +73,15 @@ STATUS="$(awk -v v="$VERSION" '
 ./scripts/release-notes.sh check "$VERSION"
 echo "Roadmap: FINISHED, CHANGELOG.md: Abschnitt [$VERSION] vorhanden."
 
-step "Format, Analyse, Tests"
-./scripts/check.sh
-
-step "Release-APK bauen"
-./scripts/build-release-apk.sh
+step "Im Container: testen, bauen, signieren, prüfen"
+docker compose exec -T dev ./scripts/release-build.sh "$VERSION" "$BUILD"
 APK="dist/gymlog-$VERSION.apk"
-[ -f "$APK" ] || fail "$APK wurde nicht erzeugt."
-
-step "APK prüfen"
-BADGING="$("$BUILD_TOOLS/aapt2" dump badging "$APK")"
-[[ "$(head -1 <<<"$BADGING")" == *"name='$PACKAGE' versionCode='$BUILD' versionName='$VERSION'"* ]] ||
-  fail "Paket/Version der APK passen nicht: $(head -1 <<<"$BADGING")"
-[ "$(grep '^native-code:' <<<"$BADGING")" = "native-code: 'arm64-v8a'" ] ||
-  fail "Unerwartete Prozessor-Architekturen: $(grep '^native-code:' <<<"$BADGING")"
-SIGNER="$("$BUILD_TOOLS/apksigner" verify --print-certs "$APK" 2>/dev/null)" || fail "Signatur der APK ist ungültig."
-CERT="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' <<<"$SIGNER")"
-DN="$(sed -n 's/^Signer #1 certificate DN: //p' <<<"$SIGNER")"
-[ -n "$CERT" ] || fail "Kein Signaturzertifikat gefunden."
-[[ "$DN" != *"Android Debug"* ]] || fail "APK ist mit dem Debug-Schlüssel signiert, nicht mit deinem Release-Schlüssel."
-if [ -f "$CERT_FILE" ]; then
-  [ "$CERT" = "$(tr -d '[:space:]' <"$CERT_FILE")" ] ||
-    fail "APK ist mit einem ANDEREN Schlüssel signiert als die bisherigen Releases ($CERT_FILE). Updates würden fehlschlagen. .secrets/ aus der Sicherung zurückholen."
-  echo "Signaturschlüssel wie bei den bisherigen Releases."
-else
-  echo "Erstes Release: Der Fingerabdruck des Schlüssels wird in $CERT_FILE gespeichert und ab jetzt geprüft."
-fi
-SHA="$(sha256sum "$APK" | cut -d' ' -f1)"
+SIGNING="dist/gymlog-$VERSION.signing"
+[ -f "$APK" ] && [ -f "$SIGNING" ] || fail "Der Container hat keine APK geliefert."
+CERT="$(sed -n 's/^cert=//p' "$SIGNING")"
+DN="$(sed -n 's/^dn=//p' "$SIGNING")"
+SHA="$(sha256 "$APK")"
+[ -z "$(git status --porcelain)" ] || fail "Der Build hat Dateien im Repository verändert (git status)."
 
 NOTES="dist/release-notes-$VERSION.md"
 {
@@ -122,22 +107,18 @@ if [ "$ANSWER" != ja ]; then
 fi
 
 step "Changelog, Commit und Tag"
-DATE="$(date +%F)"
-./scripts/release-notes.sh finalize "$VERSION" "$DATE" >CHANGELOG.md.new
+./scripts/release-notes.sh finalize "$VERSION" "$(date +%F)" >CHANGELOG.md.new
 mv CHANGELOG.md.new CHANGELOG.md
 git add CHANGELOG.md
 if [ ! -f "$CERT_FILE" ]; then
   echo "$CERT" >"$CERT_FILE"
   git add "$CERT_FILE"
 fi
-ID=()
-git config user.name >/dev/null || ID+=(-c "user.name=$(git log -1 --format=%an)")
-git config user.email >/dev/null || ID+=(-c "user.email=$(git log -1 --format=%ae)")
-git "${ID[@]}" commit --quiet -m "chore(release): $TAG"
-git "${ID[@]}" tag -a "$TAG" -m "GymLog $VERSION"
+git commit --quiet -m "chore(release): $TAG"
+git tag -a "$TAG" -m "GymLog $VERSION"
 
 step "Push nach GitHub"
-if ! git "${GIT_AUTH[@]}" push --atomic origin main "$TAG"; then
+if ! git push --atomic origin main "$TAG"; then
   echo >&2
   echo "Push fehlgeschlagen, auf GitHub hat sich nichts geändert. Lokal zurücksetzen und später neu starten:" >&2
   echo "  git tag -d $TAG && git reset --hard HEAD~1" >&2

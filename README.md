@@ -105,14 +105,15 @@ In der DEV-App gibt es unter Einstellungen → „Entwicklung (nur GymLog DEV)�
    ```
 3. Claude Code plant, setzt mit Tests um, erhöht die Version in `pubspec.yaml`, schreibt den Abschnitt in
    `CHANGELOG.md`, eine Testliste fürs Handy in `docs/PROGRESS.md`, setzt die Roadmap auf `FINISHED` und committet.
-4. Testliste am Handy mit der DEV-App abarbeiten, dann veröffentlichen (siehe „Veröffentlichen auf GitHub“).
+4. Testliste am Handy mit der DEV-App abarbeiten, dann auf dem PC veröffentlichen
+   (siehe [Neue Version veröffentlichen](#neue-version-veröffentlichen-release)).
 
 Ohne diesen Auftrag setzt Claude Code nichts aus der Roadmap um.
 
 ### Container stoppen
 
 ```bash
-docker compose down                # auf dem PC; NICHT "down -v" (löscht Claude-/GitHub-Login, Verlauf und Caches)
+docker compose down                # auf dem PC; NICHT "down -v" (löscht Claude-Login, Gesprächsverlauf und Caches)
 ```
 
 ---
@@ -127,36 +128,9 @@ docker compose down                # auf dem PC; NICHT "down -v" (löscht Claude
 
 Updates behalten alle Daten. Dieses Skript führst du selbst aus, Claude Code darf es nicht.
 
-### Veröffentlichen auf GitHub (für dich und Freunde)
+### Veröffentlichen auf GitHub
 
-Jede Version landet als Release mit APK-Datei und Changelog unter
-<https://github.com/AndreasZachariae/fitness_tracker_app/releases>. Zum Weitergeben reicht der Link
-**<https://github.com/AndreasZachariae/fitness_tracker_app/releases/latest>** – keine APK per Mail oder Teams nötig.
-
-Einmalig (im Container, nach dem Neubau mit `docker compose up -d --build` auf dem PC):
-
-```bash
-gh auth login                      # GitHub.com → HTTPS → "Login with a web browser", Code im Browser eingeben
-```
-
-Der Login bleibt im Volume `gh-config` gespeichert. Claude Code darf `gh`, `git push` und `release.sh` nicht ausführen.
-
-Für jede Version (nach bestandener Handy-Testliste, Roadmap-Status `FINISHED`):
-
-```bash
-./scripts/release.sh
-```
-
-Das Skript prüft alles (Login, Schlüssel, alles committet, Version neu, Roadmap, Changelog, Tests), baut und signiert
-`dist/gymlog-<version>.apk`, vergleicht den Signaturschlüssel mit den bisherigen Releases und zeigt den Release-Text.
-Erst nach Eingabe von `ja` trägt es Datum und Commits in `CHANGELOG.md` ein, setzt den Tag `vX.Y.Z`, pusht und
-erstellt die Release. Bei jeder anderen Antwort wird nichts veröffentlicht. Vorschau ohne Bauen:
-`./scripts/release-notes.sh notes 1.0.0`.
-
-Die APK enthält nur 64-Bit-ARM (~23 MB) und läuft auf praktisch jedem Handy ab Android 7. Freunde installieren sie
-wie unten beschrieben; mit der App [Obtainium](https://github.com/ImranR98/Obtainium) und der Repo-Adresse bekommen
-sie neue Versionen automatisch angezeigt. Das Repository ist öffentlich: Code, Doku und Commit-Verlauf sind sichtbar,
-`.secrets/` nicht (steht in `.gitignore`).
+Siehe [Neue Version veröffentlichen](#neue-version-veröffentlichen-release) weiter unten.
 
 ### APK-Datei ohne Release
 
@@ -178,6 +152,53 @@ und behält die Daten (gleicher Schlüssel).
 
 ---
 
+## Neue Version veröffentlichen (Release)
+
+Jede Version landet mit APK und Changelog unter
+<https://github.com/AndreasZachariae/fitness_tracker_app/releases>. Zum Weitergeben an Freunde immer diesen Link
+schicken, keine APK per Mail oder Teams: **<https://github.com/AndreasZachariae/fitness_tracker_app/releases/latest>**
+
+Das Release startest **du auf dem PC** (nicht im Container): Dort liegen dein GitHub-Zugang und deine SSH-Schlüssel.
+Der Container testet, baut und signiert nur und hat keinen Zugriff auf GitHub; Claude Code darf kein Release auslösen.
+
+**Einmalig auf dem PC:** [GitHub CLI](https://cli.github.com) installieren (z. B. `sudo apt install gh`) und anmelden:
+
+```bash
+gh auth login                      # GitHub.com, Login im Browser
+gh auth status                     # Kontrolle
+```
+
+**Jedes Mal – Checkliste:**
+
+1. Claude Code hat die Version umgesetzt: `pubspec.yaml` hat die neue Version, `CHANGELOG.md` einen Abschnitt
+   `## [X.Y.Z] – unveröffentlicht`, alles ist committet.
+2. Testliste in `docs/PROGRESS.md` mit der DEV-App am Handy abgearbeitet.
+3. In `docs/ROADMAP.md` steht die Version auf `STATUS: FINISHED` (selbst setzen und committen, falls nötig).
+4. Auf dem PC im Projektordner:
+
+```bash
+cd ~/pfad/zu/fitness_tracker_app   # Projektordner auf dem PC
+docker compose up -d               # Container muss laufen
+./scripts/release-notes.sh notes X.Y.Z   # optional: Release-Text vorab ansehen
+./scripts/release.sh               # prüfen, bauen, Vorschau, nach "ja" veröffentlichen
+```
+
+`release.sh` prüft alles (GitHub-Login, Branch `main`, alles committet, Stand von GitHub, neue Version und
+Build-Nummer, Roadmap `FINISHED`, Changelog), lässt im Container Tests laufen, die APK `dist/gymlog-X.Y.Z.apk` bauen
+und signieren und vergleicht den Signaturschlüssel mit den bisherigen Releases. Dann zeigt es den Release-Text.
+**Erst nach Eingabe von `ja`** trägt es Datum und Commits in `CHANGELOG.md` ein, committet, setzt den Tag `vX.Y.Z`,
+pusht `main` und Tag und erstellt die Release mit der APK. Jede andere Antwort bricht ab, ohne etwas zu ändern.
+
+Gut zu wissen:
+- Die APK enthält nur 64-Bit-ARM (~23 MB) und läuft auf praktisch jedem Handy ab Android 7.
+- Freunde installieren wie in der Release beschrieben; mit [Obtainium](https://github.com/ImranR98/Obtainium) und der
+  Repo-Adresse sehen sie neue Versionen automatisch.
+- Danach die eigene GymLog-App aktualisieren: `./scripts/install-release.sh` (im Container) oder die APK aus der
+  Release auf dem Handy installieren – die Daten bleiben.
+- Das Repository ist öffentlich: Code, Doku und Commit-Verlauf sind sichtbar, `.secrets/` nicht.
+
+---
+
 ## Alle Skripte
 
 | Skript | Wo | Wozu |
@@ -190,8 +211,9 @@ und behält die Daten (gleicher Schlüssel).
 | `scripts/install-dev.sh` | Container | DEV-App bauen, installieren, starten |
 | `scripts/install-release.sh` | Container | echte App installieren/aktualisieren |
 | `scripts/build-release-apk.sh` | Container | echte App als APK-Datei nach `dist/` |
-| `scripts/release.sh` | Container | Version als GitHub-Release veröffentlichen (nur du) |
-| `scripts/release-notes.sh` | Container | Vorschau/Prüfung von Changelog und Release-Text |
+| `scripts/release.sh` | **PC** | Version als GitHub-Release veröffentlichen (nur du) |
+| `scripts/release-build.sh` | Container | wird von `release.sh` aufgerufen: testen, bauen, signieren, prüfen |
+| `scripts/release-notes.sh` | PC oder Container | Vorschau/Prüfung von Changelog und Release-Text |
 | `scripts/check.sh` | Container | Formatierung, Analyse, alle Tests |
 | `scripts/screenshot.sh` | Container | Screenshot vom Handy nach `build/screenshots/` |
 
@@ -205,7 +227,8 @@ und behält die Daten (gleicher Schlüssel).
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | Die installierte App hat einen anderen Schlüssel. **Nicht deinstallieren**, erst in der App ein Backup erstellen und sichern; dann deinstallieren, neu installieren, Backup wiederherstellen. |
 | Dateien gehören plötzlich „1001“ oder root (Linux) | `./scripts/host-setup.sh`, dann `docker compose build --no-cache && docker compose up -d`. |
 | „Permission denied“ in Caches nach Änderung von `.env` | `docker compose down -v` (löscht Caches und Claude-Login, nicht `.secrets/`), dann neu bauen. |
-| `release.sh`: „Nicht bei GitHub angemeldet“ | Im Container `gh auth login`. Fehlt `gh`: auf dem PC `docker compose up -d --build`. |
+| `release.sh`: „gh fehlt“ / „nicht angemeldet“ | Auf dem PC GitHub CLI installieren und `gh auth login`. |
+| `release.sh`: „läuft auf dem PC, nicht im Container“ | Terminal auf dem PC öffnen, im Projektordner starten. |
 | `release.sh`: „ANDEREN Schlüssel“ | `.secrets/` aus der Sicherung zurückholen; niemals mit einem neuen Schlüssel veröffentlichen. |
 | `release.sh`: Push oder Release fehlgeschlagen | Das Skript nennt den Befehl zum Zurücksetzen bzw. Wiederholen. |
 | Skripte melden `\r`-Fehler (Windows) | Projekt im WSL-Dateisystem ablegen; `.gitattributes` erzwingt LF. |

@@ -48,7 +48,7 @@ aus dem Gedächtnis an: Bei Unsicherheit im lokalen SDK (`/home/flutter/sdks/flu
    - in `CHANGELOG.md` oben einen Abschnitt `## [X.Y.Z] – unveröffentlicht` auf Deutsch für Nutzer schreiben
      (Neu / Geändert / Behoben, ein Eintrag pro Zeile ohne Zeilenumbruch), `./scripts/release-notes.sh check X.Y.Z` grün,
    - Status der Version in `docs/ROADMAP.md` auf `FINISHED` setzen.
-   Veröffentlichen (`scripts/release.sh`) macht nur der Mensch.
+   Veröffentlichen (`scripts/release.sh`, auf dem PC) macht nur der Mensch.
 5. Unklarheiten in der Spezifikation: Triff die Annahme, die Daten sicherer und die Bedienung einfacher macht, und dokumentiere
    sie unter „Annahmen“ in `docs/PROGRESS.md`. Nur bei grundlegenden Zielkonflikten nachfragen.
 
@@ -59,8 +59,9 @@ Auf dem Handy liegen echte Trainingsdaten in der Release-App `de.gymlog.app`. De
 1. **Niemals** `applicationId`/`namespace` (`de.gymlog.app`), den Debug-Suffix `.dev`, die Signatur-Konfiguration oder den
    Keystore ändern, neu erzeugen oder entfernen.
 2. **Niemals** `adb uninstall`, `adb shell pm …`, `adb install …`, `flutter install`, `scripts/install-release.sh`,
-   `scripts/build-release-apk.sh`, `scripts/release.sh` oder `flutter build apk --release` ausführen (Release-Builds nutzen
-   `.secrets/`). Kein `git push`, kein `git tag`, keine `gh`-Befehle (der GitHub-Login im Container gehört dem Menschen).
+   `scripts/build-release-apk.sh`, `scripts/release-build.sh`, `scripts/release.sh` oder `flutter build apk --release`
+   ausführen (Release-Builds nutzen `.secrets/`). Kein `git push`, kein `git tag`, keine `gh`-Befehle. Releases startet nur
+   der Mensch auf seinem PC; im Container gibt es absichtlich keinen GitHub-Zugang.
    Interaktion mit dem Handy ausschließlich über `scripts/install-dev.sh` und `scripts/screenshot.sh` (nur Paket `de.gymlog.app.dev`).
 3. `.secrets/` weder lesen noch schreiben.
 4. Datenbankschema nur per Migration ändern: `schemaVersion` + 1, Schema-Dump (`drift_dev schema dump`), Migrationstest.
