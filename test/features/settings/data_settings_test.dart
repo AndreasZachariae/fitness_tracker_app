@@ -60,6 +60,15 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Scrolls the section "Daten" to the top: reminder card and all tiles
+  /// are on screen.
+  Future<void> showData(WidgetTester tester) async {
+    await scrollTo(tester, S.sectionData);
+    final y = tester.getTopLeft(find.text(S.sectionData)).dy;
+    await tester.drag(find.byType(ListView), Offset(0, 120 - y));
+    await tester.pumpAndSettle();
+  }
+
   Future<AppSettings> settings(WidgetTester tester) =>
       dbWork(tester, () => SettingsRepository(db).get());
 
@@ -107,24 +116,31 @@ void main() {
           MaintenanceRepository(db).replaceAll(generateDemoData(now: testNow)),
     );
     await openSettings(tester);
-    await scrollTo(tester, S.createBackup);
-    expect(find.text(S.noBackupYet), findsOneWidget);
+    await showData(tester);
+    // Tile subtitle and the reminder card (1.0.1).
+    expect(find.text(S.noBackupYet), findsNWidgets(2));
 
     files.dismissShare = true;
-    await tester.tap(find.text(S.createBackup));
+    await tester.tap(find.widgetWithText(ListTile, S.createBackup));
     await tester.pumpAndSettle();
     await tester.tap(find.text(S.shareAction));
     await settle(tester);
     expect((await settings(tester)).lastBackupAt, isNull);
 
     files.dismissShare = false;
-    await tester.tap(find.text(S.createBackup));
+    await tester.tap(find.widgetWithText(ListTile, S.createBackup));
     await tester.pumpAndSettle();
     await tester.tap(find.text(S.shareAction));
     await settle(tester);
     expect(files.shared.single.$1, startsWith('gymlog-backup-'));
     expect((await settings(tester)).lastBackupAt, testNow);
     expect(find.text(S.lastBackup('3.11.2026, 18:20')), findsOneWidget);
+    expect(find.text(S.noBackupYet), findsNothing, reason: 'card gone');
+    expect(
+      find.byType(SnackBar),
+      findsNothing,
+      reason: 'no confirmation (1.0.1)',
+    );
     expect(
       () => decodeBackup(utf8.decode(files.shared.single.$2)),
       returnsNormally,
@@ -145,7 +161,11 @@ void main() {
     final zip = ZipDecoder().decodeBytes(files.saved.single.$2);
     expect(zip.files, hasLength(4));
     expect((await settings(tester)).lastBackupAt, isNull);
-    expect(find.text(S.exportCreated), findsOneWidget);
+    expect(
+      find.byType(SnackBar),
+      findsNothing,
+      reason: 'no confirmation (1.0.1)',
+    );
     await disposeApp(tester, db);
   });
 
@@ -179,7 +199,11 @@ void main() {
     await tester.tap(find.text(S.restoreConfirm));
     await settleIo(tester);
 
-    expect(find.text(S.restoreDone), findsOneWidget);
+    expect(
+      find.byType(SnackBar),
+      findsNothing,
+      reason: 'no confirmation (1.0.1)',
+    );
     final counts = await dbWork(
       tester,
       () => MaintenanceRepository(db).counts(),
@@ -245,53 +269,32 @@ void main() {
     await disposeApp(tester, db);
   });
 
-  testWidgets('summary reminds of an old backup and can create one', (
-    tester,
-  ) async {
-    await dbWork(tester, () async {
-      await SettingsRepository(db).update(
-        (s) => s.copyWith(
-          lastBackupAt: testNow.subtract(const Duration(days: 21)),
-        ),
-      );
-      final r = Repos(db);
-      final e = await addExercise(r, 'Bank');
-      final id = await r.sessions.start(
-        exercises: [SessionExerciseDraft(exerciseId: e, targetSets: 1)],
-      );
-      final se = (await r.sessions.getDetails(id)).single.sessionExercise;
-      await r.sessions.saveSet(se.id, const SetValues(weightKg: 50, reps: 5));
-    });
-    tester.view.physicalSize = const Size(1080, 2340);
-    tester.view.devicePixelRatio = 2.75;
-    addTearDown(tester.view.reset);
-    await pumpApp(tester, db: db, files: files);
-    await settle(tester);
-    await tester.tap(find.text(S.finishTraining));
-    await settle(tester);
-
-    expect(find.text(S.backupAgo(21)), findsOneWidget);
-    await tester.tap(find.text(S.createBackup));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(S.shareAction));
-    await settle(tester);
-    expect(files.shared, hasLength(1));
-    expect(find.text(S.backupAgo(21)), findsNothing);
-    await disposeApp(tester, db);
+  /// A training of today with one set; the last backup was 40 days ago.
+  Future<void> seedTraining(
+    WidgetTester tester, {
+    int? reminderDays,
+    bool finished = true,
+  }) => dbWork(tester, () async {
+    await SettingsRepository(db).update(
+      (s) => s.copyWith(
+        lastBackupAt: testNow.subtract(const Duration(days: 40)),
+        backupReminderDays: reminderDays ?? s.backupReminderDays,
+      ),
+    );
+    final r = Repos(db);
+    final e = await addExercise(r, 'Bank');
+    final id = await r.sessions.start(
+      exercises: [SessionExerciseDraft(exerciseId: e, targetSets: 1)],
+    );
+    final se = (await r.sessions.getDetails(id)).single.sessionExercise;
+    await r.sessions.saveSet(se.id, const SetValues(weightKg: 50, reps: 5));
+    if (finished) await r.sessions.finishSession(id);
   });
 
-  testWidgets('no reminder when switched off', (tester) async {
-    await dbWork(tester, () async {
-      await SettingsRepository(db)
-          .update((s) => s.copyWith(backupReminderDays: 0));
-      final r = Repos(db);
-      final e = await addExercise(r, 'Bank');
-      final id = await r.sessions.start(
-        exercises: [SessionExerciseDraft(exerciseId: e, targetSets: 1)],
-      );
-      final se = (await r.sessions.getDetails(id)).single.sessionExercise;
-      await r.sessions.saveSet(se.id, const SetValues(weightKg: 50, reps: 5));
-    });
+  testWidgets('summary has no backup reminder any more (1.0.1)', (
+    tester,
+  ) async {
+    await seedTraining(tester, finished: false);
     tester.view.physicalSize = const Size(1080, 2340);
     tester.view.devicePixelRatio = 2.75;
     addTearDown(tester.view.reset);
@@ -300,7 +303,45 @@ void main() {
     await tester.tap(find.text(S.finishTraining));
     await settle(tester);
     expect(find.text(S.summaryTitle), findsOneWidget);
-    expect(find.text(S.noBackupYet), findsNothing);
+    expect(find.text(S.backupAgo(40)), findsNothing);
+    await disposeApp(tester, db);
+  });
+
+  testWidgets('settings remind of an old backup under "Daten" (1.0.1)', (
+    tester,
+  ) async {
+    await seedTraining(tester);
+    await openSettings(tester);
+    await showData(tester);
+    expect(find.text(S.backupAgo(40)), findsOneWidget, reason: '> 30 days');
+    final card = find.ancestor(
+      of: find.text(S.backupAgo(40)),
+      matching: find.byType(Card),
+    );
+    await tester.tap(
+      find.descendant(of: card, matching: find.text(S.createBackup)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.shareAction));
+    await settle(tester);
+    expect(files.shared, hasLength(1));
+    expect(find.text(S.backupAgo(40)), findsNothing);
+    await disposeApp(tester, db);
+  });
+
+  testWidgets('no reminder when switched off or recent enough', (tester) async {
+    await seedTraining(tester, reminderDays: 0);
+    await openSettings(tester);
+    await showData(tester);
+    expect(find.text(S.backupAgo(40)), findsNothing);
+    await dbWork(
+      tester,
+      () =>
+          SettingsRepository(db)
+              .update((s) => s.copyWith(backupReminderDays: 60)),
+    );
+    await settle(tester);
+    expect(find.text(S.backupAgo(40)), findsNothing, reason: '40 ≤ 60 days');
     await disposeApp(tester, db);
   });
 }

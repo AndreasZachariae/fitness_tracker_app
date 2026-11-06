@@ -21,6 +21,9 @@ void showMessage(
         content: Text(message),
         actionOverflowThreshold: largeText ? 0 : null,
         duration: onUndo == null ? duration : const Duration(seconds: 5),
+        // With an action Flutter keeps the snackbar until it is swiped away;
+        // it covered the app (1.0.1). It always disappears on its own.
+        persist: false,
         action: onUndo == null
             ? null
             : SnackBarAction(label: S.undo, onPressed: onUndo),

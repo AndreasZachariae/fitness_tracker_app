@@ -62,6 +62,13 @@ class _TrainingListState extends State<TrainingList> {
   /// Dismissed items are hidden at once; the removal itself is async.
   final _hidden = <Object>{};
 
+  /// Group held at its drag handle, shown as one line (1.0.1).
+  int? _held;
+
+  void _hold(int? groupKey) {
+    if (_held != groupKey) setState(() => _held = groupKey);
+  }
+
   @override
   void didUpdateWidget(TrainingList oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -145,6 +152,7 @@ class _TrainingListState extends State<TrainingList> {
               onCreateGroup: widget.onCreateGroup,
             ),
       itemCount: blocks.length,
+      onReorderEnd: (_) => _hold(null),
       onReorderItem: (a, b) {
         final moved = [...blocks];
         moved.insert(b, moved.removeAt(a));
@@ -179,8 +187,16 @@ class _TrainingListState extends State<TrainingList> {
             PlanGroupKind.superset => supersetSubtitle(group.restSec),
             PlanGroupKind.rotation => S.rotationEvery(group.rotationEvery),
           },
-          dragHandle: GroupDragHandle(kind: group.kind, index: i),
+          dragHandle: GroupDragHandle(
+            kind: group.kind,
+            index: i,
+            onHold: () => _hold(group.key),
+            onRelease: () => _hold(null),
+          ),
           onOptions: () => widget.onGroupOptions(group, members),
+          collapsedText: _held == group.key
+              ? groupCollapsedText(members.map((m) => m.exercise.name))
+              : null,
           child: ReorderableListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),

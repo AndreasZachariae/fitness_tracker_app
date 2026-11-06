@@ -46,7 +46,8 @@ Version 1.0 der Spezifikation. Verbindlich für die Umsetzung. Abschnittsnummern
   `keyAlias`, `keyPassword`; `storeFile` ist relativ zu `.secrets/`). Fehlt die Datei, bricht ein Release-Build mit klarer Meldung ab
   („Signaturschlüssel fehlt – siehe README, Schritt 4“). Kein Fallback auf Debug-Signatur für Release.
 - Debug-Signatur: Standard-Debug-Keystore unter `~/.android` (liegt im Docker-Volume).
-- Manifest: nur Permission `VIBRATE`. `android:allowBackup` bleibt auf dem Standard (aktiv) als zusätzliches Sicherheitsnetz.
+- Manifest: Permission `VIBRATE`; ab 1.0.1 zusätzlich `USE_EXACT_ALARM` und `SCHEDULE_EXACT_ALARM` (nur Android 12) für die
+  Pausen-Vibration im Hintergrund (§6.2.1). `android:allowBackup` bleibt auf dem Standard (aktiv) als zusätzliches Sicherheitsnetz.
   Activity auf Hochformat fixiert.
 - Version in `pubspec.yaml` als `x.y.z+build`; Build-Nummer bei jedem Meilenstein erhöhen.
 - `.gitignore` enthält zusätzlich zu den Flutter-Einträgen: `.secrets/`, `.env`, `build/`.
@@ -128,7 +129,7 @@ Es darf höchstens eine aktive Session geben (im Repository erzwingen).
 **`app_settings`** – genau eine Zeile (`id` = 1):
 `defaultSets` (3) · `defaultRestSec` (90) · `restTimerEnabled` (true) · `vibrationEnabled` (true) · `keepScreenOn` (true) ·
 `autoActivateNext` (false) · `themeMode` (`system` | `light` | `dark`) · `lastSelectedPlanId` nullable (null = Frei) ·
-`lastBackupAt` nullable · `backupReminderDays` (14; 0 = aus)
+`lastBackupAt` nullable · `backupReminderDays` (14, ab 1.0.1 Standard 30; 0 = aus)
 
 Regeln:
 - Übungen, die in Sessions vorkommen, werden nicht gelöscht, sondern archiviert. Unbenutzte dürfen gelöscht werden.
@@ -185,8 +186,8 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
   - **Erledigt** (`done`): ausgegraut, eingeklappt, Haken, Zusammenfassung „3 Sätze, bestes 62,5 kg × 10“. Kein Drag-Handle.
     Tap → klappt auf (Sätze ansehen/ändern) mit Button „Wieder öffnen“ (→ aktiv, weitere Sätze möglich).
   - **Übersprungen** (`skipped`): wie erledigt, Label „übersprungen“.
-- **Satz speichern:** Satz sofort in DB, leichte Haptik, nächster Satz vorbefüllt (§7.1), Pausentimer startet (§6.2.1),
-  Snackbar „Satz gespeichert“ mit „Rückgängig“ (5 s; löscht den Satz und stellt den Status wieder her).
+- **Satz speichern:** Satz sofort in DB, leichte Haptik, nächster Satz vorbefüllt (§7.1), Pausentimer startet (§6.2.1).
+  Ab 1.0.1 ohne Snackbar (Sätze lassen sich jederzeit bearbeiten oder löschen).
   Ist `targetSets` erreicht → Status `done`, Kachel klappt zu. Danach **keine** automatische Aktivierung der nächsten Übung
   (außer Einstellung `autoActivateNext`); stattdessen wird die nächste offene Kachel dezent markiert.
 - Tap auf eine andere offene Übung macht sie aktiv; die bisher aktive wird `pending` und behält ihre Sätze.
@@ -204,7 +205,9 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
 - Dauer: `restSec` der Session-Übung → der Übung → `defaultRestSec`. Ende = `completedAt` des letzten Satzes + Dauer
   (+/− Anpassungen im State). Dadurch nach App-Neustart korrekt rekonstruierbar.
 - Bei 0: Vibrationsmuster (3 × kurz, wenn `vibrationEnabled`), Leiste wechselt für 10 s auf „Pause vorbei“.
-- Nur im Vordergrund. Keine Benachrichtigungen in v1.
+- Ab 1.0.1 auch im Hintergrund und bei gesperrtem Display: Geht die App während einer Pause in den Hintergrund, vibriert
+  ein exakter Android-Alarm zum Pausenende (gleiches Muster). Keine Benachrichtigungen in v1.
+- Nach „Beenden“ oder „Verwerfen“ endet die laufende Pause (keine Leiste, keine Vibration).
 
 ### 6.3 Session beenden
 
@@ -217,7 +220,7 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
     übernehmen“ (Standard aus).
   - Freie Session: Button „Als Plan speichern“ (Name eingeben).
   - Notizfeld.
-  - Ist das letzte Backup älter als `backupReminderDays`: Hinweis „Letztes Backup vor 21 Tagen“ mit Button „Backup erstellen“.
+  - (Bis 1.0.0 hier der Backup-Hinweis; ab 1.0.1 in Einstellungen → Daten, §6.7.)
   - Button „Fertig“ → Training-Tab im Zustand 6.1.
 
 ### 6.4 Verlauf
@@ -242,12 +245,14 @@ Der Zeitraum schneidet nur die Anzeige zu; Berechnungen nutzen immer die gesamte
   Kennzahlen: Bestwert, Veränderung im Zeitraum (absolut und %), Anzahl Trainings. Tabelle der letzten 10 Trainings.
 - **Gesamt:**
   1. **Kraftindex** (§7.5) als Linie in %, 100-%-Referenzlinie, Untertitel „Durchschnitt über N Übungen“.
-     Schalter „Körpergewicht einblenden“ → zweites Diagramm direkt darunter mit gleicher Zeitachse (keine Doppelachse).
-  2. **Wochenvolumen** (Balken, kg, §7.6).
-  3. **Trainingskalender** als Heatmap: letzte 26 Wochen, Spalten = Wochen, Zeilen = Mo–So, Intensität = Anzahl Sätze.
-     Kennzahlen: Ø Trainings pro Woche, aktuelle Serie „Wochen in Folge mit Training“.
-  4. **Trainingsdauer** pro Training.
-  5. **Sätze pro Kategorie** im Zeitraum (horizontale Balken).
+  2. **Serie** (ab 1.0.1 eigene, hervorgehobene Karte): „N Wochen in Folge“ mit Training; ohne aktive Serie „Keine aktive
+     Serie“; die längste Serie mit „nicht aktiv“, wenn sie länger ist als die aktuelle.
+  3. **Körpergewicht** (ab 1.0.1 immer, ohne Schalter) mit gleicher Zeitachse wie der Kraftindex (keine Doppelachse).
+  4. **Wochenvolumen** (Balken, kg, §7.6).
+  5. **Trainingskalender** als Heatmap: letzte 26 Wochen, Spalten = Wochen, Zeilen = Mo–So, Intensität = Anzahl Sätze.
+     Kennzahl: Ø Trainings pro Woche.
+  6. **Trainingsdauer** pro Training.
+  7. **Sätze pro Kategorie** im Zeitraum (horizontale Balken).
 - **Rekorde:** alle Übungen mit ihren Bestwerten (§7.7) und Datum; Tap → Tab Übung mit dieser Übung.
 - Leerzustände je Diagramm, z. B. „Für einen Verlauf brauchst du mindestens zwei Trainings mit dieser Übung.“
 
@@ -267,7 +272,8 @@ Der Zeitraum schneidet nur die Anzeige zu; Berechnungen nutzen immer die gesamte
   Nächste Übung automatisch aktivieren.
 - **Darstellung:** System / Hell / Dunkel.
 - **Daten:** „CSV exportieren“, „Backup erstellen“, „Backup wiederherstellen“, „Letztes Backup: 3.11.2026, 18:20“,
-  Backup-Erinnerung (Tage, 0 = aus).
+  Backup-Erinnerung (Tage, 0 = aus). Ab 1.0.1 steht hier unter „Daten“ der gelbe Hinweis „Letztes Backup vor … Tagen“
+  mit „Backup erstellen“, sobald die Erinnerung fällig ist.
 - **Über:** App-Version, Build-Nummer, Datenbank-Schemaversion.
 - **Nur im Dev-Build** (`de.gymlog.app.dev`): „Demo-Daten erzeugen“ und „Alle Daten löschen“ (mit Bestätigung).
 
@@ -388,7 +394,9 @@ selbsterklärend. Flächen erinnern an Stahl und Gummiboden, nicht an eine App-V
   Rekord = rot + Label.
 - **Bewegung nur als Antwort auf Aktionen** (Aufklappen, Satz gespeichert, Kachel erledigt). Der einzige hervorgehobene Moment ist
   das Rekord-Aufleuchten. Keine Verläufe, keine dekorativen Schatten. Eckenradius: Karten 12 dp, Buttons 12 dp, Chips 8 dp.
-- **Texte:** Satzanfang groß, aktive Verben, eine Aktion heißt überall gleich („Satz speichern“ → Snackbar „Satz gespeichert“).
+- **Texte:** Satzanfang groß, aktive Verben, eine Aktion heißt überall gleich.
+- **Snackbars (ab 1.0.1):** keine Bestätigungen. Nur Fehler, Hinweise ohne sichtbares Ergebnis und Löschen mit „Rückgängig“
+  (Körpergewicht, Training im Verlauf, Übung aus der Plan-/freien Liste); sie verschwinden nach 5 s von selbst.
   Fehlermeldungen sagen, was passiert ist und was zu tun ist. Leerzustände laden zur nächsten Aktion ein.
 - Systemschriftgröße bis Faktor 1,3 ohne Layoutbruch.
 

@@ -88,7 +88,11 @@ void main() {
       clock.advance(const Duration(minutes: 2));
       await tapSave(tester);
     }
-    expect(find.text(S.setSaved), findsOneWidget);
+    expect(
+      find.byType(SnackBar),
+      findsNothing,
+      reason: 'no confirmation (1.0.1)',
+    );
     final d = await details(tester, id);
     // §7.1 rule 1: each further set takes the values of the previous one.
     expect(d.first.sets.map((s) => (s.weightKg, s.reps)), [
@@ -128,25 +132,6 @@ void main() {
       (await dbWork(tester, () => r.sessions.findById(id)))!.notes,
       'Lief gut',
     );
-    await disposeApp(tester, db);
-  });
-
-  testWidgets('undo removes the set and restores the status', (tester) async {
-    final id = await startPushSession(tester);
-    await open(tester);
-    for (var i = 0; i < 3; i++) {
-      await tapSave(tester);
-    }
-    expect(
-      (await details(tester, id)).first.sessionExercise.status,
-      SessionExerciseStatus.done,
-    );
-    await tester.tap(find.text(S.undo));
-    await settle(tester);
-    final d = await details(tester, id);
-    expect(d.first.sets, hasLength(2));
-    expect(d.first.sessionExercise.status, SessionExerciseStatus.active);
-    expect(find.text(S.setOf(3, 3)), findsOneWidget);
     await disposeApp(tester, db);
   });
 

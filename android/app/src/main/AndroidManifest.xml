@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Only permission of the app (SPEC §3). No INTERNET here: the app works fully offline. -->
+    <!-- Permissions (SPEC §3, CLAUDE.md rule 6). No INTERNET here: the app works fully offline. -->
     <uses-permission android:name="android.permission.VIBRATE"/>
+    <!-- Exact alarm for the rest-over vibration in the background (1.0.1): granted at install on
+         Android 13+ (USE_EXACT_ALARM), on Android 12 SCHEDULE_EXACT_ALARM. No notification. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32"/>
 
     <application
         android:label="@string/app_name"
@@ -29,6 +33,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <receiver android:name=".RestAlarmReceiver" android:exported="false"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/format/formatters.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../core/theme/gym_colors.dart';
+import '../../core/theme/typography.dart';
 import '../../domain/body_weight.dart';
 import '../../domain/calendar.dart';
 import '../../domain/models/models.dart';
@@ -18,16 +19,12 @@ class OverallStatsTab extends StatelessWidget {
     required this.data,
     required this.period,
     required this.today,
-    required this.showBodyWeight,
-    required this.onShowBodyWeight,
     super.key,
   });
 
   final StatsData data;
   final StatsPeriod period;
   final LocalDate today;
-  final bool showBodyWeight;
-  final ValueChanged<bool> onShowBodyWeight;
 
   @override
   Widget build(BuildContext context) {
@@ -51,26 +48,24 @@ class OverallStatsTab extends StatelessWidget {
           minX: minX,
           maxX: maxX,
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: SwitchListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-            title: const Text(S.showBodyWeight),
-            value: showBodyWeight,
-            onChanged: onShowBodyWeight,
+        // Second place on purpose (1.0.1).
+        _StreakCard(
+          current: currentStreak(data, today),
+          longest: longestStreak(data),
+          trainedThisWeek: data.trainings.any(
+            (t) => !t.day.isBefore(mondayOf(today)),
           ),
         ),
-        if (showBodyWeight)
-          _BodyWeightChart(
-            data: [
-              for (final s in movingAverage7(data.bodyWeights))
-                if (!s.entry.date.isBefore(from) &&
-                    !s.entry.date.isAfter(today))
-                  s,
-            ],
-            minX: minX,
-            maxX: maxX,
-          ),
+        // Always shown (1.0.1); shares the time axis with the index.
+        _BodyWeightChart(
+          data: [
+            for (final s in movingAverage7(data.bodyWeights))
+              if (!s.entry.date.isBefore(from) && !s.entry.date.isAfter(today))
+                s,
+          ],
+          minX: minX,
+          maxX: maxX,
+        ),
         _WeeklyVolumeChart(
           weeks: [
             for (final w in weeklyVolume(data, today))
@@ -80,7 +75,6 @@ class OverallStatsTab extends StatelessWidget {
         _Heatmap(
           grid: trainingHeatmap(data, today),
           perWeek: trainingsPerWeek(data, period, today),
-          streak: currentStreak(data, today),
         ),
         _DurationChart(
           trainings: [
@@ -356,16 +350,11 @@ class _WeeklyVolumeChart extends StatelessWidget {
 }
 
 class _Heatmap extends StatelessWidget {
-  const _Heatmap({
-    required this.grid,
-    required this.perWeek,
-    required this.streak,
-  });
+  const _Heatmap({required this.grid, required this.perWeek});
 
   /// `[week][weekday]` sets, oldest week first.
   final List<List<int>> grid;
   final double perWeek;
-  final int streak;
 
   @override
   Widget build(BuildContext context) {
@@ -440,7 +429,84 @@ class _Heatmap extends StatelessWidget {
             S.perWeek(formatDecimal1(perWeek)),
             style: theme.textTheme.bodyMedium,
           ),
-          Text(S.streak(streak), style: theme.textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
+/// Weeks in a row with training, highlighted (1.0.1); the longest streak
+/// is shown as "nicht aktiv" when the current one is shorter.
+class _StreakCard extends StatelessWidget {
+  const _StreakCard({
+    required this.current,
+    required this.longest,
+    required this.trainedThisWeek,
+  });
+
+  final int current;
+  final int longest;
+  final bool trainedThisWeek;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final gym = GymColors.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    final active = current > 0;
+    final hints = [
+      if (active && current == longest && longest > 1) S.streakIsLongest,
+      if (longest > current) S.streakLongest(longest),
+      if (!trainedThisWeek) active ? S.streakKeep : S.streakStart,
+    ];
+    return ChartCard(
+      title: S.streakTitle,
+      info: S.streakInfo,
+      height: null,
+      child: Row(
+        children: [
+          Icon(
+            Icons.local_fire_department,
+            size: 44,
+            color: active ? gym.superset : muted,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (active)
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '$current ',
+                          style: NumberStyles.small.copyWith(
+                            fontSize: 40,
+                            height: 1.1,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        TextSpan(
+                          text: S.streakWeeksLabel(current),
+                          style: theme.textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Text(
+                    S.streakNone,
+                    style: theme.textTheme.titleLarge?.copyWith(color: muted),
+                  ),
+                for (final h in hints)
+                  Text(
+                    h,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: muted),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );

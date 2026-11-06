@@ -4,6 +4,7 @@ import '../core/format/exercise_format.dart';
 import '../core/l10n/strings_de.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/gym_colors.dart';
+import '../core/theme/typography.dart';
 import '../domain/models/models.dart';
 import 'exercise_type_icon.dart';
 import 'info_button.dart';
@@ -34,12 +35,18 @@ class GroupFrame extends StatelessWidget {
     this.subtitle,
     this.dragHandle,
     this.onOptions,
+    this.collapsedText,
     super.key,
   });
 
   final PlanGroupKind kind;
   final String? subtitle;
   final Widget child;
+
+  /// While the group is held at its drag handle it shows only this one
+  /// line instead of [child]: a short group moves like a single exercise
+  /// (1.0.1; a tall one jumped past several exercises at once).
+  final String? collapsedText;
 
   /// E.g. a [ReorderableDragStartListener] of the outer list.
   final Widget? dragHandle;
@@ -104,7 +111,18 @@ class GroupFrame extends StatelessWidget {
                   ],
                 ),
               ),
-              child,
+              if (collapsedText case final text?)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                  child: Text(
+                    text,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                )
+              else
+                child,
             ],
           ),
         ),
@@ -114,21 +132,42 @@ class GroupFrame extends StatelessWidget {
 }
 
 /// The drag handle icon of a whole group.
+///
+/// [onHold] runs when a finger touches the handle, before the drag starts
+/// (Flutter measures the dragged item only after the finger moved a bit),
+/// [onRelease] when it is lifted without a drag. After a drag the list's
+/// `onReorderEnd` has to undo [onHold].
 class GroupDragHandle extends StatelessWidget {
-  const GroupDragHandle({required this.kind, required this.index, super.key});
+  const GroupDragHandle({
+    required this.kind,
+    required this.index,
+    this.onHold,
+    this.onRelease,
+    super.key,
+  });
 
   final PlanGroupKind kind;
   final int index;
+  final VoidCallback? onHold;
+  final VoidCallback? onRelease;
 
   @override
-  Widget build(BuildContext context) => ReorderableDragStartListener(
-    index: index,
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(4, 12, 16, 12),
-      child: Icon(Icons.drag_handle, semanticLabel: S.moveGroup(kind)),
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: (_) => onHold?.call(),
+    onPointerUp: (_) => onRelease?.call(),
+    onPointerCancel: (_) => onRelease?.call(),
+    child: ReorderableDragStartListener(
+      index: index,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(4, 12, 16, 12),
+        child: Icon(Icons.drag_handle, semanticLabel: S.moveGroup(kind)),
+      ),
     ),
   );
 }
+
+/// The one line of a held group: its exercise names.
+String groupCollapsedText(Iterable<String> names) => names.join(' · ');
 
 /// An exercise that can be put into a new group.
 typedef GroupCandidate = ({Object key, Exercise exercise});
@@ -307,7 +346,6 @@ class _RestDialogState extends State<_RestDialog> {
           NumberStepper(
             label: S.fieldRestShort,
             valueText: formatDuration(shown),
-            helper: _rest == null ? S.supersetRestDefault : null,
             onDecrement: shown > 0
                 ? () => setState(() => _rest = (shown - _step).clamp(0, _max))
                 : null,
@@ -315,14 +353,24 @@ class _RestDialogState extends State<_RestDialog> {
                 ? () => setState(() => _rest = (shown + _step).clamp(0, _max))
                 : null,
           ),
-          if (_rest != null)
-            Align(
+          // Same height either way, so the dialog does not jump (1.0.1).
+          SizedBox(
+            height: 48,
+            child: Align(
               alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () => setState(() => _rest = null),
-                child: const Text(S.resetToDefault),
-              ),
+              child: _rest == null
+                  ? Text(
+                      S.supersetRestDialogDefault,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    )
+                  : TextButton(
+                      onPressed: () => setState(() => _rest = null),
+                      child: const Text(S.resetToDefault),
+                    ),
             ),
+          ),
         ],
       ),
       actions: [
@@ -362,17 +410,48 @@ class _EveryDialogState extends State<_EveryDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Compact: [−] 2 [+] Trainings (1.0.1).
     return AlertDialog(
       title: const Text(S.rotationEveryTitle),
-      content: NumberStepper(
-        label: S.trainings(_every),
-        valueText: '$_every',
-        onDecrement: _every > minRotationEvery
-            ? () => setState(() => _every--)
-            : null,
-        onIncrement: _every < maxRotationEvery
-            ? () => setState(() => _every++)
-            : null,
+      content: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton.filledTonal(
+            tooltip: '${S.rotationEveryTitle}: ${S.decrease}',
+            onPressed: _every > minRotationEvery
+                ? () => setState(() => _every--)
+                : null,
+            icon: const Icon(Icons.remove),
+          ),
+          SizedBox(
+            width: 48,
+            child: Text(
+              '$_every',
+              textAlign: TextAlign.center,
+              style: NumberStyles.small.copyWith(
+                fontSize: 24,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+          IconButton.filledTonal(
+            tooltip: '${S.rotationEveryTitle}: ${S.increase}',
+            onPressed: _every < maxRotationEvery
+                ? () => setState(() => _every++)
+                : null,
+            icon: const Icon(Icons.add),
+          ),
+          const SizedBox(width: 12),
+          // Fixed width: "Training"/"Trainings" must not move the buttons.
+          SizedBox(
+            width: 96,
+            child: Text(
+              S.trainingsUnit(_every),
+              style: theme.textTheme.titleMedium,
+            ),
+          ),
+        ],
       ),
       actions: [
         TextButton(

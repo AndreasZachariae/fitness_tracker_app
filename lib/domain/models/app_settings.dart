@@ -14,7 +14,7 @@ final class AppSettings {
     this.themeMode = ThemePreference.system,
     this.lastSelectedPlanId,
     this.lastBackupAt,
-    this.backupReminderDays = 14,
+    this.backupReminderDays = 30,
   });
 
   static const singletonId = 1;

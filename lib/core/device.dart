@@ -16,6 +16,16 @@ abstract interface class DeviceFeedback {
   Future<void> restOver();
 }
 
+/// Vibrates at the end of a rest while the app is in the background or the
+/// screen is locked (1.0.1): an exact Android alarm, no notification.
+abstract interface class RestAlarm {
+  /// Vibrates at [at] unless [cancel] is called before. Replaces an earlier
+  /// alarm.
+  Future<void> schedule(DateTime at);
+
+  Future<void> cancel();
+}
+
 /// Keeps the display on while a session runs (SPEC §6.2).
 abstract interface class ScreenAwake {
   Future<void> set(bool on);
@@ -49,6 +59,24 @@ final class PlatformFeedback implements DeviceFeedback {
   });
 }
 
+final class PlatformRestAlarm implements RestAlarm {
+  const PlatformRestAlarm();
+
+  /// Implemented in android/app/src/main/kotlin/de/gymlog/app/RestAlarm.kt.
+  static const _channel = MethodChannel('de.gymlog.app/rest_alarm');
+
+  @override
+  Future<void> schedule(DateTime at) => PlatformFeedback._safe(
+    () => _channel.invokeMethod<void>('schedule', {
+      'atMillis': at.millisecondsSinceEpoch,
+    }),
+  );
+
+  @override
+  Future<void> cancel() =>
+      PlatformFeedback._safe(() => _channel.invokeMethod<void>('cancel'));
+}
+
 final class PlatformScreenAwake implements ScreenAwake {
   const PlatformScreenAwake();
 
@@ -64,6 +92,10 @@ final class PlatformScreenAwake implements ScreenAwake {
 
 final deviceFeedbackProvider = Provider<DeviceFeedback>(
   (ref) => const PlatformFeedback(),
+);
+
+final restAlarmProvider = Provider<RestAlarm>(
+  (ref) => const PlatformRestAlarm(),
 );
 
 final screenAwakeProvider = Provider<ScreenAwake>(

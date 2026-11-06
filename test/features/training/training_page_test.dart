@@ -342,7 +342,11 @@ void main() {
 
     expect(await dbWork(tester, r.plans.getPlans), isEmpty);
     expect(isSelected(tester, S.freeTraining), isTrue);
-    expect(find.text(S.planDeleted('Push')), findsOneWidget);
+    expect(
+      find.byType(SnackBar),
+      findsNothing,
+      reason: 'no confirmation (1.0.1)',
+    );
     await disposeApp(tester, db);
   });
 

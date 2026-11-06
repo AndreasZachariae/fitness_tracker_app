@@ -394,7 +394,7 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
         if (group.kind == PlanGroupKind.superset)
           (
             icon: Icons.timer_outlined,
-            label: S.supersetRestTitle,
+            label: S.supersetRestOption,
             value: _GroupAction.rest,
           )
         else ...[
@@ -500,6 +500,9 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
     final last = ref.watch(lastPerformancesProvider).value ?? const {};
 
     return Scaffold(
+      // No text field on this page; dialogs move above the keyboard on their
+      // own. Resizing squeezed the page behind the "+ Plan" dialog (1.0.1).
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text(S.tabTraining),
         actions: const [SettingsAction()],

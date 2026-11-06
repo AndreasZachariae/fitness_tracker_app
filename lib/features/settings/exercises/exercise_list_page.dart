@@ -153,8 +153,7 @@ class _ExerciseListPageState extends ConsumerState<ExerciseListPage> {
         confirmLabel: S.addLibraryConfirm,
       );
       if (!ok) return;
-      final added = await repo.addLibrary();
-      if (mounted) showMessage(context, S.libraryAdded(added));
+      await repo.addLibrary();
     } on Object catch (e) {
       if (mounted) showError(context, e);
     }

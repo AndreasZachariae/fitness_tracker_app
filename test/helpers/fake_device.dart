@@ -14,6 +14,24 @@ final class FakeFeedback implements DeviceFeedback {
   Future<void> restOver() async => calls.add('restOver');
 }
 
+/// Records scheduled and cancelled rest alarms.
+final class FakeRestAlarm implements RestAlarm {
+  final calls = <String>[];
+  DateTime? scheduledAt;
+
+  @override
+  Future<void> schedule(DateTime at) async {
+    scheduledAt = at;
+    calls.add('schedule');
+  }
+
+  @override
+  Future<void> cancel() async {
+    scheduledAt = null;
+    calls.add('cancel');
+  }
+}
+
 final class FakeScreenAwake implements ScreenAwake {
   final states = <bool>[];
 

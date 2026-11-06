@@ -34,14 +34,26 @@ void main() {
     }
   });
 
-  test('main manifest has no INTERNET permission, only VIBRATE', () {
+  test('main manifest: no INTERNET; VIBRATE and the exact alarm only', () {
     final manifest = File('android/app/src/main/AndroidManifest.xml')
         .readAsStringSync();
     final permissions = RegExp(r'uses-permission\s+android:name="([^"]+)"')
         .allMatches(manifest)
         .map((m) => m.group(1))
         .toList();
-    expect(permissions, ['android.permission.VIBRATE']);
+    // Exact alarm for the rest-over vibration in the background (1.0.1).
+    expect(permissions, [
+      'android.permission.VIBRATE',
+      'android.permission.USE_EXACT_ALARM',
+      'android.permission.SCHEDULE_EXACT_ALARM',
+    ]);
+    expect(
+      manifest,
+      contains(
+        '"android.permission.SCHEDULE_EXACT_ALARM" '
+        'android:maxSdkVersion="32"',
+      ),
+    );
   });
 
   test('application id and debug suffix are unchanged', () {

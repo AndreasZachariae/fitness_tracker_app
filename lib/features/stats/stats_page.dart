@@ -28,7 +28,6 @@ class _StatsPageState extends ConsumerState<StatsPage>
   StatsPeriod _period = StatsPeriod.threeMonths;
   int? _exerciseId;
   final _metrics = <int, ExerciseMetric>{};
-  bool _showBodyWeight = false;
 
   @override
   void dispose() {
@@ -92,9 +91,6 @@ class _StatsPageState extends ConsumerState<StatsPage>
                         data: data,
                         period: _period,
                         today: today,
-                        showBodyWeight: _showBodyWeight,
-                        onShowBodyWeight: (v) =>
-                            setState(() => _showBodyWeight = v),
                       ),
                       RecordsTab(data: data, onTap: _openExercise),
                     ],

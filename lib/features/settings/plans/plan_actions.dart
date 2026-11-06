@@ -85,7 +85,6 @@ Future<bool> deletePlanWithConfirmation(
   if (!confirmed || !context.mounted) return false;
   try {
     await ref.read(planRepositoryProvider).delete(plan.id);
-    if (context.mounted) showMessage(context, S.planDeleted(plan.name));
     return true;
   } on Object catch (e) {
     if (context.mounted) showError(context, e);

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/core/clock.dart';
 import 'package:gymlog/data/db/database.dart';
 import 'package:gymlog/data/repositories/exercise_repository.dart';
+import 'package:gymlog/data/repositories/plan_repository.dart';
 import 'package:gymlog/data/repositories/repository_exceptions.dart';
 import 'package:gymlog/data/repositories/session_repository.dart';
 import 'package:gymlog/domain/models/models.dart';
@@ -203,6 +204,60 @@ void main() {
     expect(await db.select(db.sessionExercises).get(), isEmpty);
     expect(await db.select(db.setEntries).get(), isEmpty);
     expect(await db.select(db.exercises).get(), hasLength(3));
+  });
+
+  group('restoreDeleted (1.0.1: "Rückgängig" in the history)', () {
+    Future<int> finishedWithSuperset({int? planId}) async {
+      final id = await repo.start(
+        plan: planId == null
+            ? null
+            : (await PlanRepository(db, clock).findById(planId)),
+        exercises: [
+          SessionExerciseDraft(exerciseId: bench, targetSets: 2),
+          SessionExerciseDraft(exerciseId: pullUps, targetSets: 2),
+        ],
+      );
+      final d = await details(id);
+      await repo.createSuperset(id, [for (final e in d) e.sessionExercise.id]);
+      await repo.addSet(d[0].sessionExercise.id, weightKg: 60, reps: 10);
+      await repo.addSet(d[1].sessionExercise.id, weightKg: 0, reps: 8);
+      await repo.finishSession(id);
+      return id;
+    }
+
+    test(
+      'brings back session, exercises, superset and sets with ids',
+      () async {
+        final id = await finishedWithSuperset();
+        Future<List<Object>> snapshot() async => [
+          (await repo.findById(id))!,
+          await db.select(db.sessionExercises).get(),
+          await db.select(db.sessionSupersets).get(),
+          await db.select(db.setEntries).get(),
+        ];
+        final before = await snapshot();
+        final deleted = await repo.delete(id);
+        expect(deleted.sets, hasLength(2));
+        expect(deleted.supersets, hasLength(1));
+        expect(await repo.findById(id), isNull);
+
+        await repo.restoreDeleted(deleted);
+        expect(await snapshot(), before);
+      },
+    );
+
+    test('a plan deleted in the meantime is dropped, the name stays', () async {
+      final plans = PlanRepository(db, clock);
+      final planId = await plans.create('Push');
+      await plans.addExercise(planId, bench, targetSets: 2);
+      final id = await finishedWithSuperset(planId: planId);
+      final deleted = await repo.delete(id);
+      await plans.delete(planId);
+      await repo.restoreDeleted(deleted);
+      final s = (await repo.findById(id))!;
+      expect(s.planId, isNull);
+      expect(s.planNameSnapshot, 'Push');
+    });
   });
 
   test('watchActive and watchFinished follow the session', () async {

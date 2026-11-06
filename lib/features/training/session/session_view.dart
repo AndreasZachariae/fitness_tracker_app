@@ -23,6 +23,7 @@ import '../../../widgets/snackbars.dart';
 import '../../../widgets/ticker.dart';
 import '../../settings/exercises/exercise_form_page.dart';
 import '../exercise_picker_sheet.dart';
+import 'rest_timer_bar.dart';
 import 'session_tiles.dart';
 import 'set_edit_dialog.dart';
 
@@ -42,6 +43,13 @@ class _SessionViewState extends ConsumerState<SessionView>
   final _expanded = <int>{};
   List<int>? _pendingOrder;
   bool _finishing = false;
+
+  /// Superset held at its drag handle, shown as one line (1.0.1).
+  int? _heldSuperset;
+
+  void _holdSuperset(int? id) {
+    if (_heldSuperset != id) setState(() => _heldSuperset = id);
+  }
 
   /// Session exercise that just set a record (red flash, SPEC §7.7).
   int? _flashId;
@@ -83,12 +91,6 @@ class _SessionViewState extends ConsumerState<SessionView>
         } else {
           unawaited(feedback.setSaved());
         }
-        if (!mounted) return;
-        showMessage(
-          context,
-          S.setSaved,
-          onUndo: () => _guard(() => repo.undoSave(saved)),
-        );
       });
 
   @override
@@ -134,7 +136,6 @@ class _SessionViewState extends ConsumerState<SessionView>
           await repo.updateSet(set.id, values);
         case SetEditDelete():
           await repo.deleteSet(set.id);
-          if (mounted) showMessage(context, S.setDeleted);
       }
     });
   }
@@ -175,7 +176,7 @@ class _SessionViewState extends ConsumerState<SessionView>
       options: [
         (
           icon: Icons.timer_outlined,
-          label: S.supersetRestTitle,
+          label: S.supersetRestOption,
           value: _SupersetAction.rest,
         ),
         (icon: Icons.add, label: S.addExercise, value: _SupersetAction.add),
@@ -286,6 +287,11 @@ class _SessionViewState extends ConsumerState<SessionView>
     );
   }
 
+  /// No rest bar or rest vibration after the training ends (1.0.1).
+  void _stopRest(List<SessionExerciseDetail> details) => ref
+      .read(restTimerProvider.notifier)
+      .skipAll([for (final d in details) ...d.sets.map((s) => s.id)]);
+
   /// "Beenden" (SPEC §6.3).
   Future<void> _finish(List<SessionExerciseDetail> details) async {
     final repo = ref.read(sessionRepositoryProvider);
@@ -299,9 +305,9 @@ class _SessionViewState extends ConsumerState<SessionView>
         destructive: true,
       );
       if (!discard) return;
+      _stopRest(details);
       await _guard(() async {
         await repo.delete(_session.id);
-        if (mounted) showMessage(context, S.trainingDiscarded);
       });
       return;
     }
@@ -318,6 +324,7 @@ class _SessionViewState extends ConsumerState<SessionView>
     setState(() => _finishing = true);
     try {
       await repo.finishSession(_session.id);
+      _stopRest(details);
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         await context.push(AppRoutes.summary(_session.id));
@@ -512,6 +519,7 @@ class _SessionViewState extends ConsumerState<SessionView>
         ),
       ),
       itemCount: blocks.length,
+      onReorderEnd: (_) => _holdSuperset(null),
       onReorderItem: (a, b) =>
           _applyOrder(reorderSessionBlocks(exerciseBlocks(), a, b)),
       itemBuilder: (context, i) {
@@ -532,9 +540,17 @@ class _SessionViewState extends ConsumerState<SessionView>
           kind: PlanGroupKind.superset,
           subtitle: _supersetSubtitle(superset, members),
           dragHandle: movable
-              ? GroupDragHandle(kind: PlanGroupKind.superset, index: i)
+              ? GroupDragHandle(
+                  kind: PlanGroupKind.superset,
+                  index: i,
+                  onHold: () => _holdSuperset(superset.id),
+                  onRelease: () => _holdSuperset(null),
+                )
               : null,
           onOptions: () => _supersetOptions(superset, members, details),
+          collapsedText: _heldSuperset == superset.id
+              ? groupCollapsedText(members.map((d) => d.exercise.name))
+              : null,
           child: ReorderableListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),

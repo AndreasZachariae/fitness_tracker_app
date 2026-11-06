@@ -212,7 +212,6 @@ class _InputCardState extends ConsumerState<_InputCard> {
       await repo.save(_day, kg);
       if (!mounted) return;
       FocusScope.of(context).unfocus();
-      showMessage(context, S.saved);
       setState(() => _date = null);
     } on Object catch (e) {
       if (mounted) showError(context, e);

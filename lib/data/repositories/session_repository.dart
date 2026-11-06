@@ -906,9 +906,63 @@ class SessionRepository {
   Future<void> finish(int sessionId) => finishSession(sessionId);
 
   /// Deletes a session with all its exercises and sets.
-  Future<void> delete(int sessionId) => _db.transaction(() async {
+  Future<DeletedSession> delete(int sessionId) => _db.transaction(() async {
     final session = await _db.sessionsDao.findById(sessionId);
     if (session == null) throw NotFoundException('session', sessionId);
+    final exercises = await _db.sessionsDao.getSessionExercises(sessionId);
+    final deleted = DeletedSession(
+      session: session,
+      supersets: await _db.sessionsDao.getSupersets(sessionId),
+      exercises: exercises,
+      sets: [
+        for (final se in exercises) ...await _db.sessionsDao.getSets(se.id),
+      ],
+    );
     await _db.sessionsDao.deleteById(sessionId);
+    return deleted;
   });
+
+  /// Undoes [delete] with the same ids (1.0.1: "Rückgängig" in the
+  /// history). A plan deleted in the meantime is dropped from the session;
+  /// the plan name stays.
+  Future<void> restoreDeleted(DeletedSession deleted) =>
+      _db.transaction(() async {
+        var session = deleted.session;
+        if (session.isActive) {
+          if (await _db.sessionsDao.getActive() case final active?) {
+            throw ActiveSessionExistsException(active.id);
+          }
+        }
+        if (session.planId case final planId?
+            when await _db.plansDao.findById(planId) == null) {
+          session = session.copyWith(planId: null);
+        }
+        await _db.batch((b) {
+          b.insert(_db.sessions, session.toInsertable());
+          b.insertAll(_db.sessionSupersets, [
+            for (final s in deleted.supersets) s.toInsertable(),
+          ]);
+          b.insertAll(_db.sessionExercises, [
+            for (final e in deleted.exercises) e.toInsertable(),
+          ]);
+          b.insertAll(_db.setEntries, [
+            for (final s in deleted.sets) s.toInsertable(),
+          ]);
+        });
+      });
+}
+
+/// A deleted session with everything that belonged to it.
+final class DeletedSession {
+  const DeletedSession({
+    required this.session,
+    required this.supersets,
+    required this.exercises,
+    required this.sets,
+  });
+
+  final Session session;
+  final List<SessionSuperset> supersets;
+  final List<SessionExercise> exercises;
+  final List<SetEntry> sets;
 }

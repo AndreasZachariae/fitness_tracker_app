@@ -125,7 +125,7 @@ void main() {
     await disposeApp(tester, db);
   });
 
-  testWidgets('overall tab: index, body weight switch, calendar', (
+  testWidgets('overall tab: index, streak, body weight, calendar', (
     tester,
   ) async {
     await seed(tester);
@@ -141,11 +141,22 @@ void main() {
     await settle(tester);
     expect(find.text(S.strengthIndex), findsOneWidget);
     expect(find.text(S.strengthIndexSubtitle(1)), findsOneWidget);
-    expect(find.text(S.tabBody), findsWidgets); // navigation bar only
-    final bodyCharts = find.text(S.average7);
-    expect(bodyCharts, findsNothing);
-    await tester.tap(find.text(S.showBodyWeight));
-    await settle(tester);
+    // Streak right after the index, highlighted (1.0.1).
+    expect(find.text(S.streakTitle), findsOneWidget);
+    expect(
+      find.text('2 ${S.streakWeeksLabel(2)}', findRichText: true),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(find.text(S.streakTitle)).dy,
+      greaterThan(tester.getTopLeft(find.text(S.strengthIndex)).dy),
+    );
+    // Body weight chart without a switch (1.0.1).
+    await tester.dragUntilVisible(
+      find.text(S.average7),
+      find.byType(ListView).last,
+      const Offset(0, -200),
+    );
     expect(find.text(S.average7), findsOneWidget);
 
     await tester.dragUntilVisible(
@@ -154,7 +165,6 @@ void main() {
       const Offset(0, -300),
     );
     await tester.pumpAndSettle();
-    expect(find.text(S.streak(2)), findsOneWidget);
     await tester.dragUntilVisible(
       find.text(S.setsPerCategory),
       find.byType(ListView).last,

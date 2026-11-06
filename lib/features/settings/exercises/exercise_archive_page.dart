@@ -34,9 +34,6 @@ class ExerciseArchivePage extends ConsumerWidget {
                 onPressed: () async {
                   try {
                     await ref.read(exerciseRepositoryProvider).restore(e.id);
-                    if (context.mounted) {
-                      showMessage(context, S.exerciseRestored(e.name));
-                    }
                   } on Object catch (error) {
                     if (context.mounted) showError(context, error);
                   }

@@ -68,7 +68,8 @@ Auf dem Handy liegen echte Trainingsdaten in der Release-App `de.gymlog.app`. De
    Keine destruktiven Migrationen, kein Drop/Recreate von Tabellen mit Nutzerdaten.
 5. Jeder erfasste Satz wird **sofort** in der Datenbank gespeichert, nie erst beim Beenden der Session.
 6. Keine `INTERNET`-Permission im Haupt-Manifest, keine Analytics, keine Crash-Reporter, keine Laufzeit-Downloads
-   (Schriften als Assets bündeln). Erlaubte Permission: `VIBRATE`.
+   (Schriften als Assets bündeln). Erlaubte Permissions: `VIBRATE`, für die Pausen-Vibration im Hintergrund (1.0.1, vom
+   Menschen freigegeben) `USE_EXACT_ALARM` und `SCHEDULE_EXACT_ALARM` mit `maxSdkVersion="32"`. Keine weiteren.
 
 ## Konventionen
 

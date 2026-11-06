@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/clock.dart';
 import '../../../core/format/exercise_format.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/l10n/strings_de.dart';
@@ -19,7 +18,6 @@ import '../../../domain/metrics.dart';
 import '../../../domain/models/models.dart';
 import '../../../widgets/name_dialog.dart';
 import '../../../widgets/snackbars.dart';
-import '../../settings/data/data_actions.dart';
 
 /// Data shown in the summary, loaded once.
 final class _SummaryData {
@@ -315,7 +313,6 @@ class _SummaryBody extends StatelessWidget {
                     Expanded(child: Text(S.savedAsPlan(savedPlanName!))),
                   ],
                 ),
-        const _BackupHint(),
         const SizedBox(height: 16),
         TextField(
           controller: notes,
@@ -397,64 +394,6 @@ class _StatTile extends StatelessWidget {
                 footer!,
                 style: theme.textTheme.bodySmall?.copyWith(color: footerColor),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// "Letztes Backup vor 21 Tagen" + "Backup erstellen" (SPEC §6.3).
-class _BackupHint extends ConsumerWidget {
-  const _BackupHint();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsProvider).value;
-    if (settings == null || settings.backupReminderDays == 0) {
-      return const SizedBox.shrink();
-    }
-    final last = settings.lastBackupAt;
-    final days = last == null
-        ? null
-        : ref.watch(clockProvider).now().difference(last).inDays;
-    if (days != null && days <= settings.backupReminderDays) {
-      return const SizedBox.shrink();
-    }
-    final theme = Theme.of(context);
-    final gym = GymColors.of(context);
-    return Card(
-      margin: const EdgeInsets.only(top: 16),
-      color: gym.restContainer,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.backup_outlined, color: gym.onRestContainer),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    days == null ? S.noBackupYet : S.backupAgo(days),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: gym.onRestContainer,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: gym.onRestContainer,
-                ),
-                onPressed: () => createBackupFlow(context, ref),
-                child: const Text(S.createBackup),
-              ),
-            ),
           ],
         ),
       ),

@@ -34,7 +34,7 @@ void main() {
     expect(s.themeMode, ThemePreference.system);
     expect(s.lastSelectedPlanId, isNull);
     expect(s.lastBackupAt, isNull);
-    expect(s.backupReminderDays, 14);
+    expect(s.backupReminderDays, 30, reason: '1 month (1.0.1)');
     expect(s.copyWith(lastSelectedPlanId: 4).copyWith().lastSelectedPlanId, 4);
     expect(
       s.copyWith(lastSelectedPlanId: 4).copyWith(lastSelectedPlanId: null),

@@ -105,7 +105,6 @@ void main() {
       await scrollThrough(find.byType(ListView).first);
       await tester.tap(find.text(S.statsTabOverall));
       await settle(tester);
-      await tapShown(find.text(S.showBodyWeight));
       await scrollThrough(find.byType(ListView).last);
       await tester.tap(find.text(S.statsTabRecords));
       await settle(tester);

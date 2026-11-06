@@ -18,6 +18,7 @@ Future<AppDatabase> pumpApp(
   Clock? clock,
   FakeFeedback? feedback,
   FakeScreenAwake? screen,
+  FakeRestAlarm? alarm,
   FakeFileGateway? files,
 }) async {
   final database = db ?? newTestDatabase();
@@ -28,6 +29,7 @@ Future<AppDatabase> pumpApp(
         clockProvider.overrideWithValue(clock ?? newTestClock()),
         deviceFeedbackProvider.overrideWithValue(feedback ?? FakeFeedback()),
         screenAwakeProvider.overrideWithValue(screen ?? FakeScreenAwake()),
+        restAlarmProvider.overrideWithValue(alarm ?? FakeRestAlarm()),
         appInfoProvider.overrideWith(
           (ref) async => (version: '0.9.0', buildNumber: '9'),
         ),

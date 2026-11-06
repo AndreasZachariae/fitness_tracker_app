@@ -137,9 +137,20 @@ void main() {
 
     await tester.tap(find.byTooltip(S.groupOptions(PlanGroupKind.superset)));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(S.supersetRestTitle));
+    await tester.tap(find.text(S.supersetRestOption));
     await tester.pumpAndSettle();
+    expect(find.text(S.supersetRestTitle), findsOneWidget, reason: 'title');
+    expect(find.text(S.supersetRestDialogDefault), findsOneWidget);
+    final dialogSize = tester.getSize(find.byType(AlertDialog));
     await tester.tap(find.byTooltip('${S.fieldRestShort}: ${S.increase}'));
+    await tester.pump();
+    expect(find.text(S.supersetRestDialogDefault), findsNothing);
+    expect(find.text(S.resetToDefault), findsOneWidget);
+    expect(
+      tester.getSize(find.byType(AlertDialog)),
+      dialogSize,
+      reason: 'the dialog keeps its size (1.0.1)',
+    );
     await tester.pump();
     await tester.tap(find.text(S.save));
     await settle(tester);
@@ -194,6 +205,48 @@ void main() {
       () => r.plans.getEntries(planId),
     )).firstWhere((e) => e.exercise.name == 'Curls Seil').exercise.id;
     expect(groups.values.single.rotationExerciseId, curlB);
+    await disposeApp(tester, db);
+  });
+
+  testWidgets('rotation interval dialog: compact, value shown once (1.0.1)', (
+    tester,
+  ) async {
+    await seed(tester);
+    await open(tester);
+    await createGroup(tester, PlanGroupKind.rotation, [
+      'Curls Hantel',
+      'Curls Seil',
+    ]);
+    await tester.tap(find.byTooltip(S.groupOptions(PlanGroupKind.rotation)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.rotationEveryOption));
+    await tester.pumpAndSettle();
+    final dialog = find.byType(AlertDialog);
+    // The visible card of the dialog.
+    final card = find
+        .descendant(of: dialog, matching: find.byType(Material))
+        .first;
+    expect(
+      find.descendant(of: dialog, matching: find.text('1')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: dialog, matching: find.text(S.trainingsUnit(1))),
+      findsOneWidget,
+    );
+    final size = tester.getSize(card);
+    await tester.tap(find.byTooltip('${S.rotationEveryTitle}: ${S.increase}'));
+    await tester.pump();
+    expect(
+      find.descendant(of: dialog, matching: find.text(S.trainingsUnit(2))),
+      findsOneWidget,
+    );
+    expect(find.text(S.rotationEvery(2)), findsNothing, reason: 'no repeat');
+    expect(tester.getSize(card), size);
+    expect(size.width, lessThan(340), reason: 'not stretched');
+    await tester.tap(find.text(S.save));
+    await settle(tester);
+    expect(find.text(S.rotationEvery(2)), findsOneWidget);
     await disposeApp(tester, db);
   });
 
@@ -358,6 +411,71 @@ void main() {
     expect(groupIds[0], isNotNull);
     expect(groupIds[1], groupIds[0]);
     expect(groupIds.skip(2), [null, null]);
+    await disposeApp(tester, db);
+  });
+
+  testWidgets('a held group shrinks to one line and lands between two '
+      'single exercises (1.0.1)', (tester) async {
+    await seed(tester);
+    await open(tester);
+    await createGroup(tester, PlanGroupKind.superset, [
+      'Curls Hantel',
+      'Curls Seil',
+    ]);
+    final handle = find.byType(GroupDragHandle);
+    final dips = find.ancestor(
+      of: find.text('Dips'),
+      matching: find.byType(Card),
+    );
+    final dipsRect = tester.getRect(dips);
+    final start = tester.getCenter(handle);
+    final handleBelowTop =
+        start.dy - tester.getTopLeft(find.byType(GroupFrame)).dy;
+
+    final gesture = await tester.startGesture(start);
+    await tester.pump();
+    expect(
+      find.text(groupCollapsedText(['Curls Hantel', 'Curls Seil'])),
+      findsOneWidget,
+      reason: 'collapsed while held',
+    );
+    // Top of the group into the upper half of "Dips".
+    final target = dipsRect.top + dipsRect.height * 0.3 + handleBelowTop;
+    const steps = 12;
+    for (var i = 0; i < steps; i++) {
+      await gesture.moveBy(Offset(0, (target - start.dy) / steps));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    // Holding still must not make it jump on (it did with tall groups).
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await gesture.up();
+    await settle(tester);
+    expect(await planOrder(tester), [
+      'Klimmzüge',
+      'Curls Hantel',
+      'Curls Seil',
+      'Dips',
+    ]);
+    expect(find.text('Curls Hantel'), findsOneWidget, reason: 'expanded');
+    expect(
+      find.text(groupCollapsedText(['Curls Hantel', 'Curls Seil'])),
+      findsNothing,
+    );
+    await disposeApp(tester, db);
+  });
+
+  testWidgets('a tap on the group handle collapses only while held', (
+    tester,
+  ) async {
+    await seed(tester);
+    await open(tester);
+    await createGroup(tester, PlanGroupKind.superset, ['Klimmzüge', 'Dips']);
+    await tester.tap(find.byType(GroupDragHandle));
+    await settle(tester);
+    expect(find.text(groupCollapsedText(['Klimmzüge', 'Dips'])), findsNothing);
+    expect(find.text('Klimmzüge'), findsOneWidget);
     await disposeApp(tester, db);
   });
 }

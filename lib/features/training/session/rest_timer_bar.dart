@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/clock.dart';
 import '../../../core/device.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/l10n/strings_de.dart';
@@ -49,6 +52,14 @@ class RestTimerController extends Notifier<RestAdjustments> {
     skipped: state.skipped,
     signalled: {...state.signalled, setId},
   );
+
+  /// Ends every rest after these sets, e.g. when the training is finished
+  /// or discarded: no bar and no vibration any more (1.0.1).
+  void skipAll(Iterable<int> setIds) => state = RestAdjustments(
+    adjustSec: state.adjustSec,
+    skipped: {...state.skipped, ...setIds},
+    signalled: state.signalled,
+  );
 }
 
 final restTimerProvider =
@@ -56,8 +67,9 @@ final restTimerProvider =
       RestTimerController.new,
     );
 
-/// "Pause 1:12" above the navigation bar (SPEC §6.2.1). Only in the
-/// foreground, no notifications.
+/// "Pause 1:12" above the navigation bar (SPEC §6.2.1). In the foreground
+/// the app vibrates at the end itself; when it goes to the background
+/// during a rest, a [RestAlarm] takes over (1.0.1). No notifications.
 class RestTimerBar extends ConsumerStatefulWidget {
   const RestTimerBar({super.key});
 
@@ -65,14 +77,68 @@ class RestTimerBar extends ConsumerStatefulWidget {
   ConsumerState<RestTimerBar> createState() => _RestTimerBarState();
 }
 
-class _RestTimerBarState extends ConsumerState<RestTimerBar> {
+class _RestTimerBarState extends ConsumerState<RestTimerBar>
+    with WidgetsBindingObserver {
   /// Sets whose rest was seen running; only those vibrate at the end.
   final _seenRunning = <int>{};
 
+  /// The rest shown as running in the last build.
+  ({int setId, DateTime end})? _running;
+
+  /// The rest a background alarm was set for.
+  ({int setId, DateTime end})? _alarm;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.hidden || AppLifecycleState.paused:
+        final running = _running;
+        final settings = ref.read(settingsProvider).value;
+        final adjustments = ref.read(restTimerProvider);
+        if (running == null ||
+            _alarm == running ||
+            settings == null ||
+            !settings.vibrationEnabled ||
+            !settings.restTimerEnabled ||
+            adjustments.skipped.contains(running.setId) ||
+            adjustments.signalled.contains(running.setId)) {
+          return;
+        }
+        _alarm = running;
+        unawaited(ref.read(restAlarmProvider).schedule(running.end));
+      case AppLifecycleState.resumed:
+        final alarm = _alarm;
+        if (alarm == null) return;
+        _alarm = null;
+        unawaited(ref.read(restAlarmProvider).cancel());
+        // The alarm has vibrated already; do not vibrate a second time.
+        if (!ref.read(clockProvider).now().isBefore(alarm.end)) {
+          ref.read(restTimerProvider.notifier).markSignalled(alarm.setId);
+        }
+      case AppLifecycleState.inactive || AppLifecycleState.detached:
+        break;
+    }
+  }
+
   void _signalIfDue(int setId, AppSettings settings) {
     final adjustments = ref.read(restTimerProvider);
+    // Read, not watched: a covered home screen gets no updates (Riverpod
+    // pauses it), but a finished training has skipped its rests (1.0.1).
     if (!_seenRunning.contains(setId) ||
-        adjustments.signalled.contains(setId)) {
+        adjustments.signalled.contains(setId) ||
+        adjustments.skipped.contains(setId)) {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -92,6 +158,7 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar> {
     final session = ref.watch(activeSessionProvider).value;
     final settings = ref.watch(settingsProvider).value ?? AppSettings.defaults;
     if (session == null || !settings.restTimerEnabled) {
+      _running = null;
       return const SizedBox.shrink();
     }
     final details =
@@ -106,6 +173,7 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar> {
     );
     final adjustments = ref.watch(restTimerProvider);
     if (last == null || adjustments.skipped.contains(last.set.id)) {
+      _running = null;
       return const SizedBox.shrink();
     }
     final setId = last.set.id;
@@ -119,6 +187,13 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar> {
           adjustSec: adjustments.adjustSec[setId] ?? 0,
           now: now,
         );
+        _running = switch (state) {
+          RestRunning(:final remaining) => (
+            setId: setId,
+            end: now.add(remaining),
+          ),
+          _ => null,
+        };
         switch (state) {
           case RestHidden():
             return const SizedBox.shrink();

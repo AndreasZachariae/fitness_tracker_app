@@ -108,18 +108,12 @@ abstract final class S {
   static const addLibraryConfirm = 'Hinzufügen';
   static const libraryComplete =
       'Alle Standardübungen sind schon vorhanden (auch archivierte zählen).';
-  static String libraryAdded(int n) =>
-      n == 1 ? '1 Übung hinzugefügt.' : '$n Übungen hinzugefügt.';
   static const exercisesNoMatch = 'Keine Übung passt zur Suche.';
   static const allCategories = 'Alle';
   static const newExercise = 'Neue Übung';
   static const archiveTitle = 'Archiv';
   static const archiveEmpty = 'Keine archivierten Übungen.';
   static const openArchive = 'Archiv öffnen';
-  static String exerciseRestored(String name) => '„$name“ wiederhergestellt.';
-  static String exerciseDeleted(String name) => '„$name“ gelöscht.';
-  static String exerciseArchived(String name) =>
-      '„$name“ archiviert. Der Verlauf bleibt erhalten.';
   static String deleteExerciseTitle(String name) => '„$name“ löschen?';
   static String archiveExerciseTitle(String name) => '„$name“ archivieren?';
   static const deleteExerciseBody = 'Die Übung wurde noch nie trainiert.';
@@ -174,7 +168,6 @@ abstract final class S {
   static const deletePlanBody =
       'Der Plan und seine Übungsliste werden gelöscht. Deine Trainings im '
       'Verlauf bleiben erhalten.';
-  static String planDeleted(String name) => 'Plan „$name“ gelöscht.';
 
   // Training tab (no active session)
   static const freeTraining = 'Frei';
@@ -216,7 +209,6 @@ abstract final class S {
   static String lastTimeOn(String date, String summary) =>
       'Letztes Mal ($date): $summary';
   static const saveSet = 'Satz speichern';
-  static const setSaved = 'Satz gespeichert';
   static const addOneSet = '+1 Satz';
   static const skip = 'Überspringen';
   static const finishExercise = 'Übung beenden';
@@ -237,7 +229,6 @@ abstract final class S {
   static const enterDuration = 'Dauer (Sekunden oder m:ss)';
   static const errorNumber = 'Gib eine gültige Zahl ein.';
   static String editSet(int n) => 'Satz $n ändern';
-  static const setDeleted = 'Satz gelöscht.';
   static const ok = 'OK';
   static String openExercisesTitle(int n) => n == 1
       ? '1 Übung ist nicht abgeschlossen. Training trotzdem beenden?'
@@ -245,7 +236,6 @@ abstract final class S {
   static const discardNoSetsTitle = 'Keine Sätze erfasst. Training verwerfen?';
   static const keepTraining = 'Weiter trainieren';
   static const discard = 'Verwerfen';
-  static const trainingDiscarded = 'Training verworfen.';
   static String trainingRunning(String time) => 'Training läuft – $time';
   static const trainingRunningA11y = 'Laufendes Training öffnen';
 
@@ -321,13 +311,11 @@ abstract final class S {
       '„$name“ aus diesem Training entfernen?';
   static const removeFromSessionBody =
       'Die Übung und ihre Sätze werden aus diesem Training gelöscht.';
-  static String removedFromSession(String name) => '„$name“ entfernt.';
   static const noSetsRecorded = 'Keine Sätze erfasst.';
 
   // Body weight (SPEC §6.6)
   static const today = 'Heute';
   static const weightKgLabel = 'Gewicht in kg';
-  static const saved = 'Gespeichert.';
   static String overwriteEntry(String date) =>
       'Eintrag vom $date überschreiben?';
   static const overwrite = 'Überschreiben';
@@ -420,13 +408,15 @@ abstract final class S {
   static String groupOptions(PlanGroupKind k) => '${groupKind(k)}-Optionen';
   static String moveGroup(PlanGroupKind k) => '${groupKind(k)} verschieben';
   static String supersetRest(String rest) => 'Pause $rest nach jeder Runde';
-  static const supersetRestDefault = 'Pause nach jeder Runde wie letzte Übung';
+  static const supersetRestDefault = 'Pause wie bei letzter Übung';
   static const supersetRestTitle = 'Pause nach jeder Runde';
+  static const supersetRestOption = 'Pause einstellen';
+  static const supersetRestDialogDefault = 'wie bei letzter Übung';
   static String rotationEvery(int n) =>
       n == 1 ? 'Wechsel nach jedem Training' : 'Wechsel nach $n Trainings';
   static const rotationEveryTitle = 'Übung wechseln nach';
-  static const rotationEveryOption = 'Wechsel nach … Trainings';
-  static String trainings(int n) => n == 1 ? '1 Training' : '$n Trainings';
+  static const rotationEveryOption = 'Wechsel einstellen';
+  static String trainingsUnit(int n) => n == 1 ? 'Training' : 'Trainings';
   static const rotationDue = 'Ist dran';
   static String rotationDueLeft(int n) =>
       n == 1 ? 'Ist dran · noch 1 Training' : 'Ist dran · noch $n Trainings';
@@ -500,10 +490,15 @@ abstract final class S {
   static const calendarInfo =
       'Jedes Kästchen ist ein Tag der letzten 26 Wochen (Spalten = Wochen, '
       'Zeilen = Mo–So). Je kräftiger die Farbe, desto mehr Sätze.\n\n'
-      'Ø Trainings pro Woche bezieht sich auf den gewählten Zeitraum.\n\n'
-      'Serie: Wochen in Folge mit mindestens einem Training. Die laufende Woche '
-      'zählt mit, sobald du trainiert hast; solange sie noch leer ist, bricht '
-      'sie die Serie nicht.';
+      'Ø Trainings pro Woche bezieht sich auf den gewählten Zeitraum.';
+  static const streakInfo =
+      'Deine Serie zählt die Wochen (Mo–So) in Folge mit mindestens einem '
+      'Training.\n\n'
+      'Die laufende Woche zählt mit, sobald du trainiert hast. Solange sie '
+      'noch leer ist, bleibt die Serie bestehen. Fällt eine ganze Woche aus, '
+      'ist die Serie vorbei.\n\n'
+      'Die längste Serie bleibt als Bestwert stehen, auch wenn sie nicht mehr '
+      'aktiv ist.';
   static const recordsInfo =
       'Rekorde sind Bestwerte je Übung:\n\n'
       '• Gewicht × Wdh: geschätztes 1RM (Epley: Gewicht × (1 + Wdh / 30)) und '
@@ -533,14 +528,20 @@ abstract final class S {
   static const strengthIndexEmpty =
       'Für den Kraftindex brauchst du Trainings mit Übungen, die im Kraftindex '
       'zählen.';
-  static const showBodyWeight = 'Körpergewicht einblenden';
   static const weeklyVolume = 'Wochenvolumen';
   static const volumeEmpty = 'Noch kein Volumen im Zeitraum.';
   static const calendar = 'Trainingskalender';
   static const calendarSubtitle = 'Letzte 26 Wochen · Sätze pro Tag';
   static String perWeek(String n) => 'Ø $n Trainings pro Woche';
-  static String streak(int n) =>
-      n == 1 ? 'Serie: 1 Woche in Folge' : 'Serie: $n Wochen in Folge';
+  static const streakTitle = 'Serie';
+  static String streakWeeksLabel(int n) =>
+      n == 1 ? 'Woche in Folge' : 'Wochen in Folge';
+  static const streakNone = 'Keine aktive Serie';
+  static const streakStart = 'Trainiere diese Woche, um eine neue zu starten.';
+  static const streakKeep = 'Trainiere diese Woche, um sie zu halten.';
+  static const streakIsLongest = 'Deine längste Serie bisher';
+  static String streakLongest(int n) =>
+      'Längste Serie: ${n == 1 ? '1 Woche' : '$n Wochen'} · nicht aktiv';
   static const weekdayInitials = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
   static const trainingDuration = 'Trainingsdauer';
   static const durationEmpty = 'Noch keine Trainings im Zeitraum.';
@@ -579,8 +580,6 @@ abstract final class S {
   static String days(int n) => n == 1 ? '1 Tag' : '$n Tage';
   static const shareAction = 'Teilen';
   static const saveAsAction = 'Speichern unter …';
-  static const backupCreated = 'Backup erstellt.';
-  static const exportCreated = 'Export erstellt.';
   static const exportFailed =
       'Export fehlgeschlagen. Deine Daten sind unverändert – bitte versuche es '
       'noch einmal.';
@@ -598,7 +597,6 @@ abstract final class S {
       'Alle aktuellen Daten werden ersetzt. Vorher wird automatisch eine '
       'Sicherheitskopie deines aktuellen Stands angelegt.';
   static const restoreConfirm = 'Wiederherstellen';
-  static const restoreDone = 'Backup wiederhergestellt.';
   static const restoreFailed =
       'Wiederherstellen fehlgeschlagen. Deine bisherigen Daten sind unverändert.';
   static const importErrorTitle = 'Datei kann nicht importiert werden';

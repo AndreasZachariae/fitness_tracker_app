@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:gymlog/core/clock.dart';
 import 'package:gymlog/core/l10n/strings_de.dart';
+import 'package:gymlog/core/router.dart';
 import 'package:gymlog/data/db/database.dart';
 import 'package:gymlog/data/repositories/session_repository.dart';
 import 'package:gymlog/data/repositories/settings_repository.dart';
@@ -22,8 +27,10 @@ void main() {
   late FixedClock clock;
   late FakeFeedback feedback;
   late FakeScreenAwake screen;
+  late FakeRestAlarm alarm;
 
   setUp(() {
+    alarm = FakeRestAlarm();
     db = newTestDatabase();
     r = Repos(db);
     clock = newTestClock();
@@ -41,6 +48,7 @@ void main() {
       clock: clock,
       feedback: feedback,
       screen: screen,
+      alarm: alarm,
     );
     await settle(tester);
   }
@@ -84,6 +92,145 @@ void main() {
     await tester.tap(find.text(S.saveSet));
     await settle(tester);
   }
+
+  group('rest timer (1.0.1)', () {
+    int restOvers() => feedback.calls.where((c) => c == 'restOver').length;
+
+    Future<void> lifecycle(
+      WidgetTester tester,
+      List<AppLifecycleState> states,
+    ) async {
+      for (final s in states) {
+        tester.binding.handleAppLifecycleStateChanged(s);
+      }
+      await tester.pump();
+    }
+
+    const toBackground = [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+    ];
+    const toForeground = [
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ];
+
+    testWidgets('no vibration after "Beenden" while the summary is open', (
+      tester,
+    ) async {
+      await seed(tester);
+      await open(tester);
+      await tapSave(tester);
+      expect(find.text(S.rest), findsOneWidget);
+      await tester.tap(find.text(S.finishTraining));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, S.finishTraining));
+      await settle(tester);
+      expect(find.text(S.summaryTitle), findsOneWidget);
+      for (var i = 0; i < 4; i++) {
+        clock.advance(const Duration(seconds: 30));
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+      expect(restOvers(), 0);
+      await disposeApp(tester, db);
+    });
+
+    testWidgets('a covered home screen does not vibrate for a stopped rest', (
+      tester,
+    ) async {
+      // On the phone the summary covered the home screen before it learned
+      // that the training was over; Riverpod pauses covered screens.
+      await seed(tester);
+      await open(tester);
+      await tapSave(tester);
+      // Any full page on top covers the home screen, like the summary.
+      unawaited(
+        GoRouter.of(tester.element(find.text(S.saveSet)))
+            .push(AppRoutes.settings),
+      );
+      await settle(tester);
+      expect(find.text(S.settings), findsWidgets);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp)),
+      );
+      final setIds = await dbWork(tester, () async {
+        final active = (await r.sessions.getActive())!;
+        return [
+          for (final d in await r.sessions.getDetails(active.id))
+            ...d.sets.map((s) => s.id),
+        ];
+      });
+      container.read(restTimerProvider.notifier).skipAll(setIds);
+      for (var i = 0; i < 4; i++) {
+        clock.advance(const Duration(seconds: 30));
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+      expect(restOvers(), 0);
+      await disposeApp(tester, db);
+    });
+
+    testWidgets('background: alarm at the end of the rest; back after the '
+        'end: no second vibration', (tester) async {
+      await seed(tester);
+      await open(tester);
+      await tapSave(tester);
+      clock.advance(const Duration(seconds: 30));
+      await tester.pump(const Duration(milliseconds: 300));
+      await lifecycle(tester, toBackground);
+      expect(alarm.calls, ['schedule']);
+      expect(alarm.scheduledAt, testNow.add(const Duration(seconds: 90)));
+
+      clock.advance(const Duration(seconds: 62));
+      await lifecycle(tester, toForeground);
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+      expect(alarm.calls, ['schedule', 'cancel']);
+      expect(find.text(S.restOver), findsOneWidget);
+      expect(restOvers(), 0, reason: 'the alarm vibrated already');
+      await disposeApp(tester, db);
+    });
+
+    testWidgets('back before the end: alarm cancelled, the app vibrates', (
+      tester,
+    ) async {
+      await seed(tester);
+      await open(tester);
+      await tapSave(tester);
+      await lifecycle(tester, toBackground);
+      clock.advance(const Duration(seconds: 40));
+      await lifecycle(tester, toForeground);
+      expect(alarm.calls, ['schedule', 'cancel']);
+      clock.advance(const Duration(seconds: 51));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+      expect(restOvers(), 1);
+      await disposeApp(tester, db);
+    });
+
+    testWidgets('no alarm without a running rest or with vibration off', (
+      tester,
+    ) async {
+      await seed(tester);
+      await open(tester);
+      await lifecycle(tester, toBackground);
+      await lifecycle(tester, toForeground);
+      expect(alarm.calls, isEmpty, reason: 'no set yet');
+
+      await dbWork(
+        tester,
+        () =>
+            SettingsRepository(db)
+                .update((s) => s.copyWith(vibrationEnabled: false)),
+      );
+      await tapSave(tester);
+      await lifecycle(tester, toBackground);
+      expect(alarm.calls, isEmpty);
+      await lifecycle(tester, toForeground);
+      await disposeApp(tester, db);
+    });
+  });
 
   group('rest timer (SPEC §6.2.1)', () {
     testWidgets('starts after a set, ±15 s, counts down from stored time', (

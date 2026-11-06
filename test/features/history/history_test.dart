@@ -180,6 +180,21 @@ void main() {
     expect(find.text(S.sessionDeleted), findsOneWidget);
     expect(find.text('Di, 3.11. · Push'), findsNothing);
     expect(find.text('So, 1.11. · ${S.freeTrainingTitle}'), findsOneWidget);
+
+    // "Rückgängig" brings the training back with all sets (1.0.1).
+    final before = await dbWork(tester, () => r.sessions.watchHistory().first);
+    await tester.tap(find.text(S.undo));
+    await settle(tester);
+    expect(find.text('Di, 3.11. · Push'), findsOneWidget);
+    final restored = await dbWork(
+      tester,
+      () => r.sessions.getDetails(ids['nov']!),
+    );
+    expect(restored.expand((d) => d.sets), isNotEmpty);
+    expect(
+      await dbWork(tester, () => r.sessions.watchHistory().first),
+      hasLength(before.length + 1),
+    );
     await disposeApp(tester, db);
   });
 

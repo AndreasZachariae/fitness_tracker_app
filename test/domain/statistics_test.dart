@@ -437,6 +437,26 @@ void main() {
       expect(currentStreak(data(const []), today), 0);
     });
 
+    test('longest streak, also when it is no longer active (1.0.1)', () {
+      expect(longestStreak(d), 1, reason: '19.10. and 2.11., gap in between');
+      expect(longestStreak(data(const [])), 0);
+      final past = data([
+        for (final day in [
+          '2026-09-01', // week of 31.8.
+          '2026-09-03', // same week, counts once
+          '2026-09-08',
+          '2026-09-15',
+          '2026-10-06', // gap of two weeks
+          '2026-10-13',
+        ])
+          tr(day, {
+            bench: [s(w: 60, r: 1)],
+          }),
+      ]);
+      expect(longestStreak(past), 3);
+      expect(currentStreak(past, today), 0, reason: 'broken since 20.10.');
+    });
+
     test('sets per category in the period', () {
       expect(setsPerCategory(d, StatsPeriod.all, today), {
         ExerciseCategory.chest: 3,

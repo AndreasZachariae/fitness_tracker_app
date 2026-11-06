@@ -57,7 +57,6 @@ Future<void> createBackupFlow(BuildContext context, WidgetRef ref) async {
     final file = await service.createBackup();
     if (await _deliver(ref, target, file)) {
       await service.markBackedUp();
-      if (context.mounted) showMessage(context, S.backupCreated);
     }
   } on Object {
     if (context.mounted) showMessage(context, S.exportFailed);
@@ -70,9 +69,7 @@ Future<void> exportCsvFlow(BuildContext context, WidgetRef ref) async {
   if (target == null) return;
   try {
     final file = await ref.read(dataTransferProvider).createCsvExport();
-    if (await _deliver(ref, target, file) && context.mounted) {
-      showMessage(context, S.exportCreated);
-    }
+    await _deliver(ref, target, file);
   } on Object {
     if (context.mounted) showMessage(context, S.exportFailed);
   }
@@ -135,7 +132,6 @@ Future<void> restoreBackupFlow(BuildContext context, WidgetRef ref) async {
   if (!ok) return;
   try {
     await service.restore(backup);
-    if (context.mounted) showMessage(context, S.restoreDone);
   } on ImportBlockedException {
     if (context.mounted) showMessage(context, S.restoreBlocked);
   } on Object {

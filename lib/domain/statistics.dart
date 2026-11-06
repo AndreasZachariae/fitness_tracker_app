@@ -456,6 +456,22 @@ int currentStreak(StatsData data, LocalDate today) {
   return streak;
 }
 
+/// Longest run of consecutive weeks (Mo–So) with at least one training,
+/// at any time; 0 without trainings.
+int longestStreak(StatsData data) {
+  final weeks = {for (final t in data.trainings) mondayOf(t.day)}.toList()
+    ..sort();
+  var best = 0;
+  var run = 0;
+  LocalDate? previous;
+  for (final w in weeks) {
+    run = previous != null && previous.addDays(7) == w ? run + 1 : 1;
+    if (run > best) best = run;
+    previous = w;
+  }
+  return best;
+}
+
 /// Working sets per category in the shown period.
 Map<ExerciseCategory?, int> setsPerCategory(
   StatsData data,

@@ -111,7 +111,6 @@ class _ForgottenSessionGuardState extends ConsumerState<ForgottenSessionGuard> {
           );
           if (!sure) return await _ask(session);
           await repo.delete(session.id);
-          if (mounted) showMessage(context, S.trainingDiscarded);
         case _ForgottenChoice.finish:
           final lastSet = await repo.lastSetTime(session.id);
           await repo.finishSession(

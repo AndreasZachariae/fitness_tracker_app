@@ -124,6 +124,21 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Nachtrag aus `docs/ROADMAP.md` (1.0.0+12): mitgelieferte Übungsbibliothek mit 94 Übungen (Geräte, Kabel,
         Lang-/Kurzhantel, Eigengewicht, Zeitübungen, Ausdauergeräte) in allen acht Kategorien; neue Datenbank startet
         damit, Einstellungen → Übungen → „Standardübungen hinzufügen“ ergänzt fehlende; Tests
+  - [x] Gesamt-Testliste am Handy abgearbeitet (Mensch, 2026-11-06); Anmerkungen → Version 1.0.1
+- [x] 1.0.1 Bugfixes nach dem Handytest (`docs/ROADMAP.md`, 1.0.1+13), erste veröffentlichte Version
+  - [x] Snackbars: keine Bestätigungen mehr; nur Fehler, Hinweise und Löschen mit „Rückgängig“ (Körpergewicht, Training
+        im Verlauf – neu mit Wiederherstellung –, Übung aus Plan/freier Liste); verschwinden nach 5 s von selbst
+  - [x] „+ Plan“: Trainingsseite schrumpft nicht mehr hinter der Tastatur (gelb-schwarzer Überlaufstreifen)
+  - [x] Supersets/Rotationen beim Ziehen am Griff auf eine Zeile verkleinert → landen zuverlässig zwischen zwei Übungen
+        (Plan, freie Liste und Session)
+  - [x] Superset-Texte kürzer („Pause wie bei letzter Übung“, Menü „Pause einstellen“), Pausendialog mit fester Größe;
+        Rotationsdialog kompakt („[−] 2 [+] Trainings“), Menü „Wechsel einstellen“
+  - [x] Pausen-Vibration im Hintergrund/bei gesperrtem Display über exakten Android-Alarm (neue Permissions, vom Menschen
+        freigegeben); nach „Beenden“/„Verwerfen“ endet die Pause
+  - [x] Backup-Hinweis aus der Zusammenfassung in Einstellungen → Daten verschoben; Erinnerung standardmäßig 30 Tage
+  - [x] Statistik: Serie als eigene Karte direkt nach dem Kraftindex (mit längster Serie „nicht aktiv“), Körpergewicht
+        ohne Schalter
+  - [x] CHANGELOG 1.0.1 (enthält die nie veröffentlichte 1.0.0), Tests, Testliste
 
 ## Annahmen
 
@@ -446,6 +461,58 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   `release-notes.sh` ist lesend und von Claude Code getestet; `release.sh` und `release-build.sh` darf Claude Code nicht
   ausführen, beide sind nur auf Syntax geprüft. GitHub zeigt Zeilenumbrüche im Release-Text an, daher stehen
   Changelog-Einträge in einer Zeile.
+- **1.0.1 Versionen:** 1.0.0 wurde nie veröffentlicht; erste GitHub-Release ist 1.0.1 (Entscheidung des Menschen). Der
+  Changelog-Abschnitt [1.0.1] enthält deshalb die komplette Funktionsübersicht plus „Geändert nach dem Test der
+  Vorabversion 1.0.0“; einen eigenen Abschnitt [1.0.0] gibt es nicht.
+- **1.0.1 Snackbars:** Regel: keine Bestätigung für etwas, das man ohnehin sieht. Geblieben: Fehler, „Alle
+  Standardübungen sind schon vorhanden“, „Backup wiederherstellen“ während eines Trainings gesperrt, und Löschen mit
+  „Rückgängig“ (Körpergewicht, Übung aus Plan/freier Liste, Training im Verlauf). Entfernt: „Satz gespeichert“ samt
+  Rückgängig (Sätze sind jederzeit änderbar; `undoSave` bleibt im Repository), „Gespeichert.“, „Training verworfen.“,
+  „Satz gelöscht.“, „… entfernt.“, „Plan … gelöscht.“, „… gelöscht/archiviert.“ (der Dialog sagt es vorher),
+  „wiederhergestellt“, „Backup erstellt.“, „Export erstellt.“, „Backup wiederhergestellt.“, „N Übungen hinzugefügt.“.
+  Löschen mit Bestätigungsdialog (Satz, Übung aus Training, Plan, Übung) hat keinen Rückgängig-Hinweis; nur das Training
+  im Verlauf bekommt zusätzlich zum Dialog „Rückgängig“ (ausdrücklich gewünscht): `SessionRepository.delete` liefert
+  alles Gelöschte, `restoreDeleted` fügt es mit denselben ids wieder ein (ein inzwischen gelöschter Plan wird entfernt,
+  der Planname bleibt). Ursache für „muss man wegwischen“: Flutter hält Snackbars mit Aktion standardmäßig offen
+  (`persist`); jetzt immer `persist: false`, 5 s.
+- **1.0.1 „+ Plan“:** Der gelb-schwarze Streifen war Flutters Überlaufmarkierung (nur in der DEV-App sichtbar): Die
+  Tastatur des Namensdialogs schrumpfte die Trainingsseite dahinter auf ~126 dp, zu wenig für Plan-Chips und „Training
+  starten“. Die Seite hat kein eigenes Textfeld und passt sich der Tastatur nicht mehr an (`resizeToAvoidBottomInset:
+  false`); Test mit schrittweise einfahrender Tastatur.
+- **1.0.1 Ziehen von Gruppen:** Flutter entscheidet beim Ziehen über Ober- und Unterkante des gezogenen Elements; bei
+  einem hohen Superset liegen die in verschiedenen Übungen, der Platz springt hin und her bzw. zurück. Lösung ohne
+  eigene Liste: Beim Berühren des Gruppengriffs zeigt die Gruppe nur eine Zeile („Curls Hantel · Curls Seil“); Flutter
+  misst das Element erst, wenn sich der Finger etwas bewegt hat, also klein – sie verhält sich dann wie eine einzelne
+  Übung. Nach dem Loslassen wieder voll. Test zeigt: ohne die Änderung landet die Gruppe wieder an der alten Stelle.
+- **1.0.1 Pausen-Vibration im Hintergrund:** Android lässt Apps im Hintergrund nur für Alarme, Anrufe und
+  Benachrichtigungen vibrieren; ein Dart-Timer läuft im Hintergrund außerdem nicht verlässlich. Umsetzung ohne Paket und
+  ohne Benachrichtigung: `android/.../RestAlarm.kt` (MethodChannel `de.gymlog.app/rest_alarm`, `AlarmManager.
+  setExactAndAllowWhileIdle`, `BroadcastReceiver` vibriert mit Nutzung „Alarm“, gleiches Muster 3 × kurz). Die App plant
+  den Alarm nur, wenn sie während einer laufenden Pause in den Hintergrund geht (Vibration und Pausentimer an), und
+  hebt ihn beim Zurückkommen auf; war die Pause dann schon vorbei, vibriert die App nicht ein zweites Mal. Permissions:
+  `USE_EXACT_ALARM` (Android 13+, bei Installation erteilt, keine Abfrage) und `SCHEDULE_EXACT_ALARM` nur bis
+  Android 12 (`maxSdkVersion="32"`); hat der Nutzer exakte Alarme entzogen, kommt ein ungenauer Alarm. CLAUDE.md Regel 6,
+  SPEC §3 und der Architekturtest sind angepasst. Wird die App im Hintergrund beendet, vibriert der Alarm trotzdem.
+  Nur am Handy prüfbar; Dart-Seite mit Fake getestet.
+- **1.0.1 Pause nach „Beenden“:** Riverpod 3 pausiert Provider-Updates für verdeckte Seiten (`TickerMode`). Die
+  Zusammenfassung verdeckt die Hauptseite; kam die Meldung „Training beendet“ aus der Datenbank erst danach an (am
+  Handy langsamer als im Test), lief die Pausenleiste unsichtbar weiter und vibrierte. Jetzt beendet „Beenden“ bzw.
+  „Verwerfen“ die Pausen aller Sätze direkt im Timer-State, und die Vibration prüft diesen State frisch. Test: Pause
+  läuft, Seite verdeckt, Pause beendet → keine Vibration (ohne Änderung: eine).
+- **1.0.1 Backup-Erinnerung:** Hinweiskarte jetzt in Einstellungen → Daten (gleiche gelbe Karte mit „Backup
+  erstellen“), nicht mehr in der Zusammenfassung. Standard 30 Tage nur in `AppSettings.defaults`; die SQL-Spalte behält
+  ihren Default 14, weil eine Änderung eine Schemamigration wäre und alle Zeilen ohnehin mit den App-Standards angelegt
+  werden. Bestehende Installationen (DEV-App) behalten ihren Wert.
+- **1.0.1 Serie:** Logik unverändert (Wochen Mo–So mit mindestens einem Training; eine noch leere laufende Woche bricht
+  die Serie nicht, eine ganz ausgefallene schon). Neu: eigene Karte mit großer Zahl und Flammensymbol, „Keine aktive
+  Serie“, Hinweis „Trainiere diese Woche, um sie zu halten/eine neue zu starten.“, „Längste Serie: N Wochen · nicht
+  aktiv“ bzw. „Deine längste Serie bisher“; `longestStreak` in der Domain. Reihenfolge: Kraftindex, Serie,
+  Körpergewicht (immer), Wochenvolumen, Kalender, Dauer, Kategorien.
+- **1.0.1 Automatisches Drehen:** Das Hochformat ist nur im Manifest festgelegt (`screenOrientation="portrait"`); eine
+  App kann die System-Einstellung „Automatisch drehen“ ohne Sonderrechte gar nicht ändern, GymLog tut es nicht. Vermutlich
+  wurde der Drehen-Knopf getippt, den Android in der Navigationsleiste anbietet, wenn das Handy gedreht wird. Keine
+  Änderung; bei erneutem Auftreten bitte notieren, wann.
+- **1.0.1 Systemschrift:** Läuft laut Handytest; der automatische Test bleibt, weitere Arbeit daran ist nicht geplant.
 
 ## Datenbank-Migrationen (ab Schema 2)
 
@@ -468,7 +535,37 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
 
-### Gesamt-Testliste Version 1.0 (vor der ersten Installation der Release-App)
+### 1.0.1 Bugfixes (vor dem ersten Release)
+In der **DEV-App** (nach `./scripts/install-dev.sh`). Die DEV-App behält ihre Daten und ihre Backup-Erinnerung.
+- [ ] Pausen-Vibration im Hintergrund: Satz speichern, App wechseln (z. B. Startbildschirm) → zum Pausenende 3 × kurz.
+  Dasselbe mit gesperrtem Display. Zurück in GymLog nach dem Ende: „Pause vorbei“, aber keine zweite Vibration.
+- [ ] Zurück in GymLog **vor** dem Ende: die App vibriert wie bisher genau einmal.
+- [ ] Vibration in den Einstellungen aus: auch im Hintergrund keine Vibration.
+- [ ] Letzten Satz speichern, gleich „Beenden“: auf der Zusammenfassung keine Pausenleiste und keine Vibration, auch
+  nicht nach Ablauf der Pause.
+- [ ] Keine Hinweise mehr bei Satz speichern, Satz löschen, Training verwerfen, Körpergewicht speichern, Plan löschen,
+  Backup/Export. Körpergewicht wegwischen → Hinweis mit „Rückgängig“, verschwindet nach ~5 s von selbst.
+- [ ] Verlauf: Training löschen (Rückfrage) → Hinweis „Training gelöscht“ mit „Rückgängig“ → Training mit allen Sätzen
+  wieder da.
+- [ ] „+ Plan“: kein gelb-schwarzer Streifen hinter dem Dialog.
+- [ ] Superset/Rotation am Griff oben rechts anfassen: Rahmen schrumpft auf eine Zeile mit den Übungsnamen; zwischen
+  zwei einzelne Übungen schieben → landet dort; danach wieder vollständig. Kurz antippen ändert nichts.
+- [ ] Superset: Untertitel „Pause wie bei letzter Übung“ in einer Zeile; ⋮ → „Pause einstellen“ → Dialog „Pause nach
+  jeder Runde“ mit „wie bei letzter Übung“; +/− ändert die Größe des Dialogs nicht.
+- [ ] Rotation: ⋮ → „Wechsel einstellen“ → kompakt „[−] 1 [+] Training“, bei 2 „Trainings“.
+- [ ] Zusammenfassung ohne Backup-Hinweis. Einstellungen → Daten: gelbe Karte „Letztes Backup vor … Tagen“, wenn die
+  Erinnerung fällig ist (DEV-App: dein bisheriger Wert); „Backup erstellen“ dort → Karte verschwindet.
+- [ ] Statistik → Gesamt: Serie als zweite Karte (Flamme, „N Wochen in Folge“ bzw. „Keine aktive Serie“, längste Serie
+  „nicht aktiv“); Körpergewicht direkt darunter ohne Schalter.
+- [ ] „Über“: Version 1.0.1, Build 13.
+
+**Danach: erstes Release** (auf dem PC, README „Neue Version veröffentlichen“) und echte App installieren
+- [ ] Release 1.0.1 auf GitHub mit APK; Text = Changelog 1.0.1 mit Installationshinweisen.
+- [ ] Release-App: Icon blau „GymLog“; Start ohne Trainings und Pläne, mit den 94 Standardübungen; Einstellungen ohne
+  Entwickler-Bereich; Backup-Erinnerung 30 Tage; „Über“ zeigt 1.0.1. Ein Backup aus der DEV-App lässt sich hier
+  wiederherstellen.
+
+### Gesamt-Testliste Version 1.0 (am Handy abgearbeitet, 2026-11-06; Anmerkungen → 1.0.1)
 Zuerst in der **DEV-App** (gelbes Icon „GymLog DEV“). Die Release-App war noch nie installiert und startet daher ohne
 Daten (keine Migration nötig); sie wird erst nach bestandener Liste installiert.
 

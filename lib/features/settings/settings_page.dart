@@ -12,6 +12,7 @@ import '../../data/providers.dart';
 import '../../domain/models/models.dart';
 import '../../widgets/number_stepper.dart';
 import '../../widgets/snackbars.dart';
+import 'data/backup_hint.dart';
 import 'data/data_actions.dart';
 import 'dev_tools_section.dart';
 
@@ -148,6 +149,7 @@ class SettingsPage extends ConsumerWidget {
                   ),
                 ),
                 const _Header(S.sectionData),
+                const BackupHint(),
                 ListTile(
                   leading: const Icon(Icons.table_view_outlined),
                   title: const Text(S.exportCsv),

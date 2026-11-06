@@ -93,7 +93,11 @@ void main() {
       expect(find.text(S.addLibraryBody(missing)), findsOneWidget);
       await tester.tap(find.text(S.addLibraryConfirm));
       await settle(tester);
-      expect(find.text(S.libraryAdded(missing)), findsOneWidget);
+      expect(
+        find.byType(SnackBar),
+        findsNothing,
+        reason: 'no confirmation (1.0.1)',
+      );
       expect(find.text('Abduktoren (Maschine)'), findsOneWidget);
       final all = await dbWork(tester, () => db.exercisesDao.getAll());
       expect(all, hasLength(exerciseLibrary.length));
@@ -261,7 +265,11 @@ void main() {
       expect(find.text(S.deleteExerciseTitle('Plank')), findsOneWidget);
       await tester.tap(find.widgetWithText(TextButton, S.delete));
       await settle(tester);
-      expect(find.text(S.exerciseDeleted('Plank')), findsOneWidget);
+      expect(
+        find.byType(SnackBar),
+        findsNothing,
+        reason: 'no confirmation (1.0.1)',
+      );
       expect(await dbWork(tester, () => r.exercises.findById(3)), isNull);
 
       await tester.tap(find.text('Bankdrücken'));
@@ -275,7 +283,11 @@ void main() {
       );
       await tester.tap(find.widgetWithText(TextButton, S.archive));
       await settle(tester);
-      expect(find.text(S.exerciseArchived('Bankdrücken')), findsOneWidget);
+      expect(
+        find.byType(SnackBar),
+        findsNothing,
+        reason: 'no confirmation (1.0.1)',
+      );
       expect(
         (await dbWork(tester, () => r.exercises.findById(1)))!.archived,
         isTrue,

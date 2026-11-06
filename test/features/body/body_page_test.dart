@@ -46,7 +46,11 @@ void main() {
     await settle(tester);
     final list = await entries(tester);
     expect((list.single.date, list.single.weightKg), (today, 81.5));
-    expect(find.text(S.saved), findsOneWidget);
+    expect(
+      find.byType(SnackBar),
+      findsNothing,
+      reason: 'no confirmation (1.0.1)',
+    );
     expect(find.text('81,5 kg'), findsWidgets);
     await disposeApp(tester, db);
   });
@@ -130,6 +134,9 @@ void main() {
     await settle(tester);
     expect(await entries(tester), hasLength(1));
     expect(find.text(S.entryDeleted('2.11.')), findsOneWidget);
+    // Disappears on its own, no swiping needed (1.0.1).
+    final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+    expect(snackBar.persist, isFalse);
     await tester.tap(find.text(S.undo));
     await settle(tester);
     expect(await entries(tester), hasLength(2));

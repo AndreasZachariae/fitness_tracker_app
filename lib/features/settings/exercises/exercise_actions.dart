@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n/strings_de.dart';
 import '../../../data/providers.dart';
-import '../../../data/repositories/exercise_repository.dart';
 import '../../../domain/models/models.dart';
 import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/snackbars.dart';
@@ -32,14 +31,8 @@ Future<bool> removeExerciseWithConfirmation(
   );
   if (!confirmed || !context.mounted) return false;
   try {
-    final result = await repo.deleteOrArchive(exercise.id);
-    if (!context.mounted) return true;
-    showMessage(
-      context,
-      result == ExerciseRemoval.archived
-          ? S.exerciseArchived(exercise.name)
-          : S.exerciseDeleted(exercise.name),
-    );
+    // The dialog already said whether it is deleted or archived.
+    await repo.deleteOrArchive(exercise.id);
     return true;
   } on Object catch (e) {
     if (context.mounted) showError(context, e);

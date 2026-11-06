@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/clock.dart';
 import '../../core/format/exercise_format.dart';
 import '../../core/format/formatters.dart';
+import '../../core/l10n/error_messages.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/typography.dart';
@@ -109,7 +110,6 @@ class _SessionDetailPageState extends ConsumerState<SessionDetailPage> {
           await repo.updateSet(set.id, values);
         case SetEditDelete():
           await repo.deleteSet(set.id);
-          if (mounted) showMessage(context, S.setDeleted);
       }
     });
   }
@@ -127,7 +127,6 @@ class _SessionDetailPageState extends ConsumerState<SessionDetailPage> {
       await ref
           .read(sessionRepositoryProvider)
           .removeSessionExercise(d.sessionExercise.id);
-      if (mounted) showMessage(context, S.removedFromSession(d.exercise.name));
     });
   }
 
@@ -145,9 +144,18 @@ class _SessionDetailPageState extends ConsumerState<SessionDetailPage> {
     if (!ok || !mounted) return;
     _debounce?.cancel(); // nothing left to save
     await _guard(() async {
-      await ref.read(sessionRepositoryProvider).delete(session.id);
+      final repo = ref.read(sessionRepositoryProvider);
+      final deleted = await repo.delete(session.id);
       if (!mounted) return;
-      showMessage(context, S.sessionDeleted);
+      // The messenger outlives this page, so "Rückgängig" works in the list.
+      final messenger = ScaffoldMessenger.of(context);
+      showMessage(
+        context,
+        S.sessionDeleted,
+        onUndo: () => repo.restoreDeleted(deleted).catchError((Object e) {
+          messenger.showSnackBar(SnackBar(content: Text(errorMessage(e))));
+        }),
+      );
       context.pop();
     });
   }
