@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
 # AUF DEM PC ausführen (nicht im Container), im Projektordner, Container läuft. Nur durch dich.
-# Veröffentlicht die Version aus pubspec.yaml als GitHub-Release. Dein GitHub-Zugang (git, gh) bleibt auf dem PC;
+# Veröffentlicht die Version aus pubspec.yaml als GitHub-Release. Gepusht wird mit deinem SSH-Schlüssel auf dem PC;
 # der Container testet, baut und signiert nur (scripts/release-build.sh) und kommt nie an GitHub heran.
-#   1. prüft: Werkzeuge, GitHub-Login, Branch main, alles committet, Stand von GitHub, Version/Tag neu,
+#   1. prüft: SSH-Zugang zu GitHub, Branch main, alles committet, Stand von GitHub, Version/Tag neu,
 #      Roadmap-Status FINISHED, Changelog-Abschnitt vorhanden
 #   2. im Container: Tests, APK bauen und signieren, Paket/Version/Signaturschlüssel prüfen
 #   3. zeigt den Release-Text und fragt nach – bis hierhin wird nichts veröffentlicht oder committet
-#   4. trägt Datum und Commits in CHANGELOG.md ein, committet "chore(release): vX.Y.Z", setzt den Tag vX.Y.Z,
-#      pusht main + Tag und erstellt die GitHub-Release mit der APK
-# Voraussetzungen auf dem PC: git mit Push-Rechten auf das Repo, GitHub CLI "gh" (angemeldet: gh auth status), Docker.
+#   4. trägt Datum und Commits in CHANGELOG.md ein, committet "chore(release): vX.Y.Z", setzt den Tag vX.Y.Z und
+#      pusht main + Tag per SSH
+#   5. öffnet die vorausgefüllte Release-Seite im Browser: APK hineinziehen, "Publish release" (ein SSH-Schlüssel
+#      reicht für git, aber nicht für GitHubs Release-Schnittstelle; so braucht es weder gh noch einen Token)
+# Voraussetzungen auf dem PC: git, SSH-Schlüssel bei GitHub hinterlegt (ssh -T git@github.com), Docker.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 REPO="AndreasZachariae/fitness_tracker_app"
+# Push über SSH, unabhängig davon, ob origin per HTTPS eingetragen ist (gelesen wird weiter über origin).
+PUSH_URL="git@github.com:$REPO.git"
 CERT_FILE=".github/signing-certificate.sha256"
 
 fail() {
@@ -32,8 +36,8 @@ step "Voraussetzungen"
 [ ! -f /.dockerenv ] || fail "Dieses Skript läuft auf dem PC, nicht im Container (dort gibt es absichtlich keinen GitHub-Zugang)."
 command -v git >/dev/null || fail "git fehlt."
 command -v docker >/dev/null || fail "docker fehlt."
-command -v gh >/dev/null || fail "GitHub CLI 'gh' fehlt auf dem PC: https://cli.github.com (danach: gh auth login)."
-gh auth status --hostname github.com >/dev/null 2>&1 || fail "gh ist nicht angemeldet. Einmalig: gh auth login"
+git ls-remote "$PUSH_URL" HEAD >/dev/null ||
+  fail "Kein SSH-Zugang zu GitHub ($PUSH_URL). Prüfen mit: ssh -T git@github.com"
 docker compose ps --status running --services 2>/dev/null | grep -qx dev ||
   fail "Der Container läuft nicht. Erst: docker compose up -d"
 [ "$(git rev-parse --abbrev-ref HEAD)" = main ] || fail "Releases nur vom Branch main."
@@ -118,24 +122,54 @@ git commit --quiet -m "chore(release): $TAG"
 git tag -a "$TAG" -m "GymLog $VERSION"
 
 step "Push nach GitHub"
-if ! git push --atomic origin main "$TAG"; then
+if ! git push --atomic "$PUSH_URL" main "$TAG"; then
   echo >&2
   echo "Push fehlgeschlagen, auf GitHub hat sich nichts geändert. Lokal zurücksetzen und später neu starten:" >&2
   echo "  git tag -d $TAG && git reset --hard HEAD~1" >&2
   exit 1
 fi
 
-step "GitHub-Release erstellen"
-RELEASE_CMD=(gh release create "$TAG" "$APK" --repo "$REPO" --title "GymLog $VERSION"
-  --notes-file "$NOTES" --verify-tag --latest)
-if ! "${RELEASE_CMD[@]}"; then
-  echo >&2
-  echo "Commit und Tag sind auf GitHub, aber die Release fehlt. Erneut versuchen mit:" >&2
-  printf '  %q' "${RELEASE_CMD[@]}" >&2
-  echo >&2
-  exit 1
-fi
+git fetch --quiet origin main || true
 
+step "GitHub-Release anlegen (im Browser, etwa 1 Minute)"
+# Titel und Tag stehen in der Adresse; der Text auch, solange die Adresse nicht zu lang wird.
+SHORT_URL="https://github.com/$REPO/releases/new?tag=$TAG&title=GymLog%20$VERSION"
+NEW_URL="$SHORT_URL"
+BODY_IN_URL=no
+if command -v python3 >/dev/null; then
+  WITH_BODY="$SHORT_URL&body=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.stdin.read()))' <"$NOTES")"
+  # GitHub lehnt sehr lange Adressen ab; mit Sicherheitsabstand.
+  if [ "${#WITH_BODY}" -le 6000 ]; then
+    NEW_URL="$WITH_BODY"
+    BODY_IN_URL=yes
+  fi
+fi
+COPIED=no
+if [ "$BODY_IN_URL" = no ]; then
+  if command -v wl-copy >/dev/null && wl-copy <"$NOTES" 2>/dev/null; then COPIED=yes
+  elif command -v xclip >/dev/null && xclip -selection clipboard <"$NOTES" 2>/dev/null; then COPIED=yes
+  fi
+fi
+for opener in xdg-open wslview open; do
+  if command -v "$opener" >/dev/null; then
+    "$opener" "$NEW_URL" >/dev/null 2>&1 &
+    break
+  fi
+done
+
+echo "Commit und Tag $TAG sind auf GitHub. Jetzt im Browser (öffnet sich, sonst Link kopieren):"
 echo
-echo "Fertig: $(gh release view "$TAG" --repo "$REPO" --json url --jq .url)"
-echo "Zum Weitergeben immer gültig: https://github.com/$REPO/releases/latest"
+echo "  $SHORT_URL"
+echo
+if [ "$BODY_IN_URL" = yes ]; then
+  echo "  1. Tag $TAG, Titel und Text sind schon ausgefüllt (im geöffneten Fenster)."
+elif [ "$COPIED" = yes ]; then
+  echo "  1. Text ist in der Zwischenablage: ins Beschreibungsfeld einfügen."
+else
+  echo "  1. Text ins Beschreibungsfeld kopieren aus: $(pwd)/$NOTES"
+  echo "     (z. B. mit: cat $NOTES)"
+fi
+echo "  2. APK in das Feld \"Attach binaries\" ziehen: $(pwd)/$APK"
+echo "  3. \"Set as the latest release\" angehakt lassen, \"Publish release\"."
+echo
+echo "Danach immer gültig zum Weitergeben: https://github.com/$REPO/releases/latest"

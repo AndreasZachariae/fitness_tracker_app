@@ -158,15 +158,9 @@ Jede Version landet mit APK und Changelog unter
 <https://github.com/AndreasZachariae/fitness_tracker_app/releases>. Zum Weitergeben an Freunde immer diesen Link
 schicken, keine APK per Mail oder Teams: **<https://github.com/AndreasZachariae/fitness_tracker_app/releases/latest>**
 
-Das Release startest **du auf dem PC** (nicht im Container): Dort liegen dein GitHub-Zugang und deine SSH-Schlüssel.
-Der Container testet, baut und signiert nur und hat keinen Zugriff auf GitHub; Claude Code darf kein Release auslösen.
-
-**Einmalig auf dem PC:** [GitHub CLI](https://cli.github.com) installieren (z. B. `sudo apt install gh`) und anmelden:
-
-```bash
-gh auth login                      # GitHub.com, Login im Browser
-gh auth status                     # Kontrolle
-```
+Das Release startest **du auf dem PC** (nicht im Container): Gepusht wird mit deinem SSH-Schlüssel, der bei GitHub
+hinterlegt ist. Der Container testet, baut und signiert nur und hat keinen Zugriff auf GitHub; Claude Code darf kein
+Release auslösen. Kontrolle des SSH-Zugangs: `ssh -T git@github.com` („successfully authenticated“).
 
 **Jedes Mal – Checkliste:**
 
@@ -186,8 +180,13 @@ docker compose up -d               # Container muss laufen
 `release.sh` prüft alles (GitHub-Login, Branch `main`, alles committet, Stand von GitHub, neue Version und
 Build-Nummer, Roadmap `FINISHED`, Changelog), lässt im Container Tests laufen, die APK `dist/gymlog-X.Y.Z.apk` bauen
 und signieren und vergleicht den Signaturschlüssel mit den bisherigen Releases. Dann zeigt es den Release-Text.
-**Erst nach Eingabe von `ja`** trägt es Datum und Commits in `CHANGELOG.md` ein, committet, setzt den Tag `vX.Y.Z`,
-pusht `main` und Tag und erstellt die Release mit der APK. Jede andere Antwort bricht ab, ohne etwas zu ändern.
+**Erst nach Eingabe von `ja`** trägt es Datum und Commits in `CHANGELOG.md` ein, committet, setzt den Tag `vX.Y.Z` und
+pusht `main` und Tag per SSH. Jede andere Antwort bricht ab, ohne etwas zu ändern.
+
+Zum Schluss öffnet es die Release-Seite im Browser mit Tag und Titel (und, wenn er kurz genug ist, dem Text). Dort:
+Text einfügen, falls er fehlt (liegt in der Zwischenablage oder in `dist/release-notes-X.Y.Z.md`), die APK
+`dist/gymlog-X.Y.Z.apk` in „Attach binaries“ ziehen, „Publish release“. Ein SSH-Schlüssel reicht nur für git, nicht
+für GitHubs Release-Schnittstelle – so braucht es weder die GitHub CLI noch einen Token.
 
 Gut zu wissen:
 - Die APK enthält nur 64-Bit-ARM (~23 MB) und läuft auf praktisch jedem Handy ab Android 7.
@@ -227,8 +226,9 @@ Gut zu wissen:
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | Die installierte App hat einen anderen Schlüssel. **Nicht deinstallieren**, erst in der App ein Backup erstellen und sichern; dann deinstallieren, neu installieren, Backup wiederherstellen. |
 | Dateien gehören plötzlich „1001“ oder root (Linux) | `./scripts/host-setup.sh`, dann `docker compose build --no-cache && docker compose up -d`. |
 | „Permission denied“ in Caches nach Änderung von `.env` | `docker compose down -v` (löscht Caches und Claude-Login, nicht `.secrets/`), dann neu bauen. |
-| `release.sh`: „gh fehlt“ / „nicht angemeldet“ | Auf dem PC GitHub CLI installieren und `gh auth login`. |
+| `release.sh`: „Kein SSH-Zugang zu GitHub“ | `ssh -T git@github.com` prüfen; SSH-Schlüssel bei GitHub unter Settings → SSH keys hinterlegen. |
 | `release.sh`: „läuft auf dem PC, nicht im Container“ | Terminal auf dem PC öffnen, im Projektordner starten. |
 | `release.sh`: „ANDEREN Schlüssel“ | `.secrets/` aus der Sicherung zurückholen; niemals mit einem neuen Schlüssel veröffentlichen. |
-| `release.sh`: Push oder Release fehlgeschlagen | Das Skript nennt den Befehl zum Zurücksetzen bzw. Wiederholen. |
+| `release.sh`: Push fehlgeschlagen | Das Skript nennt den Befehl zum Zurücksetzen. |
+| Release-Seite nicht geöffnet | Link aus der Ausgabe kopieren; Tag ist schon auf GitHub, die Release lässt sich jederzeit nachholen. |
 | Skripte melden `\r`-Fehler (Windows) | Projekt im WSL-Dateisystem ablegen; `.gitattributes` erzwingt LF. |

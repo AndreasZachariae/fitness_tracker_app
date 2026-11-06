@@ -456,7 +456,11 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   `scripts/release-build.sh` auf (check.sh, APK bauen, Paket/Version/Architektur/Signatur prüfen). Beim ersten Release
   wird der Fingerabdruck des Zertifikats in `.github/signing-certificate.sha256` gespeichert (öffentlich unbedenklich,
   steht in jeder APK); später bricht der Build bei einem anderen Schlüssel ab. Erst nach „ja“: Changelog-Datum +
-  Commits, Commit `chore(release): vX.Y.Z`, annotierter Tag, `git push --atomic`, `gh release create`. Die APK mit
+  Commits, Commit `chore(release): vX.Y.Z`, annotierter Tag, `git push --atomic` per SSH (`git@github.com:…`, unabhängig
+  von der HTTPS-Adresse von origin). Die Release selbst legt der Mensch im Browser an (2026-11-07, Wunsch: nur SSH-Schlüssel,
+  keine GitHub CLI): Das Skript öffnet `releases/new` mit Tag, Titel und – bis 6000 Zeichen Adresslänge – dem Text, sonst
+  liegt der Text in der Zwischenablage (`wl-copy`/`xclip`) bzw. in `dist/`; die APK wird hineingezogen. Die
+  Release-Schnittstelle von GitHub akzeptiert keine SSH-Schlüssel, nur Tokens. Die APK mit
   `--target-platform android-arm64` behält den `versionCode` (anders als `--split-per-abi`); geprüft an einer Debug-APK.
   `release-notes.sh` ist lesend und von Claude Code getestet; `release.sh` und `release-build.sh` darf Claude Code nicht
   ausführen, beide sind nur auf Syntax geprüft. GitHub zeigt Zeilenumbrüche im Release-Text an, daher stehen
