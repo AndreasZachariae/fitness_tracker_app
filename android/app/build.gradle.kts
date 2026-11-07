@@ -39,6 +39,21 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Native libraries of packages (sqlite3, jni) only for the platforms Flutter builds, e.g. arm64 only
+        // with --target-platform android-arm64 (scripts/build-release-apk.sh, ~23 MB instead of ~70 MB).
+        // The Flutter Gradle plugin always lists all three ABIs; it runs before this block.
+        val abiOf = mapOf("android-arm" to "armeabi-v7a", "android-arm64" to "arm64-v8a", "android-x64" to "x86_64")
+        (project.findProperty("target-platform") as String?)
+            ?.split(",")
+            ?.mapNotNull { abiOf[it.trim()] }
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { abis ->
+                ndk {
+                    abiFilters.clear()
+                    abiFilters.addAll(abis)
+                }
+            }
     }
 
     buildFeatures {
