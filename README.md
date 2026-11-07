@@ -4,10 +4,25 @@
 ```bash
 # Neue Features eintragen in ROADMAP.md unter
 # Version 1.X.X Liste
+
 docker compose up -d
 docker compose exec dev bash
 claude --resume
+
 # Claude sagen: "Setze features aus Version 1.X.X um"
+
+./scripts/phone-connect-usb.sh
+./scripts/phone-connect-wifi.sh
+
+./scripts/install-dev.sh
+# Testliste fürs Handy in docs/PROGRESS.md durchgehen
+
+# Außerhalb des containers releasen:
+./scripts/release.sh
+
+./scripts/install-release.sh
+
+docker compose down
 ```
 
 Private Android-App fürs Krafttraining: Pläne, Sätze, Pausentimer, Statistik, Körpergewicht, Backup.
@@ -231,7 +246,6 @@ Gut zu wissen:
 | Problem | Lösung |
 |---|---|
 | `adb devices` zeigt nichts | USB: Kabel/Debugging prüfen, `./scripts/phone-connect-usb.sh` erneut. WLAN: gleiches Netz? Kabelloses Debugging noch an? `./scripts/phone-connect-wifi.sh` erneut. |
-| `adb: unknown command pair` | Das Skript lief auf dem PC (altes adb). Im Container starten: `docker compose exec dev bash`, dann `./scripts/phone-connect-wifi.sh`. |
 | Gerät steht auf `unauthorized` | Handy entsperren und Abfrage bestätigen. |
 | USB und WLAN gleichzeitig verbunden | `install-dev.sh` braucht genau ein Gerät: `adb disconnect` trennt WLAN. |
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | Die installierte App hat einen anderen Schlüssel. **Nicht deinstallieren**, erst in der App ein Backup erstellen und sichern; dann deinstallieren, neu installieren, Backup wiederherstellen. |
