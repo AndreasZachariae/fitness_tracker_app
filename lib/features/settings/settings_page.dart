@@ -266,41 +266,38 @@ class _DefaultStep extends StatelessWidget {
       WeightUnit.lbs => (5.0, 5.0, 100.0),
     };
     final value = settings.defaultStep;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        NumberStepper(
-          label: S.settingDefaultStep,
-          helper: S.settingDefaultStepSubtitle,
-          valueText: '${formatWeight(value)} ${S.unit(unit)}',
-          onDecrement: value - step >= min - 1e-9
-              ? () => update((s) => s.copyWith(defaultStep: value - step))
-              : null,
-          onIncrement: value + step <= max + 1e-9
-              ? () => update((s) => s.copyWith(defaultStep: value + step))
-              : null,
+    return NumberStepper(
+      label: S.settingDefaultStep,
+      helper: S.settingDefaultStepSubtitle,
+      valueText: '${formatWeight(value)} ${S.unit(unit)}',
+      onDecrement: value - step >= min - 1e-9
+          ? () => update((s) => s.copyWith(defaultStep: value - step))
+          : null,
+      onIncrement: value + step <= max + 1e-9
+          ? () => update((s) => s.copyWith(defaultStep: value + step))
+          : null,
+      // The unit right below the number it belongs to (1.1.0).
+      belowValue: Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: SegmentedButton<WeightUnit>(
+          showSelectedIcon: false,
+          style: const ButtonStyle(visualDensity: VisualDensity.compact),
+          segments: [
+            for (final u in WeightUnit.values)
+              ButtonSegment(value: u, label: Text(S.unit(u))),
+          ],
+          selected: {unit},
+          // The number stays, only the unit changes (within its limits).
+          onSelectionChanged: (v) => update((s) {
+            final u = v.single;
+            final limit = u == WeightUnit.kg ? 50.0 : 100.0;
+            return s.copyWith(
+              defaultStepUnit: u,
+              defaultStep: s.defaultStep > limit ? limit : s.defaultStep,
+            );
+          }),
         ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: SegmentedButton<WeightUnit>(
-            showSelectedIcon: false,
-            segments: [
-              for (final u in WeightUnit.values)
-                ButtonSegment(value: u, label: Text(S.unit(u))),
-            ],
-            selected: {unit},
-            // The number stays, only the unit changes (within its limits).
-            onSelectionChanged: (v) => update((s) {
-              final u = v.single;
-              final limit = u == WeightUnit.kg ? 50.0 : 100.0;
-              return s.copyWith(
-                defaultStepUnit: u,
-                defaultStep: s.defaultStep > limit ? limit : s.defaultStep,
-              );
-            }),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

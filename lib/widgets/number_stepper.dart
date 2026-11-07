@@ -12,6 +12,7 @@ class NumberStepper extends StatelessWidget {
     required this.onDecrement,
     required this.onIncrement,
     this.helper,
+    this.belowValue,
     super.key,
   });
 
@@ -22,6 +23,9 @@ class NumberStepper extends StatelessWidget {
 
   /// Small text below the label, e.g. "Standard (90 s)".
   final String? helper;
+
+  /// Centered right below `[−] value [+]`, e.g. a unit switch (1.1.0).
+  final Widget? belowValue;
 
   @override
   Widget build(BuildContext context) {
@@ -45,37 +49,50 @@ class NumberStepper extends StatelessWidget {
               ],
             ),
           ),
-          IconButton.filledTonal(
-            tooltip: '$label: ${S.decrease}',
-            onPressed: onDecrement,
-            icon: const Icon(Icons.remove),
-          ),
-          // Fixed width so the buttons never move; long values shrink.
-          SizedBox(
-            width: 96,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  valueText,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  style: NumberStyles.small.copyWith(
-                    fontSize: 24,
-                    color: theme.colorScheme.onSurface,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton.filledTonal(
+                    tooltip: '$label: ${S.decrease}',
+                    onPressed: onDecrement,
+                    icon: const Icon(Icons.remove),
                   ),
-                ),
+                  _value(theme),
+                  IconButton.filledTonal(
+                    tooltip: '$label: ${S.increase}',
+                    onPressed: onIncrement,
+                    icon: const Icon(Icons.add),
+                  ),
+                ],
               ),
-            ),
-          ),
-          IconButton.filledTonal(
-            tooltip: '$label: ${S.increase}',
-            onPressed: onIncrement,
-            icon: const Icon(Icons.add),
+              ?belowValue,
+            ],
           ),
         ],
       ),
     );
   }
+
+  // Fixed width so the buttons never move; long values shrink.
+  Widget _value(ThemeData theme) => SizedBox(
+    width: 96,
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Text(
+          valueText,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          style: NumberStyles.small.copyWith(
+            fontSize: 24,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+      ),
+    ),
+  );
 }
