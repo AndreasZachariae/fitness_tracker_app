@@ -2,6 +2,14 @@
 # IM CONTAINER ausführen. Verbindet das Handy per WLAN (Android 11+, "Kabelloses Debugging").
 set -euo pipefail
 
+# Nur im Container: Auf dem PC läuft oft ein altes adb (ohne "pair") oder ein zweiter adb-Server.
+if [ ! -f /.dockerenv ]; then
+  echo "Dieses Skript läuft im Container, nicht auf dem PC. Erst:" >&2
+  echo "  docker compose up -d && docker compose exec dev bash" >&2
+  echo "dann dort: ./scripts/$(basename "$0")" >&2
+  exit 1
+fi
+
 echo "Handy: Einstellungen > Entwickleroptionen > Kabelloses Debugging / Debugging über WLAN (einschalten, Bildschirm offen lassen)"
 echo
 read -rp "Erstes Mal mit diesem Container koppeln? [j/N] " ans

@@ -4,6 +4,14 @@
 # Installiert nichts und berührt keine App.
 set -euo pipefail
 
+# Nur im Container: Auf dem PC läuft oft ein altes adb (ohne "pair") oder ein zweiter adb-Server.
+if [ ! -f /.dockerenv ]; then
+  echo "Dieses Skript läuft im Container, nicht auf dem PC. Erst:" >&2
+  echo "  docker compose up -d && docker compose exec dev bash" >&2
+  echo "dann dort: ./scripts/$(basename "$0")" >&2
+  exit 1
+fi
+
 fail() {
   echo >&2
   echo "✗ $1" >&2
