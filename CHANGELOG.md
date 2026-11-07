@@ -4,7 +4,7 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.0.1] – unveröffentlicht
+## [1.0.1] – 2026-11-07
 
 Erste veröffentlichte Version: Krafttraining im Studio planen und mitschreiben, komplett offline und ohne Konto.
 
@@ -32,3 +32,43 @@ Erste veröffentlichte Version: Krafttraining im Studio planen und mitschreiben,
 ### Behoben
 - Nach „Beenden“ lief die letzte Pause weiter und vibrierte auf der Zusammenfassung.
 - Beim Anlegen eines Plans erschien hinter der Tastatur ein gelb-schwarzer Streifen.
+
+<details>
+<summary>Alle Commits (für Entwickler)</summary>
+
+#### Features
+- scaffold app shell, theme and build configuration (M0) (`7368551`)
+- add database, repositories and demo data (M1) (`2b7539f`)
+- add exercise and plan management and the training tab (M2) (`f07ac4b`)
+- add the session screen, finish flow and summary (M3) (`4cd9ee5`)
+- add rest timer, keep-awake, suggestions, records and notes (M4) (`4daa96a`)
+- add the history tab with session details (M5) (`bd760d4`)
+- add the body weight tab (M6) (`d7e6a6f`)
+- add the statistics tab (M7) (`76cecf0`)
+- add export, backup, import and the remaining settings (M8) (`2f03b8a`)
+- add supersets, rotations and explanations (M9) (`cd09292`)
+- polish for version 1.0.0 (M10) (`31eb847`)
+- ship a built-in exercise library with version 1.0.0 (`01d38fb`)
+
+#### Fehlerbehebungen
+- phone test findings as version 1.0.1 (`e3e2e10`)
+- phone connect scripts refuse to run outside the container (`a9f56dc`)
+- explain failed wireless pairing in phone-connect-wifi.sh (`4f70139`)
+- keep only the target platform ABIs in the shared release APK (`f58ed8b`)
+
+#### Dokumentation
+- rename IMPROVEMENTS.md to ROADMAP.md (`fe96780`)
+- rewrite README as a short guide, rename scripts (`8e67181`)
+
+#### Build
+- publish versions as GitHub releases with a changelog (`0600152`)
+- run releases from the host, keep GitHub access out of the container (`05652f9`)
+- release with the SSH key only, create the release in the browser (`79dbec4`)
+
+#### Wartung
+- add USB debugging setup for the dev container (`16a9cb8`)
+
+#### Sonstiges
+- Initial files (`f924622`)
+
+</details>
