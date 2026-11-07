@@ -4,7 +4,7 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.1.0] – unveröffentlicht
+## [1.1.0] – 2026-11-07
 
 ### Neu
 - **Standard-Steigerung** in den Einstellungen unter Training, wahlweise in kg oder lbs (voreingestellt 15 lbs).
@@ -16,6 +16,17 @@ Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code h
 ### Geändert
 - Standardübungen an Geräten und Kabeln nutzen jetzt die Standard-Steigerung; Bizepscurls und Trizepsdrücken am Kabel nutzen Stufen à 4,5 kg. Bisherige Sätze bleiben unverändert.
 - Stufen ohne kg-Angabe zählen nicht zum Wochenvolumen; der CSV-Export kennzeichnet sie in der neuen Spalte „weight_unit“.
+
+<details>
+<summary>Commits seit v1.0.1 (für Entwickler)</summary>
+
+#### Features
+- weight steps with lbs plates and levels (1.1.0) (`29fd218`)
+
+#### Fehlerbehebungen
+- show the kg/lbs switch right below the default step value (`34934d3`)
+
+</details>
 
 ## [1.0.1] – 2026-11-07
 
