@@ -139,6 +139,42 @@ class $ExercisesTable extends Exercises
     requiredDuringInsert: true,
   );
   @override
+  late final GeneratedColumnWithTypeConverter<StepMode, String> stepMode =
+      GeneratedColumn<String>(
+        'step_mode',
+        aliasedName,
+        false,
+        check: () => stepMode.isIn(const ['standard', 'kg', 'lbs', 'levels']),
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('kg'),
+      ).withConverter<StepMode>($ExercisesTable.$converterstepMode);
+  static const VerificationMeta _incrementLbsMeta = const VerificationMeta(
+    'incrementLbs',
+  );
+  @override
+  late final GeneratedColumn<double> incrementLbs = GeneratedColumn<double>(
+    'increment_lbs',
+    aliasedName,
+    false,
+    check: () => ComparableExpr(incrementLbs).isBiggerThanValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(15),
+  );
+  static const VerificationMeta _levelKgMeta = const VerificationMeta(
+    'levelKg',
+  );
+  @override
+  late final GeneratedColumn<double> levelKg = GeneratedColumn<double>(
+    'level_kg',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(levelKg).isBiggerThanValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  @override
   List<GeneratedColumn> get $columns => [
     id,
     name,
@@ -150,6 +186,9 @@ class $ExercisesTable extends Exercises
     notes,
     archived,
     createdAt,
+    stepMode,
+    incrementLbs,
+    levelKg,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -220,6 +259,21 @@ class $ExercisesTable extends Exercises
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('increment_lbs')) {
+      context.handle(
+        _incrementLbsMeta,
+        incrementLbs.isAcceptableOrUnknown(
+          data['increment_lbs']!,
+          _incrementLbsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('level_kg')) {
+      context.handle(
+        _levelKgMeta,
+        levelKg.isAcceptableOrUnknown(data['level_kg']!, _levelKgMeta),
+      );
+    }
     return context;
   }
 
@@ -273,6 +327,20 @@ class $ExercisesTable extends Exercises
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      stepMode: $ExercisesTable.$converterstepMode.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}step_mode'],
+        )!,
+      ),
+      incrementLbs: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}increment_lbs'],
+      )!,
+      levelKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}level_kg'],
+      ),
     );
   }
 
@@ -287,6 +355,8 @@ class $ExercisesTable extends Exercises
       const ExerciseCategoryConverter();
   static TypeConverter<ExerciseCategory?, String?> $convertercategoryn =
       NullAwareTypeConverter.wrap($convertercategory);
+  static TypeConverter<StepMode, String> $converterstepMode =
+      const StepModeConverter();
 }
 
 class ExercisesCompanion extends UpdateCompanion<Exercise> {
@@ -300,6 +370,9 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
   final Value<String> notes;
   final Value<bool> archived;
   final Value<DateTime> createdAt;
+  final Value<StepMode> stepMode;
+  final Value<double> incrementLbs;
+  final Value<double?> levelKg;
   const ExercisesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -311,6 +384,9 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     this.notes = const Value.absent(),
     this.archived = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.stepMode = const Value.absent(),
+    this.incrementLbs = const Value.absent(),
+    this.levelKg = const Value.absent(),
   });
   ExercisesCompanion.insert({
     this.id = const Value.absent(),
@@ -323,6 +399,9 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     this.notes = const Value.absent(),
     this.archived = const Value.absent(),
     required DateTime createdAt,
+    this.stepMode = const Value.absent(),
+    this.incrementLbs = const Value.absent(),
+    this.levelKg = const Value.absent(),
   }) : name = Value(name),
        type = Value(type),
        includeInStrengthIndex = Value(includeInStrengthIndex),
@@ -338,6 +417,9 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     Expression<String>? notes,
     Expression<bool>? archived,
     Expression<DateTime>? createdAt,
+    Expression<String>? stepMode,
+    Expression<double>? incrementLbs,
+    Expression<double>? levelKg,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -351,6 +433,9 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
       if (notes != null) 'notes': notes,
       if (archived != null) 'archived': archived,
       if (createdAt != null) 'created_at': createdAt,
+      if (stepMode != null) 'step_mode': stepMode,
+      if (incrementLbs != null) 'increment_lbs': incrementLbs,
+      if (levelKg != null) 'level_kg': levelKg,
     });
   }
 
@@ -365,6 +450,9 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     Value<String>? notes,
     Value<bool>? archived,
     Value<DateTime>? createdAt,
+    Value<StepMode>? stepMode,
+    Value<double>? incrementLbs,
+    Value<double?>? levelKg,
   }) {
     return ExercisesCompanion(
       id: id ?? this.id,
@@ -378,6 +466,9 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
       notes: notes ?? this.notes,
       archived: archived ?? this.archived,
       createdAt: createdAt ?? this.createdAt,
+      stepMode: stepMode ?? this.stepMode,
+      incrementLbs: incrementLbs ?? this.incrementLbs,
+      levelKg: levelKg ?? this.levelKg,
     );
   }
 
@@ -420,6 +511,17 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (stepMode.present) {
+      map['step_mode'] = Variable<String>(
+        $ExercisesTable.$converterstepMode.toSql(stepMode.value),
+      );
+    }
+    if (incrementLbs.present) {
+      map['increment_lbs'] = Variable<double>(incrementLbs.value);
+    }
+    if (levelKg.present) {
+      map['level_kg'] = Variable<double>(levelKg.value);
+    }
     return map;
   }
 
@@ -435,7 +537,10 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
           ..write('includeInStrengthIndex: $includeInStrengthIndex, ')
           ..write('notes: $notes, ')
           ..write('archived: $archived, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('stepMode: $stepMode, ')
+          ..write('incrementLbs: $incrementLbs, ')
+          ..write('levelKg: $levelKg')
           ..write(')'))
         .toString();
   }
@@ -457,6 +562,9 @@ class _$ExerciseInsertable implements Insertable<Exercise> {
       notes: Value(_object.notes),
       archived: Value(_object.archived),
       createdAt: Value(_object.createdAt),
+      stepMode: Value(_object.stepMode),
+      incrementLbs: Value(_object.incrementLbs),
+      levelKg: Value(_object.levelKg),
     ).toColumns(false);
   }
 }
@@ -3187,6 +3295,30 @@ class $AppSettingsTableTable extends AppSettingsTable
     requiredDuringInsert: false,
     defaultValue: const Constant(14),
   );
+  static const VerificationMeta _defaultStepMeta = const VerificationMeta(
+    'defaultStep',
+  );
+  @override
+  late final GeneratedColumn<double> defaultStep = GeneratedColumn<double>(
+    'default_step',
+    aliasedName,
+    false,
+    check: () => ComparableExpr(defaultStep).isBiggerThanValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(15),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<WeightUnit, String>
+  defaultStepUnit = GeneratedColumn<String>(
+    'default_step_unit',
+    aliasedName,
+    false,
+    check: () => defaultStepUnit.isIn(const ['kg', 'lbs']),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('lbs'),
+  ).withConverter<WeightUnit>($AppSettingsTableTable.$converterdefaultStepUnit);
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3200,6 +3332,8 @@ class $AppSettingsTableTable extends AppSettingsTable
     lastSelectedPlanId,
     lastBackupAt,
     backupReminderDays,
+    defaultStep,
+    defaultStepUnit,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3297,6 +3431,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('default_step')) {
+      context.handle(
+        _defaultStepMeta,
+        defaultStep.isAcceptableOrUnknown(
+          data['default_step']!,
+          _defaultStepMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3352,6 +3495,16 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.int,
         data['${effectivePrefix}backup_reminder_days'],
       )!,
+      defaultStep: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}default_step'],
+      )!,
+      defaultStepUnit: $AppSettingsTableTable.$converterdefaultStepUnit.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}default_step_unit'],
+        )!,
+      ),
     );
   }
 
@@ -3362,6 +3515,8 @@ class $AppSettingsTableTable extends AppSettingsTable
 
   static TypeConverter<ThemePreference, String> $converterthemeMode =
       const ThemePreferenceConverter();
+  static TypeConverter<WeightUnit, String> $converterdefaultStepUnit =
+      const WeightUnitConverter();
 }
 
 class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
@@ -3376,6 +3531,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
   final Value<int?> lastSelectedPlanId;
   final Value<DateTime?> lastBackupAt;
   final Value<int> backupReminderDays;
+  final Value<double> defaultStep;
+  final Value<WeightUnit> defaultStepUnit;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
     this.defaultSets = const Value.absent(),
@@ -3388,6 +3545,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     this.lastSelectedPlanId = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
     this.backupReminderDays = const Value.absent(),
+    this.defaultStep = const Value.absent(),
+    this.defaultStepUnit = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
     this.id = const Value.absent(),
@@ -3401,6 +3560,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     this.lastSelectedPlanId = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
     this.backupReminderDays = const Value.absent(),
+    this.defaultStep = const Value.absent(),
+    this.defaultStepUnit = const Value.absent(),
   });
   static Insertable<AppSettings> custom({
     Expression<int>? id,
@@ -3414,6 +3575,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     Expression<int>? lastSelectedPlanId,
     Expression<DateTime>? lastBackupAt,
     Expression<int>? backupReminderDays,
+    Expression<double>? defaultStep,
+    Expression<String>? defaultStepUnit,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3429,6 +3592,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
       if (lastBackupAt != null) 'last_backup_at': lastBackupAt,
       if (backupReminderDays != null)
         'backup_reminder_days': backupReminderDays,
+      if (defaultStep != null) 'default_step': defaultStep,
+      if (defaultStepUnit != null) 'default_step_unit': defaultStepUnit,
     });
   }
 
@@ -3444,6 +3609,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     Value<int?>? lastSelectedPlanId,
     Value<DateTime?>? lastBackupAt,
     Value<int>? backupReminderDays,
+    Value<double>? defaultStep,
+    Value<WeightUnit>? defaultStepUnit,
   }) {
     return AppSettingsTableCompanion(
       id: id ?? this.id,
@@ -3457,6 +3624,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
       lastSelectedPlanId: lastSelectedPlanId ?? this.lastSelectedPlanId,
       lastBackupAt: lastBackupAt ?? this.lastBackupAt,
       backupReminderDays: backupReminderDays ?? this.backupReminderDays,
+      defaultStep: defaultStep ?? this.defaultStep,
+      defaultStepUnit: defaultStepUnit ?? this.defaultStepUnit,
     );
   }
 
@@ -3498,6 +3667,16 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     if (backupReminderDays.present) {
       map['backup_reminder_days'] = Variable<int>(backupReminderDays.value);
     }
+    if (defaultStep.present) {
+      map['default_step'] = Variable<double>(defaultStep.value);
+    }
+    if (defaultStepUnit.present) {
+      map['default_step_unit'] = Variable<String>(
+        $AppSettingsTableTable.$converterdefaultStepUnit.toSql(
+          defaultStepUnit.value,
+        ),
+      );
+    }
     return map;
   }
 
@@ -3514,7 +3693,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
           ..write('themeMode: $themeMode, ')
           ..write('lastSelectedPlanId: $lastSelectedPlanId, ')
           ..write('lastBackupAt: $lastBackupAt, ')
-          ..write('backupReminderDays: $backupReminderDays')
+          ..write('backupReminderDays: $backupReminderDays, ')
+          ..write('defaultStep: $defaultStep, ')
+          ..write('defaultStepUnit: $defaultStepUnit')
           ..write(')'))
         .toString();
   }
@@ -3537,6 +3718,8 @@ class _$AppSettingsInsertable implements Insertable<AppSettings> {
       lastSelectedPlanId: Value(_object.lastSelectedPlanId),
       lastBackupAt: Value(_object.lastBackupAt),
       backupReminderDays: Value(_object.backupReminderDays),
+      defaultStep: Value(_object.defaultStep),
+      defaultStepUnit: Value(_object.defaultStepUnit),
     ).toColumns(false);
   }
 }
@@ -3725,6 +3908,9 @@ typedef $$ExercisesTableCreateCompanionBuilder = ExercisesCompanion Function({
   Value<String> notes,
   Value<bool> archived,
   required DateTime createdAt,
+  Value<StepMode> stepMode,
+  Value<double> incrementLbs,
+  Value<double?> levelKg,
 });
 typedef $$ExercisesTableUpdateCompanionBuilder = ExercisesCompanion Function({
   Value<int> id,
@@ -3737,6 +3923,9 @@ typedef $$ExercisesTableUpdateCompanionBuilder = ExercisesCompanion Function({
   Value<String> notes,
   Value<bool> archived,
   Value<DateTime> createdAt,
+  Value<StepMode> stepMode,
+  Value<double> incrementLbs,
+  Value<double?> levelKg,
 });
 
 final class $$ExercisesTableReferences
@@ -3840,6 +4029,22 @@ class $$ExercisesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<StepMode, StepMode, String> get stepMode =>
+      $composableBuilder(
+        column: $table.stepMode,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<double> get incrementLbs => $composableBuilder(
+    column: $table.incrementLbs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get levelKg => $composableBuilder(
+    column: $table.levelKg,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3952,6 +4157,21 @@ class $$ExercisesTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get stepMode => $composableBuilder(
+    column: $table.stepMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get incrementLbs => $composableBuilder(
+    column: $table.incrementLbs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get levelKg => $composableBuilder(
+    column: $table.levelKg,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ExercisesTableAnnotationComposer
@@ -3996,6 +4216,17 @@ class $$ExercisesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<StepMode, String> get stepMode =>
+      $composableBuilder(column: $table.stepMode, builder: (column) => column);
+
+  GeneratedColumn<double> get incrementLbs => $composableBuilder(
+    column: $table.incrementLbs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get levelKg =>
+      $composableBuilder(column: $table.levelKg, builder: (column) => column);
 
   Expression<T> planExercisesRefs<T extends Object>(
     Expression<T> Function($$PlanExercisesTableAnnotationComposer a) f,
@@ -4089,6 +4320,9 @@ class $$ExercisesTableTableManager
                 Value<String> notes = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<StepMode> stepMode = const Value.absent(),
+                Value<double> incrementLbs = const Value.absent(),
+                Value<double?> levelKg = const Value.absent(),
               }) => ExercisesCompanion(
                 id: id,
                 name: name,
@@ -4100,6 +4334,9 @@ class $$ExercisesTableTableManager
                 notes: notes,
                 archived: archived,
                 createdAt: createdAt,
+                stepMode: stepMode,
+                incrementLbs: incrementLbs,
+                levelKg: levelKg,
               ),
           createCompanionCallback:
               ({
@@ -4113,6 +4350,9 @@ class $$ExercisesTableTableManager
                 Value<String> notes = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 required DateTime createdAt,
+                Value<StepMode> stepMode = const Value.absent(),
+                Value<double> incrementLbs = const Value.absent(),
+                Value<double?> levelKg = const Value.absent(),
               }) => ExercisesCompanion.insert(
                 id: id,
                 name: name,
@@ -4124,6 +4364,9 @@ class $$ExercisesTableTableManager
                 notes: notes,
                 archived: archived,
                 createdAt: createdAt,
+                stepMode: stepMode,
+                incrementLbs: incrementLbs,
+                levelKg: levelKg,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -7968,6 +8211,8 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<int?> lastSelectedPlanId,
       Value<DateTime?> lastBackupAt,
       Value<int> backupReminderDays,
+      Value<double> defaultStep,
+      Value<WeightUnit> defaultStepUnit,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
     AppSettingsTableCompanion Function({
@@ -7982,6 +8227,8 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<int?> lastSelectedPlanId,
       Value<DateTime?> lastBackupAt,
       Value<int> backupReminderDays,
+      Value<double> defaultStep,
+      Value<WeightUnit> defaultStepUnit,
     });
 
 final class $$AppSettingsTableTableReferences
@@ -8070,6 +8317,17 @@ class $$AppSettingsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get defaultStep => $composableBuilder(
+    column: $table.defaultStep,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<WeightUnit, WeightUnit, String>
+  get defaultStepUnit => $composableBuilder(
+    column: $table.defaultStepUnit,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
   $$PlansTableFilterComposer get lastSelectedPlanId {
     final $$PlansTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -8153,6 +8411,16 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get defaultStep => $composableBuilder(
+    column: $table.defaultStep,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get defaultStepUnit => $composableBuilder(
+    column: $table.defaultStepUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PlansTableOrderingComposer get lastSelectedPlanId {
     final $$PlansTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -8232,6 +8500,17 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get defaultStep => $composableBuilder(
+    column: $table.defaultStep,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<WeightUnit, String> get defaultStepUnit =>
+      $composableBuilder(
+        column: $table.defaultStepUnit,
+        builder: (column) => column,
+      );
+
   $$PlansTableAnnotationComposer get lastSelectedPlanId {
     final $$PlansTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -8297,6 +8576,8 @@ class $$AppSettingsTableTableTableManager
                 Value<int?> lastSelectedPlanId = const Value.absent(),
                 Value<DateTime?> lastBackupAt = const Value.absent(),
                 Value<int> backupReminderDays = const Value.absent(),
+                Value<double> defaultStep = const Value.absent(),
+                Value<WeightUnit> defaultStepUnit = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
                 defaultSets: defaultSets,
@@ -8309,6 +8590,8 @@ class $$AppSettingsTableTableTableManager
                 lastSelectedPlanId: lastSelectedPlanId,
                 lastBackupAt: lastBackupAt,
                 backupReminderDays: backupReminderDays,
+                defaultStep: defaultStep,
+                defaultStepUnit: defaultStepUnit,
               ),
           createCompanionCallback:
               ({
@@ -8323,6 +8606,8 @@ class $$AppSettingsTableTableTableManager
                 Value<int?> lastSelectedPlanId = const Value.absent(),
                 Value<DateTime?> lastBackupAt = const Value.absent(),
                 Value<int> backupReminderDays = const Value.absent(),
+                Value<double> defaultStep = const Value.absent(),
+                Value<WeightUnit> defaultStepUnit = const Value.absent(),
               }) => AppSettingsTableCompanion.insert(
                 id: id,
                 defaultSets: defaultSets,
@@ -8335,6 +8620,8 @@ class $$AppSettingsTableTableTableManager
                 lastSelectedPlanId: lastSelectedPlanId,
                 lastBackupAt: lastBackupAt,
                 backupReminderDays: backupReminderDays,
+                defaultStep: defaultStep,
+                defaultStepUnit: defaultStepUnit,
               ),
           withReferenceMapper: (p0) => p0
               .map(

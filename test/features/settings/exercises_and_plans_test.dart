@@ -4,6 +4,7 @@ import 'package:gymlog/core/l10n/strings_de.dart';
 import 'package:gymlog/data/db/database.dart';
 import 'package:gymlog/domain/exercise_library.dart';
 import 'package:gymlog/domain/models/models.dart';
+import 'package:gymlog/features/settings/exercises/exercise_form_page.dart';
 
 import '../../helpers/pump_app.dart';
 import '../../helpers/seed.dart';
@@ -149,9 +150,23 @@ void main() {
       );
       await tester.tap(find.text(S.exerciseType(ExerciseType.bodyweight)));
       await tester.tap(find.text(S.category(ExerciseCategory.back)));
+      await tester.ensureVisible(find.text(S.stepCustom));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(S.stepCustom));
+      await tester.pump();
       await tester.enterText(
-        find.widgetWithText(TextField, S.fieldIncrement),
+        find.widgetWithText(TextField, '${S.fieldStepValue} (kg)'),
         '1.25',
+      );
+      await tester.scrollUntilVisible(
+        find.widgetWithText(TextField, '${S.fieldRest} (${S.optional})'),
+        100,
+        scrollable: find
+            .descendant(
+              of: find.byType(ExerciseFormPage),
+              matching: find.byType(Scrollable),
+            )
+            .first,
       );
       await tester.enterText(
         find.widgetWithText(TextField, '${S.fieldRest} (${S.optional})'),
@@ -167,6 +182,7 @@ void main() {
       expect(created.type, ExerciseType.bodyweight);
       expect(created.category, ExerciseCategory.back);
       expect(created.incrementKg, 1.25);
+      expect(created.stepMode, StepMode.kg);
       expect(created.restSec, 120);
       expect(created.includeInStrengthIndex, isTrue);
       expect(find.text('Klimmzüge'), findsOneWidget);
@@ -178,9 +194,23 @@ void main() {
       await tester.tap(find.text(S.newExercise));
       await tester.pumpAndSettle();
       await tester.enterText(find.widgetWithText(TextField, S.fieldName), 'X');
+      await tester.ensureVisible(find.text(S.stepCustom));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(S.stepCustom));
+      await tester.pump();
       await tester.enterText(
-        find.widgetWithText(TextField, S.fieldIncrement),
+        find.widgetWithText(TextField, '${S.fieldStepValue} (kg)'),
         '0',
+      );
+      await tester.scrollUntilVisible(
+        find.widgetWithText(TextField, '${S.fieldRest} (${S.optional})'),
+        100,
+        scrollable: find
+            .descendant(
+              of: find.byType(ExerciseFormPage),
+              matching: find.byType(Scrollable),
+            )
+            .first,
       );
       await tester.enterText(
         find.widgetWithText(TextField, '${S.fieldRest} (${S.optional})'),
@@ -194,6 +224,84 @@ void main() {
         await dbWork(tester, () => r.exercises.watchActive().first),
         isEmpty,
       );
+      await disposeApp(tester, db);
+    });
+
+    testWidgets('weight steps: standard by default, lbs, levels (1.1.0)', (
+      tester,
+    ) async {
+      Future<Exercise> create(
+        String name,
+        Future<void> Function() choose,
+      ) async {
+        await tester.tap(find.text(S.newExercise));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.widgetWithText(TextField, S.fieldName),
+          name,
+        );
+        await choose();
+        await tester.tap(find.text(S.save));
+        await settle(tester);
+        return (await dbWork(
+          tester,
+          () => r.exercises.watchActive().first,
+        )).firstWhere((e) => e.name == name);
+      }
+
+      await openSettings(tester, S.settingsExercises);
+      final standard = await create('Gerät', () async {
+        expect(find.text(S.stepStandardHint('15 lbs')), findsOneWidget);
+      });
+      expect(standard.stepMode, StepMode.standard);
+
+      final lbs = await create('Andere Marke', () async {
+        await tester.ensureVisible(find.text(S.stepCustom));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(S.stepCustom));
+        await tester.pump();
+        await tester.ensureVisible(find.text(S.unitLbs));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(S.unitLbs));
+        await tester.pump();
+        expect(find.text(S.stepLbsHint), findsOneWidget);
+        await tester.enterText(
+          find.widgetWithText(TextField, '${S.fieldStepValue} (lbs)'),
+          '10',
+        );
+      });
+      expect((lbs.stepMode, lbs.incrementLbs), (StepMode.lbs, 10));
+
+      final levels = await create('Seilzug', () async {
+        await tester.ensureVisible(find.text(S.stepLevels));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(S.stepLevels));
+        await tester.pump();
+        await tester.enterText(
+          find.widgetWithText(TextField, S.fieldLevelKg),
+          '4,5',
+        );
+      });
+      expect((levels.stepMode, levels.levelKg), (StepMode.levels, 4.5));
+
+      final noKg = await create('Stufen ohne kg', () async {
+        await tester.ensureVisible(find.text(S.stepLevels));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(S.stepLevels));
+        await tester.pump();
+      });
+      expect((noKg.stepMode, noKg.levelKg), (StepMode.levels, null));
+      await disposeApp(tester, db);
+    });
+
+    testWidgets('"Stufen" only for weight × reps', (tester) async {
+      await openSettings(tester, S.settingsExercises);
+      await tester.tap(find.text(S.newExercise));
+      await tester.pumpAndSettle();
+      expect(find.text(S.stepLevels), findsOneWidget);
+      await tester.tap(find.text(S.exerciseType(ExerciseType.bodyweight)));
+      await tester.pump();
+      expect(find.text(S.stepLevels), findsNothing);
       await disposeApp(tester, db);
     });
 

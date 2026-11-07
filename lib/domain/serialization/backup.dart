@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../legacy_steps.dart';
 import '../models/models.dart';
 import '../names.dart';
 import 'csv.dart' show isoWithOffset;
@@ -9,7 +10,7 @@ const backupFormat = 'gymlog-backup';
 
 /// 2 (M9): `planGroups`, `sessionSupersets`, `planExercises[].groupId` and
 /// `sessionExercises[].supersetId`. Version 1 files are still read.
-const backupFormatVersion = 2;
+const backupFormatVersion = 3;
 
 final class BackupData {
   const BackupData({
@@ -117,6 +118,9 @@ String encodeBackup(BackupData b) {
             'notes': e.notes,
             'archived': e.archived,
             'createdAt': _t(e.createdAt),
+            'stepMode': e.stepMode.code,
+            'incrementLbs': e.incrementLbs,
+            'levelKg': e.levelKg,
           },
       ],
       'plans': [
@@ -218,6 +222,8 @@ String encodeBackup(BackupData b) {
         'lastSelectedPlanId': s.lastSelectedPlanId,
         'lastBackupAt': _tn(s.lastBackupAt),
         'backupReminderDays': s.backupReminderDays,
+        'defaultStep': s.defaultStep,
+        'defaultStepUnit': s.defaultStepUnit.code,
       },
     },
   });
@@ -355,6 +361,7 @@ BackupData decodeBackup(String text) {
   if (data is! Map<String, Object?>) _invalid('data');
 
   final v2 = version >= 2;
+  final v3 = version >= 3;
   final dataset = Dataset(
     exercises: _list(
       data,
@@ -370,6 +377,25 @@ BackupData decodeBackup(String text) {
         notes: r.string('notes'),
         archived: r.boolean('archived'),
         createdAt: r.time('createdAt'),
+        // Before format 3 (1.1.0): the same steps as the database migration.
+        stepMode: v3
+            ? r.coded('stepMode', StepMode.values)
+            : legacyStepMode(
+                r.string('name'),
+                r.coded('type', ExerciseType.values),
+              ),
+        incrementLbs: v3
+            ? r.number('incrementLbs')
+            : Exercise.defaultIncrementLbs,
+        levelKg: v3
+            ? r.numberOrNull('levelKg')
+            : legacyStepMode(
+                    r.string('name'),
+                    r.coded('type', ExerciseType.values),
+                  ) ==
+                  StepMode.levels
+            ? v3LevelKg
+            : null,
       ),
     ),
     plans: _list(
@@ -492,6 +518,12 @@ BackupData decodeBackup(String text) {
     lastSelectedPlanId: r.intOrNull('lastSelectedPlanId'),
     lastBackupAt: r.timeOrNull('lastBackupAt'),
     backupReminderDays: r.integer('backupReminderDays'),
+    defaultStep: v3
+        ? r.number('defaultStep')
+        : AppSettings.defaults.defaultStep,
+    defaultStepUnit: v3
+        ? r.coded('defaultStepUnit', WeightUnit.values)
+        : AppSettings.defaults.defaultStepUnit,
   );
 
   validateDataset(dataset, settings);

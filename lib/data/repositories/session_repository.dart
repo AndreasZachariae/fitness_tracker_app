@@ -543,7 +543,7 @@ class SessionRepository {
     for (final x in all) {
       if (x.set.isWarmup) continue;
       count[x.sessionId] = (count[x.sessionId] ?? 0) + 1;
-      if (x.type == ExerciseType.weightReps) {
+      if (x.type == ExerciseType.weightReps && x.storesKg) {
         volume[x.sessionId] =
             (volume[x.sessionId] ?? 0) +
             (x.set.weightKg ?? 0) * (x.set.reps ?? 0);

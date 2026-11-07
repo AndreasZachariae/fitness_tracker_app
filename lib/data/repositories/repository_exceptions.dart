@@ -69,6 +69,18 @@ final class TypeChangeNotAllowedException extends RepositoryException {
 }
 
 /// A session is already running; at most one may be active.
+/// The exercise has sets stored as level numbers (levels without kg) and
+/// would switch to kg, or the other way round, without kg per level to
+/// convert them (1.1.0).
+final class StepChangeNotAllowedException extends RepositoryException {
+  const StepChangeNotAllowedException(this.exerciseId);
+
+  final int exerciseId;
+
+  @override
+  String toString() => 'StepChangeNotAllowedException($exerciseId)';
+}
+
 final class ActiveSessionExistsException extends RepositoryException {
   const ActiveSessionExistsException(this.activeSessionId);
 

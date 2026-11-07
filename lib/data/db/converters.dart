@@ -33,6 +33,14 @@ class PlanGroupKindConverter extends CodedConverter<PlanGroupKind> {
   const PlanGroupKindConverter() : super(PlanGroupKind.values);
 }
 
+class StepModeConverter extends CodedConverter<StepMode> {
+  const StepModeConverter() : super(StepMode.values);
+}
+
+class WeightUnitConverter extends CodedConverter<WeightUnit> {
+  const WeightUnitConverter() : super(WeightUnit.values);
+}
+
 class ThemePreferenceConverter extends CodedConverter<ThemePreference> {
   const ThemePreferenceConverter() : super(ThemePreference.values);
 }

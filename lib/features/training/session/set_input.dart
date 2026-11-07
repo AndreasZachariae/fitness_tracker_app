@@ -4,6 +4,7 @@ import '../../../core/format/exercise_format.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/l10n/strings_de.dart';
 import '../../../domain/models/models.dart';
+import '../../../domain/weight_steps.dart';
 import '../../../widgets/big_stepper.dart';
 import '../../../widgets/number_input_dialog.dart';
 import 'stopwatch_button.dart';
@@ -19,23 +20,40 @@ abstract final class SetLimits {
 
 double _round(double v) => (v * 100).round() / 100;
 
-/// Asks for a weight; [allowNegative] for bodyweight assistance.
+/// Asks for a weight; [allowNegative] for bodyweight assistance. With
+/// [levels] the level is asked for and its stored weight returned (1.1.0).
 Future<double?> askWeight(
   BuildContext context,
   double? current, {
   bool allowNegative = false,
-}) => showNumberInputDialog<double>(
-  context,
-  title: S.enterWeight,
-  initialText: current == null ? '' : formatWeight(current),
-  decimal: true,
-  parse: (t) {
-    final v = parseDecimal(t);
-    if (v == null || v > SetLimits.maxWeight) return null;
-    if (v < (allowNegative ? SetLimits.minAssistance : 0)) return null;
-    return _round(v);
-  },
-);
+  LevelStep? levels,
+}) => levels != null
+    ? showNumberInputDialog<double>(
+        context,
+        title: S.enterLevel,
+        initialText: current == null
+            ? ''
+            : formatLevel(levels.levelOf(current)),
+        decimal: true,
+        parse: (t) {
+          final v = parseDecimal(t);
+          if (v == null || v < 0 || v > 1000) return null;
+          final w = levels.weightOf(v);
+          return w > SetLimits.maxWeight ? null : w;
+        },
+      )
+    : showNumberInputDialog<double>(
+        context,
+        title: S.enterWeight,
+        initialText: current == null ? '' : formatWeight(current),
+        decimal: true,
+        parse: (t) {
+          final v = parseDecimal(t);
+          if (v == null || v > SetLimits.maxWeight) return null;
+          if (v < (allowNegative ? SetLimits.minAssistance : 0)) return null;
+          return _round(v);
+        },
+      );
 
 Future<int?> askReps(BuildContext context, int? current) =>
     showNumberInputDialog<int>(
@@ -65,7 +83,7 @@ Future<int?> askDuration(BuildContext context, int? current) =>
 class SetInput extends StatefulWidget {
   const SetInput({
     required this.type,
-    required this.incrementKg,
+    required this.step,
     required this.values,
     required this.onChanged,
     this.showStopwatch = true,
@@ -73,7 +91,9 @@ class SetInput extends StatefulWidget {
   });
 
   final ExerciseType type;
-  final double incrementKg;
+
+  /// How + and − move the weight (kg step, lbs plates, levels; 1.1.0).
+  final WeightStep step;
   final SetValues values;
   final ValueChanged<SetValues> onChanged;
 
@@ -106,29 +126,44 @@ class _SetInputState extends State<SetInput> {
 
   Widget _weight({required bool signed, required bool allowNegative}) {
     final w = _v.weightKg;
-    final step = widget.incrementKg;
+    final step = widget.step;
+    // Levels only for weight × reps exercises.
+    final levels = widget.type == ExerciseType.weightReps && step is LevelStep
+        ? step
+        : null;
     final min = allowNegative ? SetLimits.minAssistance : 0.0;
     Future<void> ask() async {
-      final v = await askWeight(context, w, allowNegative: allowNegative);
+      final v = await askWeight(
+        context,
+        w,
+        allowNegative: allowNegative,
+        levels: levels,
+      );
       if (v != null) _emit(_v.copyWith(weightKg: v));
     }
 
+    final down = w == null ? null : step.down(w);
+    final up = w == null ? null : step.up(w);
     return BigStepper(
-      label: signed ? S.addedWeight : S.weight,
-      valueText: w == null
-          ? '– ${S.unitKg}'
-          : signed
-          ? formatSignedKg(w)
-          : formatKg(w),
+      label: levels == null
+          ? (signed ? S.addedWeight : S.weight)
+          : w == null || levels.kgPerLevel == null
+          ? S.level
+          : '${S.level} · ${formatKg(w)}',
+      valueText: switch (w) {
+        null => levels == null ? '– ${S.unitKg}' : '–',
+        final w when levels != null => formatLevel(levels.levelOf(w)),
+        final w => signed ? formatSignedKg(w) : formatKg(w),
+      },
       onDecrement: w == null
           ? ask
-          : w - step >= min - 1e-9
-          ? () => _emit(_v.copyWith(weightKg: _round(w - step)))
+          : down! >= min - 1e-9
+          ? () => _emit(_v.copyWith(weightKg: _round(down)))
           : (w > min ? () => _emit(_v.copyWith(weightKg: min)) : null),
       onIncrement: w == null
           ? ask
-          : w + step <= SetLimits.maxWeight
-          ? () => _emit(_v.copyWith(weightKg: _round(w + step)))
+          : up! <= SetLimits.maxWeight
+          ? () => _emit(_v.copyWith(weightKg: _round(up)))
           : null,
       onTapValue: ask,
     );

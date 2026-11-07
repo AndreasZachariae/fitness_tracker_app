@@ -27,7 +27,7 @@ void main() {
   test('header fields (SPEC §8.2)', () {
     final json = jsonDecode(encodeBackup(backup)) as Map<String, Object?>;
     expect(json['format'], 'gymlog-backup');
-    expect(json['formatVersion'], 2);
+    expect(json['formatVersion'], 3);
     expect(json['schemaVersion'], 1);
     expect(json['appVersion'], '1.0.0+12');
     expect(json['exportedAt'], isA<String>());
@@ -84,6 +84,55 @@ void main() {
     expect(d.sets, demo.sets);
   });
 
+  test('format 2 backups (before 1.1.0) get the steps of the migration', () {
+    final j = jsonDecode(encodeBackup(backup)) as Map<String, Object?>;
+    j['formatVersion'] = 2;
+    final data = j['data']! as Map<String, Object?>;
+    final exercises = data['exercises']! as List<Object?>;
+    for (final e in exercises) {
+      (e! as Map<String, Object?>)
+        ..remove('stepMode')
+        ..remove('incrementLbs')
+        ..remove('levelKg');
+    }
+    final present = {
+      for (final e in exercises) (e! as Map<String, Object?>)['name'],
+    };
+    exercises.addAll([
+      for (final (id, name) in [
+        (900, 'Latzug'),
+        (901, 'Bizepscurls am Kabel'),
+        (902, 'Kurzhantel-Curls'),
+      ])
+        if (!present.contains(name))
+          {
+            'id': id,
+            'name': name,
+            'type': 'weight_reps',
+            'category': null,
+            'incrementKg': 2.5,
+            'restSec': null,
+            'includeInStrengthIndex': true,
+            'notes': '',
+            'archived': false,
+            'createdAt': '2026-11-01T10:00:00.000Z',
+          },
+    ]);
+    (data['settings']! as Map<String, Object?>)
+      ..remove('defaultStep')
+      ..remove('defaultStepUnit');
+    final decoded = decodeBackup(jsonEncode(j));
+    Exercise byName(String n) =>
+        decoded.dataset.exercises.firstWhere((e) => e.name == n);
+    expect(byName('Latzug').stepMode, StepMode.standard);
+    expect(byName('Bizepscurls am Kabel').stepMode, StepMode.levels);
+    expect(byName('Bizepscurls am Kabel').levelKg, 4.5);
+    expect(byName('Kurzhantel-Curls').stepMode, StepMode.kg);
+    expect(byName('Kurzhantel-Curls').incrementLbs, 15);
+    expect(decoded.settings.defaultStep, 15);
+    expect(decoded.settings.defaultStepUnit, WeightUnit.lbs);
+  });
+
   test('preview: trainings, period, body weights', () {
     final p = previewOf(demo);
     expect(p.trainings, demo.sessions.length);
@@ -116,7 +165,7 @@ void main() {
       (
         'newer version',
         () {
-          final j = json()..['formatVersion'] = 3;
+          final j = json()..['formatVersion'] = 4;
           return jsonEncode(j);
         },
         BackupError.newerVersion,
@@ -285,7 +334,7 @@ void main() {
         lines('sets.csv').first,
         'session_id,session_date,session_started_at,plan_name,exercise_id,'
         'exercise_name,exercise_type,category,exercise_position,set_index,'
-        'weight_kg,reps,duration_s,is_warmup,e1rm_kg,completed_at',
+        'weight_kg,reps,duration_s,is_warmup,e1rm_kg,completed_at,weight_unit',
       );
       expect(
         lines('sessions.csv').first,
@@ -296,7 +345,8 @@ void main() {
       expect(
         lines('exercises.csv').first,
         'exercise_id,name,type,category,increment_kg,'
-        'include_in_strength_index,archived,notes',
+        'include_in_strength_index,archived,notes,step_mode,increment_lbs,'
+        'level_kg',
       );
     });
 

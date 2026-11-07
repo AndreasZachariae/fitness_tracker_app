@@ -29,7 +29,13 @@ STATUS: FINISHED
     - Bei Statistik. Schiebe als zweites direkt nach Kraftindex. Hebe die Serien in Folge besser hervor. Sobald man es einmal nicht macht hat man keine aktive Streak mehr. Es kann aber auch die längste streak angezeigt werden. ABer gekennzeichnet, dass sie nicht aktiv ist.
     - Körper oder gewichte eintragen mit Komma oder mit Punkt ist egal, wird beides akzeptiert, Anzeigen immer mit Komma.
     - Das waren alle Tests zum überpüfen am Hady aus der finalen Testliste und version 1.0.0. Alle vorherigen haben auch erfolgreich funktioniert. Damit kann die Version abgeschlossen werden.
-Version 1.1.0 (Notifications)
+Version 1.1.0 (Gewichtseinstellungen)
+STATUS: FINISHED
+    - Aktuell ist in der app eine gewichtssteigerung in kg schritten angegeben. Das kann pro app eingestellt werden. Ich möchte zusätzlich in den Einstellung bei Training einen Punkt um die standard gewichtssteigerung festzulegen. in unserem fitnessstudio ist das nämlich an fast alle geräten gleich. 
+    - Allerdings nutzen die geräte im studio primär die bounds lbs gewichte. Das heißt auf den gesichten steht beides drauf lbs und kg. Jedes gewicht ist 15 lbs und damit ist auch die steigerung fix. Allerdings werden die kg angaben daneben umgerechnet und dann die kommastelle weggelassen. SO dass manchmal die steigerung 7kg und manchmal 6kg ist. Das ist schwierig in der app abzubilden. Ich möchte aber auf jeden fall, dass die anzeigen in der app überall immer auf kg ist. das heißt es wäre cool in der einstellung eine standard gewichtssteigerung anzugeben zb 15 und daneben auch umzuschalten zwischen kg und lbs. Im hintergrund wird das dann in kg umgerechnet und komma abgescnitten. Diese steigerung wird dann als vorschläge oder bei + und - in einer übung angewendet. 
+    - Außerdem gibt es ganz wenige geräte die von eienr anderen marke sind. In unserem fall konkret die Seilzug maschine für bizpes seilzug und trizeps drücken seilzug (Rudern und latzug ist aber eine normale maschine mit 15lbs schritten). Dort werden die scheiben einfach mit 1-15 gelabelt. Wir haben aber rausgefunden, dass eine scheibe 4,5kg entspricht. Das heißt es wäre gut wenn man beim erstellen der übung oder beim bearbeiten auch drei Optionen angeben kann. Entweder steigerung in kg wie davor besprochen, oder steigerung in int anzahl zB 1-15. Oder steigerung in int aber mit bekannten multiplier. Den kann man dann dort hinterlgen zB 4,5kg pro stufe. Und dann zeigt die übung zB DIe Stufen 10 (45kg) Für die berechnung und den vergleich mit anderen übungen kann dann der kg wert genommen werden. Bei übungen ohne bekannten multiplier ist der vergleich dann leider schwierig.
+    - wende die änderungen nachträglich für bestehende übungen an.
+Version 1.2.0 (Notifications)
 STATUS: PLANNED
     - Notifications for training sessions, reminders, and progress updates.
     - Customizable notification settings for users to choose what they want to be notified about.

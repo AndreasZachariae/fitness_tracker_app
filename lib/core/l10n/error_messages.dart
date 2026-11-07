@@ -9,6 +9,7 @@ String errorMessage(Object error) => switch (error) {
   NotFoundException() => S.errorNotFound,
   DuplicateExerciseException() => S.errorDuplicateExercise,
   TypeChangeNotAllowedException() => S.typeLocked,
+  StepChangeNotAllowedException() => S.stepChangeNeedsLevelKg,
   ActiveSessionExistsException() => S.errorActiveSession,
   SessionNotActiveException() => S.errorSessionNotActive,
   InvalidSetException() => S.errorInvalidSet,

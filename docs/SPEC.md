@@ -101,6 +101,11 @@ test/                        spiegelt lib/; domain/ mit Tabellentests
 - `category` text, nullable: `chest` | `back` | `legs` | `shoulders` | `arms` | `core` | `full_body` | `other`
   (UI: Brust, Rücken, Beine, Schultern, Arme, Rumpf, Ganzkörper, Sonstiges)
 - `incrementKg` real, Standard 2.5 · `restSec` int nullable (Überschreibt Standardpause)
+- Ab Schema 3 (1.1.0) Gewichtsschritte: `stepMode` text `standard` | `kg` | `lbs` | `levels` · `incrementLbs` real
+  (Standard 15) · `levelKg` real nullable. `standard` folgt der Standard-Steigerung der Einstellungen; `lbs` = Geräte mit
+  lbs-Scheiben (lbs-Werte durch 5 teilbar, gespeichert und angezeigt wird der auf ganze kg gerundete Wert, z. B. 100 lbs =
+  45 kg, 115 lbs = 52 kg); `levels` = nummerierte Stufen, mit `levelKg` als kg gespeichert und „Stufe 10 (45 kg)“
+  angezeigt, ohne `levelKg` wird die Stufennummer gespeichert (zählt nicht zum Volumen).
 - `includeInStrengthIndex` bool (Standard: true für `weight_reps`/`bodyweight`, false für `timed`)
 - `notes` text, Standard leer (z. B. „Sitzhöhe 4, Griff eng“) · `archived` bool · `createdAt`
 
@@ -129,7 +134,8 @@ Es darf höchstens eine aktive Session geben (im Repository erzwingen).
 **`app_settings`** – genau eine Zeile (`id` = 1):
 `defaultSets` (3) · `defaultRestSec` (90) · `restTimerEnabled` (true) · `vibrationEnabled` (true) · `keepScreenOn` (true) ·
 `autoActivateNext` (false) · `themeMode` (`system` | `light` | `dark`) · `lastSelectedPlanId` nullable (null = Frei) ·
-`lastBackupAt` nullable · `backupReminderDays` (14, ab 1.0.1 Standard 30; 0 = aus)
+`lastBackupAt` nullable · `backupReminderDays` (14, ab 1.0.1 Standard 30; 0 = aus) · ab 1.1.0 `defaultStep` real
+(Standard 15) und `defaultStepUnit` `kg` | `lbs` (Standard `lbs`)
 
 Regeln:
 - Übungen, die in Sessions vorkommen, werden nicht gelöscht, sondern archiviert. Unbenutzte dürfen gelöscht werden.
@@ -157,7 +163,7 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
   Suchfeld, „Zuletzt verwendet“, dann Bibliothek nach Kategorie gruppiert, Button „Neue Übung anlegen“.
   Bereits enthaltene Übungen sind markiert und nicht erneut wählbar.
 - **Neue Übung anlegen** (Formular): Name, Typ (Gewicht × Wdh / Körpergewicht / Zeit), Kategorie, Ziel-Sätze (Standard aus
-  Einstellungen), Ziel-Wdh bzw. Ziel-Dauer (optional), Steigerung in kg (Standard 2,5), Pause (optional), Notiz.
+  Einstellungen), Ziel-Wdh bzw. Ziel-Dauer (optional), Gewichtsschritte (ab 1.1.0: Standard / Eigene in kg oder lbs / Stufen mit optional kg pro Stufe; neue Übungen: Standard), Pause (optional), Notiz.
   Speichern legt die Übung an und fügt sie direkt hinzu.
 - Im Modus **„Frei“** ist die Liste temporär (nur im State, nicht als Plan gespeichert). Leerzustand:
   „Füge Übungen hinzu oder starte direkt.“
@@ -175,7 +181,7 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
     - Übungsnotiz (eine Zeile, Tap → bearbeiten), Referenz „Letztes Mal (28.10.): 60 × 10, 60 × 10, 60 × 8“.
     - Erledigte Sätze dieser Session als ausgegraute Zeilen („1   60 kg × 10“). Tap → Dialog Ändern/Löschen.
     - Eingabebereich je Typ:
-      - `weight_reps`: Stepper Gewicht `[−] 62,5 kg [+]` (Schritt = `incrementKg`), Stepper Wdh `[−] 10 [+]`.
+      - `weight_reps`: Stepper Gewicht `[−] 62,5 kg [+]` (Schritt nach den Gewichtsschritten der Übung; bei Stufen „Stufe · 45 kg“ und die Stufennummer), Stepper Wdh `[−] 10 [+]`.
       - `bodyweight`: Stepper Zusatzgewicht (Anzeige „+0 kg“, „+10 kg“, „−20 kg“), Stepper Wdh.
       - `timed`: großer Stoppuhr-Button „Start“ → läuft sichtbar → „Stopp“ übernimmt die Dauer; daneben Stepper Dauer (±5 s, `m:ss`);
         Zusatzgewicht eingeklappt hinter „Gewicht hinzufügen“.
@@ -289,7 +295,7 @@ Arbeitssätze = Sätze mit `isWarmup == false`. Alle Berechnungen nutzen nur Arb
 ### 7.2 Steigerungsvorschlag (nur für Satz 1)
 - Bedingung: Ziel (`targetReps` bzw. `targetDurationSec`) ist gesetzt, und in der letzten Session mit dieser Übung wurden
   mindestens `targetSets` Arbeitssätze erfasst, die alle das Ziel erreicht haben.
-- Vorschlag: `weight_reps` → Gewicht + `incrementKg` · `bodyweight` → mit Zusatzgewicht > 0: + `incrementKg`, sonst Wdh + 1 ·
+- Vorschlag: `weight_reps` → ein Gewichtsschritt mehr (nächste Scheibe bzw. Stufe, ab 1.1.0) · `bodyweight` → mit Zusatzgewicht > 0: ein Schritt mehr, sonst Wdh + 1 ·
   `timed` → Dauer + 5 s.
 - Der Vorschlag wird nur angeboten (Chip), nie automatisch übernommen.
 
@@ -333,10 +339,12 @@ ZIP `gymlog-export-YYYY-MM-DD.zip` mit vier Dateien. UTF-8 ohne BOM, Komma als T
 Kopfzeile, Quoting nach RFC 4180, leeres Feld für null, Zeitpunkte ISO 8601 mit Offset (lokal).
 
 - `sets.csv`: `session_id, session_date, session_started_at, plan_name, exercise_id, exercise_name, exercise_type, category,
-  exercise_position, set_index, weight_kg, reps, duration_s, is_warmup, e1rm_kg, completed_at`
+  exercise_position, set_index, weight_kg, reps, duration_s, is_warmup, e1rm_kg, completed_at, weight_unit` (ab 1.1.0:
+  `kg` oder `level`, wenn `weight_kg` eine Stufennummer enthält)
 - `sessions.csv`: `session_id, plan_name, started_at, ended_at, duration_s, n_exercises, n_sets, volume_kg, notes`
 - `body_weight.csv`: `date, weight_kg`
-- `exercises.csv`: `exercise_id, name, type, category, increment_kg, include_in_strength_index, archived, notes`
+- `exercises.csv`: `exercise_id, name, type, category, increment_kg, include_in_strength_index, archived, notes` (ab 1.1.0
+  zusätzlich `step_mode, increment_lbs, level_kg`)
 
 Nur abgeschlossene Sessions. Ausgabe über das Teilen-Menü; zusätzlich „Speichern unter …“ über den System-Dateidialog.
 
@@ -357,6 +365,9 @@ Datei `gymlog-backup-YYYY-MM-DD-HHmm.json`:
 ```
 Alle Spalten aller Tabellen, IDs bleiben erhalten. Nach erfolgreichem Teilen/Speichern `lastBackupAt` setzen
 (CSV-Export zählt nicht als Backup).
+Formatversionen: 2 ab M9 (Gruppen), 3 ab 1.1.0 (Gewichtsschritte). Ältere Formate werden weiter gelesen; Übungen aus
+Backups vor 1.1.0 bekommen dieselben Gewichtsschritte wie bei der Datenbank-Migration (Geräte/Kabel der Bibliothek
+„Standard“, Bizeps-/Trizeps-Kabel „Stufen × 4,5 kg“).
 
 ### 8.3 Import
 1. Datei wählen → validieren (`format`, `formatVersion` ≤ unterstützt, Pflichtfelder, referentielle Integrität).

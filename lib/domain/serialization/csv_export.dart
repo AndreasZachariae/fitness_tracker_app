@@ -1,6 +1,7 @@
 import '../metrics.dart';
 import '../models/models.dart';
 import '../records.dart';
+import '../weight_steps.dart';
 import 'csv.dart';
 
 /// The four CSV files of the export (SPEC §8.1), only finished sessions.
@@ -52,10 +53,12 @@ Map<String, String> buildCsvExport(Dataset data) {
         set.reps,
         set.durationSec,
         set.isWarmup,
-        e.type == ExerciseType.weightReps
+        e.type == ExerciseType.weightReps && storesKg(e)
             ? estimatedOneRepMax(set.weightKg ?? 0, set.reps ?? 0)
             : null,
         isoWithOffset(set.completedAt),
+        // 1.1.0: "level" = weight_kg holds a level number (levels without kg).
+        storesKg(e) ? 'kg' : 'level',
       ]);
     }
   }
@@ -109,6 +112,7 @@ Map<String, String> buildCsvExport(Dataset data) {
       'is_warmup',
       'e1rm_kg',
       'completed_at',
+      'weight_unit',
     ], setRows),
     'sessions.csv': toCsv(const [
       'session_id',
@@ -137,6 +141,9 @@ Map<String, String> buildCsvExport(Dataset data) {
         'include_in_strength_index',
         'archived',
         'notes',
+        'step_mode',
+        'increment_lbs',
+        'level_kg',
       ],
       [
         for (final e in exerciseList)
@@ -149,6 +156,9 @@ Map<String, String> buildCsvExport(Dataset data) {
             e.includeInStrengthIndex,
             e.archived,
             e.notes,
+            e.stepMode.code,
+            e.incrementLbs,
+            e.levelKg,
           ],
       ],
     ),

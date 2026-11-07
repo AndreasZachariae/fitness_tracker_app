@@ -10,6 +10,7 @@ import '../../../domain/models/models.dart';
 import '../../../domain/prefill.dart';
 import '../../../domain/progression.dart';
 import '../../../domain/records.dart';
+import '../../../domain/weight_steps.dart';
 import '../../../widgets/exercise_type_icon.dart';
 import 'set_input.dart';
 
@@ -126,7 +127,11 @@ class _SetRows extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(
-                      formatSingleSet(detail.exercise.type, set),
+                      formatSingleSet(
+                        detail.exercise.type,
+                        set,
+                        levels: levelsOf(detail.exercise),
+                      ),
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: muted,
                         fontWeight: FontWeight.w500,
@@ -156,6 +161,7 @@ class ActiveExerciseCard extends StatefulWidget {
     required this.index,
     required this.last,
     required this.actions,
+    required this.step,
     this.records = const {},
     this.highlight = false,
     super.key,
@@ -165,6 +171,9 @@ class ActiveExerciseCard extends StatefulWidget {
   final int index;
   final LastPerformance? last;
   final SessionTileActions actions;
+
+  /// Weight step of the exercise with the settings (1.1.0).
+  final WeightStep step;
   final Map<int, List<RecordKind>> records;
 
   /// Red flash after a record.
@@ -187,7 +196,7 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
     final se = d.sessionExercise;
     return suggestProgression(
       type: d.exercise.type,
-      incrementKg: d.exercise.incrementKg,
+      step: widget.step,
       targetSets: se.targetSets,
       targetReps: se.targetReps,
       targetDurationSec: se.targetDurationSec,
@@ -195,8 +204,11 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
     );
   }
 
-  static String _suggestionText(ProgressionSuggestion s) => switch (s) {
-    AddWeight(:final kg) => '+${formatKg(kg)}',
+  String _suggestionText(ProgressionSuggestion s) => switch (s) {
+    AddWeight(step: LevelStep())
+        when widget.detail.exercise.type == ExerciseType.weightReps =>
+      S.plusOneLevel,
+    final AddWeight a => '+${formatKg(a.deltaFrom(_values.weightKg ?? 0))}',
     AddRep() => S.plusOneRep,
     AddDuration(:final seconds) => '+$seconds ${S.secondsUnit}',
   };
@@ -230,7 +242,11 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
     final type = widget.detail.exercise.type;
     var values = v;
     if (type == ExerciseType.weightReps && values.weightKg == null) {
-      final w = await askWeight(context, null);
+      final w = await askWeight(
+        context,
+        null,
+        levels: levelsOf(widget.detail.exercise),
+      );
       if (w == null || !mounted) return null;
       values = values.copyWith(weightKg: w);
     }
@@ -369,7 +385,11 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                       Text(
                         S.lastTimeOn(
                           formatShortDate(last.sessionStartedAt),
-                          formatSetsDetailed(d.exercise.type, last.sets),
+                          formatSetsDetailed(
+                            d.exercise.type,
+                            last.sets,
+                            levels: levelsOf(d.exercise),
+                          ),
                         ),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
@@ -406,7 +426,7 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                     const SizedBox(height: 12),
                     SetInput(
                       type: d.exercise.type,
-                      incrementKg: d.exercise.incrementKg,
+                      step: widget.step,
                       values: _values,
                       onChanged: (v) => setState(() => _values = v),
                     ),
@@ -584,7 +604,10 @@ class CompletedExerciseTile extends StatelessWidget {
         ? S.skippedLabel
         : best == null
         ? S.sets(detail.sets.length)
-        : S.doneSummary(detail.sets.length, formatSingleSet(e.type, best));
+        : S.doneSummary(
+            detail.sets.length,
+            formatSingleSet(e.type, best, levels: levelsOf(e)),
+          );
 
     final hasRecord = detail.sets.any((s) => records.containsKey(s.id));
     return _RecordHighlight(

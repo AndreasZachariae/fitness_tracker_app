@@ -7,6 +7,7 @@ import 'package:gymlog/data/db/database.dart';
 import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
+import 'generated/schema_v3.dart' as v3;
 
 /// Migrations must keep every user data row (CLAUDE.md, rule 4).
 void main() {
@@ -313,6 +314,113 @@ void main() {
         expect(await newDb.select(newDb.appSettings).get(), expectedSettings);
         expect(await newDb.select(newDb.planGroups).get(), isEmpty);
         expect(await newDb.select(newDb.sessionSupersets).get(), isEmpty);
+      },
+    );
+  });
+
+  test('migration from v2 to v3: machines get the default step, cable '
+      'curls levels; all rows and set weights unchanged (1.1.0)', () async {
+    const t = '2026-11-07T17:00:00.000Z';
+    v2.ExercisesData ex2(
+      int id,
+      String name,
+      double inc, [
+      String type = 'weight_reps',
+    ]) => v2.ExercisesData(
+      id: id,
+      name: name,
+      type: type,
+      incrementKg: inc,
+      includeInStrengthIndex: 1,
+      notes: id == 1 ? 'Sitz 4' : '',
+      archived: 0,
+      createdAt: t,
+    );
+    v3.ExercisesData ex3(
+      v2.ExercisesData e, {
+      String mode = 'kg',
+      double? levelKg,
+    }) => v3.ExercisesData(
+      id: e.id,
+      name: e.name,
+      type: e.type,
+      incrementKg: e.incrementKg,
+      includeInStrengthIndex: e.includeInStrengthIndex,
+      notes: e.notes,
+      archived: e.archived,
+      createdAt: e.createdAt,
+      stepMode: mode,
+      incrementLbs: 15,
+      levelKg: levelKg,
+    );
+    final old = [
+      ex2(1, 'Latzug', 5),
+      ex2(2, 'brustpresse (maschine)', 5), // case of the user does not matter
+      ex2(3, 'Bizepscurls am Kabel', 2.5),
+      ex2(4, 'Bankdrücken', 2.5),
+      ex2(5, 'Meine Maschine', 5), // own exercise: unchanged
+      ex2(6, 'Kurzhantel-Curls', 2),
+    ];
+    final expected = [
+      ex3(old[0], mode: 'standard'),
+      ex3(old[1], mode: 'standard'),
+      ex3(old[2], mode: 'levels', levelKg: 4.5),
+      ex3(old[3]),
+      ex3(old[4]),
+      ex3(old[5]),
+    ];
+    const session = v2.SessionsData(id: 1, startedAt: t, endedAt: t, notes: '');
+    const sessionExercise = v2.SessionExercisesData(
+      id: 1,
+      sessionId: 1,
+      exerciseId: 3,
+      position: 0,
+      targetSets: 3,
+      status: 'done',
+    );
+    const set = v2.SetEntriesData(
+      id: 1,
+      sessionExerciseId: 1,
+      setIndex: 1,
+      weightKg: 40,
+      reps: 10,
+      isWarmup: 0,
+      completedAt: t,
+    );
+    const oldSettings = v2.AppSettingsData(
+      id: 1,
+      defaultSets: 3,
+      defaultRestSec: 90,
+      restTimerEnabled: 1,
+      vibrationEnabled: 1,
+      keepScreenOn: 1,
+      autoActivateNext: 0,
+      themeMode: 'system',
+      backupReminderDays: 30,
+    );
+
+    await verifier.testWithDataIntegrity(
+      oldVersion: 2,
+      newVersion: 3,
+      createOld: v2.DatabaseAtV2.new,
+      createNew: v3.DatabaseAtV3.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insertAll(oldDb.exercises, old);
+        batch.insert(oldDb.sessions, session);
+        batch.insert(oldDb.sessionExercises, sessionExercise);
+        batch.insert(oldDb.setEntries, set);
+        batch.insert(oldDb.appSettings, oldSettings);
+      },
+      validateItems: (newDb) async {
+        expect(await newDb.select(newDb.exercises).get(), expected);
+        final sets = await newDb.select(newDb.setEntries).get();
+        expect(sets.single.weightKg, 40, reason: 'kg values stay');
+        final settings = (await newDb.select(newDb.appSettings).get()).single;
+        expect(settings.defaultStep, 15);
+        expect(settings.defaultStepUnit, 'lbs');
+        expect(settings.backupReminderDays, 30);
+        expect(await newDb.select(newDb.sessions).get(), hasLength(1));
       },
     );
   });

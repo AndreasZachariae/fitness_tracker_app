@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/domain/models/models.dart';
 import 'package:gymlog/domain/progression.dart';
+import 'package:gymlog/domain/weight_steps.dart';
 
 SetEntry s({double? w, int? r, int? d, bool warmup = false}) => SetEntry(
   id: 1,
@@ -19,9 +20,10 @@ ProgressionSuggestion? suggest(
   int sets = 3,
   int? reps = 10,
   int? duration = 45,
+  WeightStep step = const KgStep(2.5),
 }) => suggestProgression(
   type: type,
-  incrementKg: 2.5,
+  step: step,
   targetSets: sets,
   targetReps: reps,
   targetDurationSec: duration,
@@ -40,6 +42,23 @@ void main() {
     expect(
       p!.applyTo(const SetValues(weightKg: 60, reps: 10)),
       const SetValues(weightKg: 62.5, reps: 10),
+    );
+  });
+
+  test('lbs plates and levels: the next plate / level (1.1.0)', () {
+    final hit45 = [s(w: 45, r: 10), s(w: 45, r: 10), s(w: 45, r: 10)];
+    final plates = suggest(w, hit45, step: const LbsStep(15))! as AddWeight;
+    expect(
+      plates.applyTo(const SetValues(weightKg: 45, reps: 10)).weightKg,
+      52,
+    );
+    expect(plates.deltaFrom(45), 7);
+    expect(plates.deltaFrom(52), 7);
+    expect(plates.deltaFrom(73), 6);
+    final levels = suggest(w, hit45, step: const LevelStep(4.5))! as AddWeight;
+    expect(
+      levels.applyTo(const SetValues(weightKg: 45, reps: 10)).weightKg,
+      49.5,
     );
   });
 

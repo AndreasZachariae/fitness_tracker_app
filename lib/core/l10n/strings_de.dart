@@ -134,7 +134,10 @@ abstract final class S {
   static const fieldTargetSets = 'Ziel-Sätze';
   static const fieldTargetReps = 'Ziel-Wdh';
   static const fieldTargetDuration = 'Ziel-Dauer';
-  static const fieldIncrement = 'Steigerung in kg';
+  static const level = 'Stufe';
+  static const enterLevel = 'Stufe eingeben';
+  static const plusOneLevel = '+1 Stufe';
+  static const levelReps = 'Stufen × Wdh';
   static const fieldRest = 'Pause in Sekunden';
   static String fieldRestHint(int defaultSec) => 'Standard: $defaultSec s';
   static const fieldNotes = 'Notiz';
@@ -145,6 +148,9 @@ abstract final class S {
   static const typeLocked =
       'Der Typ lässt sich nicht mehr ändern, weil es schon Trainings mit '
       'dieser Übung gibt.';
+  static const stepChangeNeedsLevelKg =
+      'Die Sätze dieser Übung sind als Stufen ohne kg gespeichert. Gib „kg pro '
+      'Stufe“ an, dann rechnet GymLog sie in kg um.';
   static const errorNameRequired = 'Gib einen Namen ein.';
   static const errorNameTooLong = 'Höchstens 60 Zeichen.';
   static const errorExerciseNameTaken =
@@ -152,6 +158,34 @@ abstract final class S {
   static const errorPlanNameTaken =
       'Es gibt schon einen Plan mit diesem Namen.';
   static const errorIncrement = 'Gib eine Zahl größer als 0 ein, z. B. 2,5.';
+  static const fieldStep = 'Gewichtsschritte';
+  static const stepStandard = 'Standard';
+  static const stepCustom = 'Eigene';
+  static const stepLevels = 'Stufen';
+  static String stepStandardHint(String step) =>
+      'Wie in den Einstellungen: $step pro Schritt.';
+  static const stepLbsHint =
+      'Für Geräte mit lbs-Scheiben: + und − springen zur nächsten Scheibe, '
+      'angezeigt wird der aufgedruckte kg-Wert.';
+  static const fieldStepValue = 'Schritt';
+  static const fieldLevelKg = 'kg pro Stufe (optional)';
+  static const fieldLevelKgHint = 'z. B. 4,5';
+  static const stepLevelsHint =
+      'Für Geräte mit nummerierten Stufen. Mit kg pro Stufe zeigt GymLog '
+      '„Stufe 10 (45 kg)“ und rechnet in kg; ohne zählt die Übung nicht zum '
+      'Wochenvolumen.';
+  static const errorStepLbs = 'Gib eine Zahl größer als 0 ein, z. B. 15.';
+  static const errorLevelKg =
+      'Gib eine Zahl größer als 0 ein oder lass es leer.';
+  static const convertToKgTitle = 'Sätze in kg umrechnen?';
+  static String convertToKgBody(String kg) =>
+      'Die bisherigen Sätze dieser Übung sind als Stufen gespeichert. Sie '
+      'werden mit $kg pro Stufe in kg umgerechnet.';
+  static const convertToLevelsTitle = 'Sätze in Stufen umrechnen?';
+  static String convertToLevelsBody(String kg) =>
+      'Die bisherigen Sätze dieser Übung sind in kg gespeichert. Sie werden '
+      'mit $kg pro Stufe in Stufen umgerechnet.';
+  static const convert = 'Umrechnen';
   static const errorRest = 'Gib eine ganze Zahl von 0 bis 3600 ein.';
   static const errorPositiveNumber = 'Gib eine ganze Zahl größer als 0 ein.';
 
@@ -559,6 +593,10 @@ abstract final class S {
   static const sectionAbout = 'Über';
   static const settingDefaultSets = 'Standard-Satzanzahl';
   static const settingDefaultRest = 'Standard-Pause';
+  static const settingDefaultStep = 'Standard-Steigerung';
+  static const settingDefaultStepSubtitle =
+      'Für Übungen mit Gewichtsschritten „Standard“, z. B. Geräte mit '
+      '15-lbs-Scheiben. Angezeigt wird immer kg.';
   static const settingRestTimer = 'Pausentimer';
   static const settingVibration = 'Vibration';
   static const settingKeepScreenOn = 'Display anlassen';
@@ -630,4 +668,9 @@ abstract final class S {
 
   // Units
   static const unitKg = 'kg';
+  static const unitLbs = 'lbs';
+  static String unit(WeightUnit u) => switch (u) {
+    WeightUnit.kg => unitKg,
+    WeightUnit.lbs => unitLbs,
+  };
 }

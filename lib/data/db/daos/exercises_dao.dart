@@ -56,6 +56,9 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
             includeInStrengthIndex: d.includeInStrengthIndex,
             notes: Value(d.notes),
             createdAt: createdAt,
+            stepMode: Value(d.stepMode),
+            incrementLbs: Value(d.incrementLbs),
+            levelKg: Value(d.levelKg),
           ),
       ]),
     );

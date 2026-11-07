@@ -96,3 +96,39 @@ enum PlanGroupKind implements Coded {
 
   static PlanGroupKind fromCode(String code) => byCode(values, code);
 }
+
+/// How the weight of an exercise goes up and down (1.1.0).
+enum StepMode implements Coded {
+  /// The default step of the settings (e.g. 15 lbs).
+  standard('standard'),
+
+  /// An own step in kg (`incrementKg`).
+  kg('kg'),
+
+  /// An own step in lbs (`incrementLbs`) on machines with lbs plates.
+  lbs('lbs'),
+
+  /// Numbered levels (e.g. 1–15), optionally with known kg per level
+  /// (`levelKg`).
+  levels('levels');
+
+  const StepMode(this.code);
+
+  @override
+  final String code;
+
+  static StepMode fromCode(String code) => byCode(values, code);
+}
+
+/// Unit of the default weight step in the settings (1.1.0).
+enum WeightUnit implements Coded {
+  kg('kg'),
+  lbs('lbs');
+
+  const WeightUnit(this.code);
+
+  @override
+  final String code;
+
+  static WeightUnit fromCode(String code) => byCode(values, code);
+}

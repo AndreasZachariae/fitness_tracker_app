@@ -16,6 +16,7 @@ import '../../../domain/models/models.dart';
 import '../../../domain/records.dart';
 import '../../../domain/rest_timer.dart';
 import '../../../domain/session_rules.dart';
+import '../../../domain/weight_steps.dart';
 import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/dashed_add_button.dart';
 import '../../../widgets/group_frame.dart';
@@ -127,6 +128,7 @@ class _SessionViewState extends ConsumerState<SessionView>
       context,
       exercise: detail.exercise,
       set: set,
+      step: _stepOf(detail.exercise),
     );
     if (result == null) return;
     final repo = ref.read(sessionRepositoryProvider);
@@ -287,6 +289,9 @@ class _SessionViewState extends ConsumerState<SessionView>
     );
   }
 
+  WeightStep _stepOf(Exercise e) =>
+      weightStepOf(e, ref.read(settingsProvider).value ?? AppSettings.defaults);
+
   /// No rest bar or rest vibration after the training ends (1.0.1).
   void _stopRest(List<SessionExerciseDetail> details) => ref
       .read(restTimerProvider.notifier)
@@ -438,6 +443,7 @@ class _SessionViewState extends ConsumerState<SessionView>
         index: index,
         last: last[d.exercise.id],
         actions: this,
+        step: _stepOf(d.exercise),
         records: records,
         highlight: _flashId == d.sessionExercise.id,
       ),

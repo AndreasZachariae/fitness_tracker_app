@@ -29,7 +29,54 @@ ExerciseDraft _ex(
   type: type,
   category: category,
   incrementKg: incrementKg,
+  // Machines and cables follow the default step of the settings (1.1.0).
+  stepMode: _standardStep.contains(name) ? StepMode.standard : StepMode.kg,
 );
+
+/// The cable tower with numbered plates (1–15, 4.5 kg each) in the user's
+/// gym (1.1.0).
+ExerciseDraft _levels(String name, ExerciseCategory category) => ExerciseDraft(
+  name: name,
+  type: ExerciseType.weightReps,
+  category: category,
+  incrementKg: _cable,
+  stepMode: StepMode.levels,
+  levelKg: 4.5,
+);
+
+/// Machines with selectorized stacks and cables (not plate-loaded ones like
+/// Hackenschmidt). Same list as the 1.1.0 migration of existing exercises.
+const _standardStep = {
+  'Brustpresse (Maschine)',
+  'Schräge Brustpresse (Maschine)',
+  'Butterfly (Maschine)',
+  'Cable Crossover',
+  'Latzug',
+  'Latzug eng',
+  'Rudern am Kabel (sitzend)',
+  'Rudern (Maschine)',
+  'Pullover am Kabel',
+  'Rückenstrecker (Maschine)',
+  'Beinpresse',
+  'Beinstrecker (Maschine)',
+  'Beinbeuger liegend (Maschine)',
+  'Beinbeuger sitzend (Maschine)',
+  'Glute-Kickbacks am Kabel',
+  'Abduktoren (Maschine)',
+  'Adduktoren (Maschine)',
+  'Wadenheben stehend (Maschine)',
+  'Wadenheben sitzend (Maschine)',
+  'Schulterpresse (Maschine)',
+  'Seitheben am Kabel',
+  'Seitheben (Maschine)',
+  'Reverse Butterfly (Maschine)',
+  'Face Pulls',
+  'Scott-Curls (Maschine)',
+  'Trizeps-Dips (Maschine)',
+  'Crunches (Maschine)',
+  'Crunches am Kabel',
+  'Pallof Press',
+};
 
 /// All exercises of the library, grouped by category.
 final List<ExerciseDraft> exerciseLibrary = List.unmodifiable([
@@ -110,9 +157,9 @@ final List<ExerciseDraft> exerciseLibrary = List.unmodifiable([
   _ex('Hammer Curls', _w, ExerciseCategory.arms, _dumbbell),
   _ex('Konzentrationscurls', _w, ExerciseCategory.arms, _dumbbell),
   _ex('Scott-Curls (Maschine)', _w, ExerciseCategory.arms, _machine),
-  _ex('Bizepscurls am Kabel', _w, ExerciseCategory.arms, _cable),
-  _ex('Trizepsdrücken am Kabel', _w, ExerciseCategory.arms, _cable),
-  _ex('Trizepsdrücken über Kopf (Kabel)', _w, ExerciseCategory.arms, _cable),
+  _levels('Bizepscurls am Kabel', ExerciseCategory.arms),
+  _levels('Trizepsdrücken am Kabel', ExerciseCategory.arms),
+  _levels('Trizepsdrücken über Kopf (Kabel)', ExerciseCategory.arms),
   _ex('French Press (SZ-Stange)', _w, ExerciseCategory.arms, _barbell),
   _ex('Enges Bankdrücken', _w, ExerciseCategory.arms, _barbell),
   _ex('Trizeps-Kickbacks (Kurzhantel)', _w, ExerciseCategory.arms, _dumbbell),

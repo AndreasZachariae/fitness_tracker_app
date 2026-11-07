@@ -4,6 +4,19 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
+## [1.1.0] – unveröffentlicht
+
+### Neu
+- **Standard-Steigerung** in den Einstellungen unter Training, wahlweise in kg oder lbs (voreingestellt 15 lbs).
+- **Geräte mit lbs-Scheiben:** + und − springen zur nächsten Scheibe, angezeigt und gespeichert wird der aufgedruckte kg-Wert (z. B. 45, 52, 59, 66 kg).
+- **Gewichtsschritte je Übung:** „Standard“ (wie in den Einstellungen), „Eigene“ in kg oder lbs, oder „Stufen“ für Geräte mit nummerierten Stufen.
+- **Stufen mit kg pro Stufe** zeigen z. B. „Stufe 10 (45 kg)“ und rechnen in kg; Stufen ohne kg-Angabe zeigen nur die Stufe.
+- Der Steigerungsvorschlag nimmt die nächste Scheibe bzw. Stufe.
+
+### Geändert
+- Standardübungen an Geräten und Kabeln nutzen jetzt die Standard-Steigerung; Bizepscurls und Trizepsdrücken am Kabel nutzen Stufen à 4,5 kg. Bisherige Sätze bleiben unverändert.
+- Stufen ohne kg-Angabe zählen nicht zum Wochenvolumen; der CSV-Export kennzeichnet sie in der neuen Spalte „weight_unit“.
+
 ## [1.0.1] – 2026-11-07
 
 Erste veröffentlichte Version: Krafttraining im Studio planen und mitschreiben, komplett offline und ohne Konto.

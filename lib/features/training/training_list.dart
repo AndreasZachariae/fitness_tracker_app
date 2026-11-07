@@ -5,6 +5,7 @@ import '../../core/l10n/strings_de.dart';
 import '../../core/theme/gym_colors.dart';
 import '../../domain/groups.dart';
 import '../../domain/models/models.dart';
+import '../../domain/weight_steps.dart';
 import '../../widgets/dashed_add_button.dart';
 import '../../widgets/exercise_type_icon.dart';
 import '../../widgets/group_frame.dart';
@@ -310,7 +311,9 @@ class _TrainingTile extends StatelessWidget {
     final theme = Theme.of(context);
     final e = item.exercise;
     final t = item.targets;
-    final summary = last == null ? null : formatSetsSummary(e.type, last!.sets);
+    final summary = last == null
+        ? null
+        : formatSetsSummary(e.type, last!.sets, levels: levelsOf(e));
     final rotation = GymColors.of(context).rotation;
     final tile = Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

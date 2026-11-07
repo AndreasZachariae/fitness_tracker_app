@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import '../../core/clock.dart';
+import '../../domain/legacy_steps.dart';
 import '../../domain/models/models.dart';
 import 'converters.dart';
 import 'daos/body_weight_dao.dart';
@@ -45,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   final Clock? libraryClock;
 
   /// Current schema version. Changes only via migration (CLAUDE.md, rule 4).
-  static const currentSchemaVersion = 2;
+  static const currentSchemaVersion = 3;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -76,13 +77,36 @@ class AppDatabase extends _$AppDatabase {
           schema.sessionExercises.supersetId,
         );
       },
+      // 1.1.0: weight steps (lbs plates, levels) and the default step.
+      from2To3: (m, schema) async {
+        await m.addColumn(schema.exercises, schema.exercises.stepMode);
+        await m.addColumn(schema.exercises, schema.exercises.incrementLbs);
+        await m.addColumn(schema.exercises, schema.exercises.levelKg);
+        await m.addColumn(schema.appSettings, schema.appSettings.defaultStep);
+        await m.addColumn(
+          schema.appSettings,
+          schema.appSettings.defaultStepUnit,
+        );
+        // Built-in machine and cable exercises use the new default step;
+        // logged sets keep their kg values (decided by the user).
+        Future<void> setMode(List<String> names, String mode, [double? kg]) =>
+            customStatement(
+              'UPDATE exercises SET step_mode = ?, level_kg = ? '
+              "WHERE type = 'weight_reps' AND name COLLATE NOCASE IN "
+              '(${List.filled(names.length, '?').join(', ')})',
+              [mode, kg, ...names],
+            );
+        await setMode(v3StandardStepExercises, 'standard');
+        await setMode(v3LevelExercises, 'levels', v3LevelKg);
+      },
     ),
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
       // Durable writes: a committed set survives app kill and power loss.
       await customStatement('PRAGMA journal_mode = WAL');
       await customStatement('PRAGMA synchronous = FULL');
-      await settingsDao.ensureRow();
+      // Only on the current schema (migration tests stop at older ones).
+      if (details.versionNow == schemaVersion) await settingsDao.ensureRow();
     },
   );
 }

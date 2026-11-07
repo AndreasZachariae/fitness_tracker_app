@@ -15,6 +15,8 @@ final class AppSettings {
     this.lastSelectedPlanId,
     this.lastBackupAt,
     this.backupReminderDays = 30,
+    this.defaultStep = 15,
+    this.defaultStepUnit = WeightUnit.lbs,
   });
 
   static const singletonId = 1;
@@ -41,6 +43,11 @@ final class AppSettings {
   /// 0 = reminder off.
   final int backupReminderDays;
 
+  /// Default weight step of exercises with [StepMode.standard] (1.1.0),
+  /// in [defaultStepUnit].
+  final double defaultStep;
+  final WeightUnit defaultStepUnit;
+
   AppSettings copyWith({
     int? defaultSets,
     int? defaultRestSec,
@@ -52,6 +59,8 @@ final class AppSettings {
     Object? lastSelectedPlanId = unset,
     Object? lastBackupAt = unset,
     int? backupReminderDays,
+    double? defaultStep,
+    WeightUnit? defaultStepUnit,
   }) {
     return AppSettings(
       id: id,
@@ -68,6 +77,8 @@ final class AppSettings {
       ),
       lastBackupAt: pick<DateTime?>(lastBackupAt, this.lastBackupAt),
       backupReminderDays: backupReminderDays ?? this.backupReminderDays,
+      defaultStep: defaultStep ?? this.defaultStep,
+      defaultStepUnit: defaultStepUnit ?? this.defaultStepUnit,
     );
   }
 
@@ -84,7 +95,9 @@ final class AppSettings {
       other.themeMode == themeMode &&
       other.lastSelectedPlanId == lastSelectedPlanId &&
       other.lastBackupAt == lastBackupAt &&
-      other.backupReminderDays == backupReminderDays;
+      other.backupReminderDays == backupReminderDays &&
+      other.defaultStep == defaultStep &&
+      other.defaultStepUnit == defaultStepUnit;
 
   @override
   int get hashCode => Object.hash(
@@ -99,5 +112,7 @@ final class AppSettings {
     lastSelectedPlanId,
     lastBackupAt,
     backupReminderDays,
+    defaultStep,
+    defaultStepUnit,
   );
 }

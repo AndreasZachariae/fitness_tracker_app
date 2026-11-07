@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/domain/exercise_library.dart';
+import 'package:gymlog/domain/legacy_steps.dart';
 import 'package:gymlog/domain/models/models.dart';
 import 'package:gymlog/domain/names.dart';
 
@@ -80,6 +81,41 @@ void main() {
         ExerciseCategory.other,
         ExerciseType.timed,
       ));
+    });
+  });
+
+  group('weight steps (1.1.0)', () {
+    Set<String> withMode(StepMode m) => {
+      for (final e in exerciseLibrary)
+        if (e.stepMode == m) e.name,
+    };
+
+    test('machines and cables use the default step, as in the migration', () {
+      expect(withMode(StepMode.standard), v3StandardStepExercises.toSet());
+      expect(withMode(StepMode.levels), v3LevelExercises.toSet());
+      expect(withMode(StepMode.lbs), isEmpty);
+    });
+
+    test('cable curls: levels with 4.5 kg; free weights keep kg steps', () {
+      final byName = {for (final e in exerciseLibrary) e.name: e};
+      expect(byName['Bizepscurls am Kabel']!.levelKg, 4.5);
+      expect(byName['Bankdrücken']!.stepMode, StepMode.kg);
+      expect(byName['Kurzhantel-Curls']!.stepMode, StepMode.kg);
+      expect(byName['Hackenschmidt-Kniebeugen']!.stepMode, StepMode.kg);
+      expect(byName['Klimmzüge']!.stepMode, StepMode.kg);
+    });
+
+    test('legacyStepMode matches names like the migration', () {
+      expect(
+        legacyStepMode('latzug', ExerciseType.weightReps),
+        StepMode.standard,
+      );
+      expect(legacyStepMode('Latzug', ExerciseType.bodyweight), StepMode.kg);
+      expect(
+        legacyStepMode('Trizepsdrücken am Kabel', ExerciseType.weightReps),
+        StepMode.levels,
+      );
+      expect(legacyStepMode('Eigene', ExerciseType.weightReps), StepMode.kg);
     });
   });
 

@@ -139,6 +139,15 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Statistik: Serie als eigene Karte direkt nach dem Kraftindex (mit längster Serie „nicht aktiv“), Körpergewicht
         ohne Schalter
   - [x] CHANGELOG 1.0.1 (enthält die nie veröffentlichte 1.0.0), Tests, Testliste
+- [x] 1.1.0 Gewichtseinstellungen (`docs/ROADMAP.md`, 1.1.0+14)
+  - [x] Schema 3 (Migration 2 → 3, additiv): `exercises.step_mode`, `increment_lbs`, `level_kg`;
+        `app_settings.default_step`, `default_step_unit`; Datenschritt für Standardübungen an Geräten/Kabeln
+  - [x] Domain `weight_steps.dart`: kg-Schritte, lbs-Scheiben (kg gerundet), Stufen mit/ohne kg pro Stufe
+  - [x] Einstellungen → Training: Standard-Steigerung mit kg/lbs; Übungsformular: Standard / Eigene (kg/lbs) / Stufen
+  - [x] Training: Stepper, Direkteingabe (Stufe), Vorschlag; Anzeige „Stufe 10 (45 kg)“ in Session, Verlauf, Statistik,
+        Rekorden; Stufen ohne kg nicht im Volumen
+  - [x] Umrechnen beim Wechsel zwischen „Stufen ohne kg“ und kg (mit Rückfrage), Backup-Format 3, CSV-Spalten
+  - [x] Tests (Domain, Migration mit Daten, Repository, Widgets), CHANGELOG, Testliste
 
 ## Annahmen
 
@@ -517,6 +526,30 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   wurde der Drehen-Knopf getippt, den Android in der Navigationsleiste anbietet, wenn das Handy gedreht wird. Keine
   Änderung; bei erneutem Auftreten bitte notieren, wann.
 - **1.0.1 Systemschrift:** Läuft laut Handytest; der automatische Test bleibt, weitere Arbeit daran ist nicht geplant.
+- **1.1.0 lbs-Scheiben:** Die Werte vom Menschen (38, 45, 59, 66, 100 kg) und seine Vorgaben (lbs-Werte ganzzahlig und
+  durch 5 teilbar, kg ohne Komma, 15 lbs pro Scheibe) passen am besten zu: lbs-Werte 10, 25, 40, 55 … (+15), kg = auf
+  ganze kg gerundet (85 → 39, 100 → 45, 115 → 52, 130 → 59, 145 → 66, 220 → 100). Vier der fünf Werte stimmen exakt; für
+  38 gibt es keine Regel, die zugleich 66 trifft (38 braucht Abschneiden, 66 Runden) – der Mensch prüft die Scheibe
+  am Gerät. Ein Grundgewicht ist nicht nötig: Die App bestimmt aus dem kg-Wert die nächste 5-lbs-Zahl und geht von dort
+  15 lbs weiter; ein Wert zwischen zwei Scheiben springt zur nächsten echten. Gespeichert wird der angezeigte kg-Wert.
+- **1.1.0 Standard-Steigerung:** 15 lbs für alle (neue Installationen und Bestand), weil es die App des Menschen ist;
+  Freunde in anderen Studios stellen es an einer Stelle um. Neue Übungen bekommen „Standard“. Schritte in den
+  Einstellungen: 0,5 kg bzw. 5 lbs; beim Umschalten der Einheit bleibt die Zahl.
+- **1.1.0 Bestand (Entscheidung des Menschen):** Nur Standardübungen an Geräten und Kabeln werden auf „Standard“
+  umgestellt (fest hinterlegte Namensliste `lib/domain/legacy_steps.dart`, gleiche Liste in der Bibliothek, per Test
+  abgeglichen; Groß-/Kleinschreibung egal, nur Typ Gewicht × Wdh). Nicht: Lang-/Kurzhantel, Kettlebell, Eigengewicht,
+  Hackenschmidt (meist Scheiben zum Auflegen), selbst angelegte Übungen. Bizepscurls, Trizepsdrücken und Trizepsdrücken
+  über Kopf am Kabel: Stufen × 4,5 kg. Beinpresse gilt als Gerät mit Steckgewicht – falls sie im Studio Scheiben zum
+  Auflegen hat, in der Übung auf „Eigene, kg“ stellen. Alte Backups (Format < 3) bekommen beim Wiederherstellen
+  dieselbe Zuordnung.
+- **1.1.0 Gespeicherte Sätze (Entscheidung des Menschen):** Beim Umstellen bleiben die kg-Werte unverändert; eine alte
+  „40 kg“ erscheint bei Stufen à 4,5 kg als „Stufe 8,9 (40 kg)“, + und − springen zur nächsten ganzen Stufe. Ändert man
+  später die kg pro Stufe, bleiben die kg ebenfalls. Nur bei „Stufen ohne kg“ steht die Stufennummer im Satz; der
+  Wechsel zu oder von diesem Modus rechnet nach Rückfrage um (× bzw. ÷ kg pro Stufe) und wird ohne kg-Angabe
+  abgelehnt. Stufen ohne kg zählen nicht zum Volumen (Verlauf, Zusammenfassung, Wochenvolumen, CSV `volume_kg`), ihre
+  Statistik und Rekorde zeigen „Stufe“ statt kg; `e1rm_kg` im CSV bleibt dort leer.
+- **1.1.0 Stufen nur für Gewicht × Wdh:** Bei Körpergewicht und Zeit ergibt „Stufe“ keinen Sinn; dort gibt es Standard
+  und Eigene.
 
 ## Datenbank-Migrationen (ab Schema 2)
 
@@ -538,6 +571,14 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.1.0 Gewichtseinstellungen
+Nur, was sich am Handy bzw. im Studio prüfen lässt; Rechnung, Migration, Formular und Anzeige sind automatisch getestet.
+- [ ] Nach dem Update der DEV-App (Migration auf Schema 3): Verlauf und Statistik unverändert; Latzug & Co. stehen in der
+  Übung auf „Standard“, Bizepscurls am Kabel auf „Stufen“ mit 4,5.
+- [ ] Im Studio an einem 15-lbs-Gerät: + und − ergeben genau die Zahlen auf den Scheiben (z. B. 45 → 52 → 59 → 66).
+  Besonders prüfen: Steht auf der 85-lbs-Scheibe 38 oder 39, und bei 160 lbs 72 oder 73? Beinpresse: Steckgewicht?
+- [ ] Am Seilzug mit Stufen: „Stufe 10 · 45 kg“ passt zur Scheibe 10; antippen der Zahl → „Stufe eingeben“.
 
 ### 1.0.1 Bugfixes (vor dem ersten Release)
 In der **DEV-App** (nach `./scripts/install-dev.sh`). Die DEV-App behält ihre Daten und ihre Backup-Erinnerung.

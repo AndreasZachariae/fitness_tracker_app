@@ -4,6 +4,7 @@ import '../../core/clock.dart';
 import '../../domain/exercise_library.dart';
 import '../../domain/models/models.dart';
 import '../../domain/names.dart';
+import '../../domain/weight_steps.dart';
 import '../db/database.dart';
 import '../db/storage_time.dart';
 import 'repository_exceptions.dart';
@@ -59,7 +60,12 @@ class ExerciseRepository {
   /// Creates an exercise and returns its id.
   Future<int> create(ExerciseDraft draft) => _db.transaction(() async {
     final name = await _checkName(draft.name);
-    _checkValues(incrementKg: draft.incrementKg, restSec: draft.restSec);
+    _checkValues(
+      incrementKg: draft.incrementKg,
+      restSec: draft.restSec,
+      incrementLbs: draft.incrementLbs,
+      levelKg: draft.levelKg,
+    );
     return _db.exercisesDao.insertExercise(
       ExercisesCompanion.insert(
         name: name,
@@ -70,6 +76,9 @@ class ExerciseRepository {
         includeInStrengthIndex: draft.includeInStrengthIndex,
         notes: Value(draft.notes.trim()),
         createdAt: storageTime(_clock.now()),
+        stepMode: Value(draft.stepMode),
+        incrementLbs: Value(draft.incrementLbs),
+        levelKg: Value(draft.levelKg),
       ),
     );
   });
@@ -91,11 +100,17 @@ class ExerciseRepository {
     final existing = await _db.exercisesDao.findById(exercise.id);
     if (existing == null) throw NotFoundException('exercise', exercise.id);
     final name = await _checkName(exercise.name, excludeId: exercise.id);
-    _checkValues(incrementKg: exercise.incrementKg, restSec: exercise.restSec);
-    if (exercise.type != existing.type &&
-        await _db.exercisesDao.hasSessionHistory(exercise.id)) {
+    _checkValues(
+      incrementKg: exercise.incrementKg,
+      restSec: exercise.restSec,
+      incrementLbs: exercise.incrementLbs,
+      levelKg: exercise.levelKg,
+    );
+    final hasHistory = await _db.exercisesDao.hasSessionHistory(exercise.id);
+    if (exercise.type != existing.type && hasHistory) {
       throw TypeChangeNotAllowedException(exercise.id);
     }
+    if (hasHistory) await _convertStoredWeights(existing, exercise);
     await _db.exercisesDao.updateExercise(
       exercise.copyWith(name: name, notes: exercise.notes.trim()),
     );
@@ -122,6 +137,29 @@ class ExerciseRepository {
     await _db.exercisesDao.updateExercise(existing.copyWith(archived: false));
   });
 
+  /// Sets of levels without kg store the level number, all others kg
+  /// (1.1.0). Switching between the two converts the logged sets with the
+  /// kg per level; without one the switch is refused. Switching between kg
+  /// based modes leaves the sets unchanged.
+  Future<void> _convertStoredWeights(Exercise from, Exercise to) async {
+    final fromKg = storesKg(from);
+    final toKg = storesKg(to);
+    if (fromKg == toKg) return;
+    final factor = switch ((from.levelKg, to.levelKg)) {
+      // Level numbers → kg of the new kg per level.
+      (_, final kg?) when !fromKg && to.stepMode == StepMode.levels => kg,
+      // Kg → level numbers with the old kg per level.
+      (final kg?, _) when from.stepMode == StepMode.levels => 1 / kg,
+      _ => throw StepChangeNotAllowedException(from.id),
+    };
+    await _db.customStatement(
+      'UPDATE set_entries SET weight_kg = ROUND(weight_kg * ?, 2) '
+      'WHERE weight_kg IS NOT NULL AND session_exercise_id IN '
+      '(SELECT id FROM session_exercises WHERE exercise_id = ?)',
+      [factor, from.id],
+    );
+  }
+
   /// Whether the exercise occurs in any session.
   Future<bool> hasHistory(int id) => _db.exercisesDao.hasSessionHistory(id);
 
@@ -135,9 +173,21 @@ class ExerciseRepository {
     return cleanName(input);
   }
 
-  static void _checkValues({required double incrementKg, int? restSec}) {
+  static void _checkValues({
+    required double incrementKg,
+    int? restSec,
+    double incrementLbs = Exercise.defaultIncrementLbs,
+    double? levelKg,
+  }) {
     if (!incrementKg.isFinite || incrementKg <= 0 || incrementKg > 100) {
       throw InvalidValueException('incrementKg', incrementKg);
+    }
+    if (!incrementLbs.isFinite || incrementLbs <= 0 || incrementLbs > 200) {
+      throw InvalidValueException('incrementLbs', incrementLbs);
+    }
+    if (levelKg != null &&
+        (!levelKg.isFinite || levelKg <= 0 || levelKg > 100)) {
+      throw InvalidValueException('levelKg', levelKg);
     }
     if (restSec != null && (restSec < 0 || restSec > 3600)) {
       throw InvalidValueException('restSec', restSec);

@@ -54,6 +54,16 @@ class Exercises extends Table {
   TextColumn get notes => text().withDefault(const Constant(''))();
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
+  // Schema 3 (1.1.0): weight steps.
+  TextColumn get stepMode => text()
+      .withDefault(const Constant('kg'))
+      .check(stepMode.isIn(const ['standard', 'kg', 'lbs', 'levels']))
+      .map(const StepModeConverter())();
+  RealColumn get incrementLbs => real()
+      .withDefault(const Constant(15))
+      .check(incrementLbs.isBiggerThanValue(0))();
+  RealColumn get levelKg =>
+      real().nullable().check(levelKg.isBiggerThanValue(0))();
 }
 
 @UseRowClass(Plan, generateInsertable: true)
@@ -256,6 +266,14 @@ class AppSettingsTable extends Table {
   IntColumn get backupReminderDays => integer()
       .withDefault(const Constant(14))
       .check(backupReminderDays.isBiggerOrEqualValue(0))();
+  // Schema 3 (1.1.0): default weight step.
+  RealColumn get defaultStep => real()
+      .withDefault(const Constant(15))
+      .check(defaultStep.isBiggerThanValue(0))();
+  TextColumn get defaultStepUnit => text()
+      .withDefault(const Constant('lbs'))
+      .check(defaultStepUnit.isIn(const ['kg', 'lbs']))
+      .map(const WeightUnitConverter())();
 
   @override
   Set<Column> get primaryKey => {id};

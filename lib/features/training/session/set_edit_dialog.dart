@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/l10n/strings_de.dart';
 import '../../../domain/models/models.dart';
 import '../../../domain/set_validation.dart';
+import '../../../domain/weight_steps.dart';
 import 'set_input.dart';
 
 sealed class SetEditResult {
@@ -24,18 +25,24 @@ Future<SetEditResult?> showSetEditDialog(
   BuildContext context, {
   required Exercise exercise,
   required SetEntry set,
+  required WeightStep step,
 }) {
   return showDialog<SetEditResult>(
     context: context,
-    builder: (_) => _SetEditDialog(exercise: exercise, set: set),
+    builder: (_) => _SetEditDialog(exercise: exercise, set: set, step: step),
   );
 }
 
 class _SetEditDialog extends StatefulWidget {
-  const _SetEditDialog({required this.exercise, required this.set});
+  const _SetEditDialog({
+    required this.exercise,
+    required this.set,
+    required this.step,
+  });
 
   final Exercise exercise;
   final SetEntry set;
+  final WeightStep step;
 
   @override
   State<_SetEditDialog> createState() => _SetEditDialogState();
@@ -65,7 +72,7 @@ class _SetEditDialogState extends State<_SetEditDialog> {
       content: SingleChildScrollView(
         child: SetInput(
           type: widget.exercise.type,
-          incrementKg: widget.exercise.incrementKg,
+          step: widget.step,
           values: _values,
           showStopwatch: false,
           onChanged: (v) => setState(() => _values = v),

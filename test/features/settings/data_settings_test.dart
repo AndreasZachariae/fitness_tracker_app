@@ -77,10 +77,30 @@ void main() {
     await tester.tap(find.byTooltip('${S.settingDefaultSets}: ${S.increase}'));
     await tester.tap(find.byTooltip('${S.settingDefaultRest}: ${S.decrease}'));
     await settle(tester);
-    await tester.tap(find.text(S.settingVibration));
-    await tester.tap(find.text(S.settingAutoActivate));
+    // Default step (1.1.0): 15 lbs, +5 lbs, then kg keeps the number.
+    expect(find.text('15 lbs'), findsOneWidget);
+    await tester.tap(find.byTooltip('${S.settingDefaultStep}: ${S.increase}'));
+    await settle(tester);
+    expect((await settings(tester)).defaultStep, 20);
+    await tester.ensureVisible(find.text(S.unitKg).first);
+    await tester.tap(find.text(S.unitKg).first);
+    await settle(tester);
+    expect(find.text('20 kg'), findsOneWidget);
+    final minus = find.byTooltip('${S.settingDefaultStep}: ${S.decrease}');
+    await tester.ensureVisible(minus);
+    await tester.pumpAndSettle();
+    await tester.tap(minus);
     await settle(tester);
     var s = await settings(tester);
+    expect((s.defaultStep, s.defaultStepUnit), (19.5, WeightUnit.kg));
+
+    for (final t in [S.settingVibration, S.settingAutoActivate]) {
+      await tester.ensureVisible(find.text(t));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t));
+    }
+    await settle(tester);
+    s = await settings(tester);
     expect(
       (s.defaultSets, s.defaultRestSec, s.vibrationEnabled, s.autoActivateNext),
       (4, 75, false, true),

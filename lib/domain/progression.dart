@@ -1,4 +1,5 @@
 import 'models/models.dart';
+import 'weight_steps.dart';
 
 /// A suggestion to increase the load for set 1 (SPEC §7.2). Only offered,
 /// never applied automatically.
@@ -8,14 +9,19 @@ sealed class ProgressionSuggestion {
   SetValues applyTo(SetValues values);
 }
 
+/// One step more: the next plate, level or kg step (1.1.0).
 final class AddWeight extends ProgressionSuggestion {
-  const AddWeight(this.kg);
+  const AddWeight(this.step);
 
-  final double kg;
+  final WeightStep step;
 
   @override
   SetValues applyTo(SetValues v) =>
-      v.copyWith(weightKg: (((v.weightKg ?? 0) + kg) * 100).round() / 100);
+      v.copyWith(weightKg: step.up(v.weightKg ?? 0));
+
+  /// How much heavier than [weight] the suggestion is.
+  double deltaFrom(double weight) =>
+      ((step.up(weight) - weight) * 100).round() / 100;
 }
 
 final class AddRep extends ProgressionSuggestion {
@@ -44,7 +50,7 @@ const durationProgressionStep = 5;
 /// [targetSets] working sets and all of its working sets reached it.
 ProgressionSuggestion? suggestProgression({
   required ExerciseType type,
-  required double incrementKg,
+  required WeightStep step,
   required int targetSets,
   required int? targetReps,
   required int? targetDurationSec,
@@ -61,10 +67,10 @@ ProgressionSuggestion? suggestProgression({
   );
   if (!reached) return null;
   return switch (type) {
-    ExerciseType.weightReps => AddWeight(incrementKg),
+    ExerciseType.weightReps => AddWeight(step),
     ExerciseType.bodyweight =>
       working.any((s) => (s.weightKg ?? 0) > 0)
-          ? AddWeight(incrementKg)
+          ? AddWeight(step)
           : const AddRep(),
     ExerciseType.timed => const AddDuration(durationProgressionStep),
   };

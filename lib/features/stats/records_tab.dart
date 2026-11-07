@@ -6,6 +6,7 @@ import '../../core/l10n/strings_de.dart';
 import '../../core/theme/gym_colors.dart';
 import '../../domain/names.dart';
 import '../../domain/statistics.dart';
+import '../../domain/weight_steps.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/exercise_type_icon.dart';
 import '../../widgets/info_button.dart';
@@ -62,7 +63,7 @@ class RecordsTab extends StatelessWidget {
                           for (final b in best)
                             Text(
                               '${S.recordKind(b.kind)}: '
-                              '${formatRecordValue(b.kind, b.value)} · '
+                              '${formatRecordValue(b.kind, b.value, levels: levelsOf(exercise))} · '
                               '${formatShortDate(b.day.toLocalDateTime())}',
                               style: theme.textTheme.bodyMedium,
                             ),

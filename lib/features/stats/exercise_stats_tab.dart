@@ -10,6 +10,7 @@ import '../../domain/models/models.dart';
 import '../../domain/names.dart';
 import '../../domain/period.dart';
 import '../../domain/statistics.dart';
+import '../../domain/weight_steps.dart';
 import '../../widgets/charts.dart';
 import '../../widgets/exercise_type_icon.dart';
 import '../../widgets/info_button.dart';
@@ -116,7 +117,12 @@ class ExerciseStatsTab extends StatelessWidget {
             ],
           ),
         ),
-        _SeriesChart(points: shown, metric: metric, type: exercise.type),
+        _SeriesChart(
+          points: shown,
+          metric: metric,
+          type: exercise.type,
+          levels: levelsOf(exercise),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: IntrinsicHeight(
@@ -128,7 +134,11 @@ class ExerciseStatsTab extends StatelessWidget {
                     label: S.statBest,
                     value: summary.best == null
                         ? '–'
-                        : formatMetric(metric, summary.best!),
+                        : formatMetric(
+                            metric,
+                            summary.best!,
+                            levels: !storesKg(exercise),
+                          ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -141,6 +151,7 @@ class ExerciseStatsTab extends StatelessWidget {
                             metric,
                             summary.change!,
                             summary.changePercent,
+                            levels: !storesKg(exercise),
                           ),
                   ),
                 ),
@@ -167,9 +178,15 @@ class ExerciseStatsTab extends StatelessWidget {
                 formatWeekdayDate(p.training.session.startedAt),
                 style: theme.textTheme.bodyLarge,
               ),
-              subtitle: Text(formatSetsDetailed(exercise.type, p.sets)),
+              subtitle: Text(
+                formatSetsDetailed(
+                  exercise.type,
+                  p.sets,
+                  levels: levelsOf(exercise),
+                ),
+              ),
               trailing: Text(
-                formatMetric(metric, p.value),
+                formatMetric(metric, p.value, levels: !storesKg(exercise)),
                 style: NumberStyles.small.copyWith(
                   fontSize: 18,
                   color: p.isRecord
@@ -249,11 +266,13 @@ class _SeriesChart extends StatelessWidget {
     required this.points,
     required this.metric,
     required this.type,
+    required this.levels,
   });
 
   final List<SeriesPoint> points;
   final ExerciseMetric metric;
   final ExerciseType type;
+  final LevelStep? levels;
 
   @override
   Widget build(BuildContext context) {
@@ -293,8 +312,8 @@ class _SeriesChart extends StatelessWidget {
                 for (final t in touched)
                   LineTooltipItem(
                     '${formatShortDate(points[t.spotIndex].training.session.startedAt)}: '
-                    '${formatMetric(metric, t.y)}\n'
-                    '${formatSetsDetailed(type, points[t.spotIndex].sets)}',
+                    '${formatMetric(metric, t.y, levels: levels != null && levels!.kgPerLevel == null)}\n'
+                    '${formatSetsDetailed(type, points[t.spotIndex].sets, levels: levels)}',
                     TextStyle(color: theme.colorScheme.onInverseSurface),
                   ),
               ];

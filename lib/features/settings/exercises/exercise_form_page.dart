@@ -9,6 +9,8 @@ import '../../../data/repositories/plan_repository.dart';
 import '../../../data/repositories/repository_exceptions.dart';
 import '../../../domain/models/models.dart';
 import '../../../domain/names.dart';
+import '../../../domain/weight_steps.dart';
+import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/info_button.dart';
 import '../../../widgets/number_stepper.dart';
 import '../../../widgets/snackbars.dart';
@@ -72,6 +74,20 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
       _original?.incrementKg ?? ExerciseDraft.defaultIncrementKg,
     ),
   );
+  late final _incrementLbs = TextEditingController(
+    text: formatWeight(_original?.incrementLbs ?? Exercise.defaultIncrementLbs),
+  );
+  late final _levelKg = TextEditingController(
+    text: _original?.levelKg == null ? '' : formatWeight(_original!.levelKg!),
+  );
+
+  /// New exercises follow the default step of the settings (1.1.0).
+  late StepMode _stepMode = _original?.stepMode ?? StepMode.standard;
+
+  /// Unit of an own step ("Eigene").
+  late WeightUnit _customUnit = _original?.stepMode == StepMode.lbs
+      ? WeightUnit.lbs
+      : WeightUnit.kg;
   late final _rest = TextEditingController(
     text: _original?.restSec?.toString() ?? '',
   );
@@ -93,10 +109,13 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
 
   String? _nameError;
   String? _incrementError;
+  String? _levelKgError;
   String? _restError;
   bool _busy = false;
 
   bool get _isNew => _original == null;
+
+  void _update(VoidCallback change) => setState(change);
 
   @override
   void initState() {
@@ -116,6 +135,8 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
   void dispose() {
     _name.dispose();
     _increment.dispose();
+    _incrementLbs.dispose();
+    _levelKg.dispose();
     _rest.dispose();
     _notes.dispose();
     super.dispose();
@@ -123,6 +144,10 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
 
   void _setType(ExerciseType type) => setState(() {
     _type = type;
+    // Levels only for weight × reps.
+    if (type != ExerciseType.weightReps && _stepMode == StepMode.levels) {
+      _stepMode = StepMode.standard;
+    }
     if (_isNew && !_inIndexTouched) {
       _inIndex = type.includeInStrengthIndexByDefault;
     }
@@ -130,7 +155,24 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
 
   Future<void> _save() async {
     final name = cleanName(_name.text);
-    final increment = parseDecimal(_increment.text);
+    final custom = _stepMode == StepMode.kg || _stepMode == StepMode.lbs;
+    final increment = custom && _customUnit == WeightUnit.kg
+        ? parseDecimal(_increment.text)
+        : (_original?.incrementKg ?? ExerciseDraft.defaultIncrementKg);
+    final incrementLbs = custom && _customUnit == WeightUnit.lbs
+        ? parseDecimal(_incrementLbs.text)
+        : (_original?.incrementLbs ?? Exercise.defaultIncrementLbs);
+    final levelText = _levelKg.text.trim();
+    final levelKg = _stepMode != StepMode.levels
+        ? _original?.levelKg
+        : (levelText.isEmpty ? null : parseDecimal(levelText));
+    final levelInvalid =
+        _stepMode == StepMode.levels &&
+        levelText.isNotEmpty &&
+        (levelKg == null || levelKg <= 0 || levelKg > 100);
+    final mode = custom
+        ? (_customUnit == WeightUnit.kg ? StepMode.kg : StepMode.lbs)
+        : _stepMode;
     final restText = _rest.text.trim();
     final rest = restText.isEmpty ? null : int.tryParse(restText);
     setState(() {
@@ -141,15 +183,22 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
           : null;
       _incrementError = increment == null || increment <= 0 || increment > 100
           ? S.errorIncrement
+          : incrementLbs == null || incrementLbs <= 0 || incrementLbs > 200
+          ? S.errorStepLbs
           : null;
+      _levelKgError = levelInvalid ? S.errorLevelKg : null;
       _restError =
           restText.isNotEmpty && (rest == null || rest < 0 || rest > 3600)
           ? S.errorRest
           : null;
     });
-    if (_nameError != null || _incrementError != null || _restError != null) {
+    if (_nameError != null ||
+        _incrementError != null ||
+        _levelKgError != null ||
+        _restError != null) {
       return;
     }
+    if (!await _confirmConversion(mode, levelKg)) return;
 
     setState(() => _busy = true);
     final repo = ref.read(exerciseRepositoryProvider);
@@ -165,6 +214,9 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
             restSec: rest,
             includeInStrengthIndex: _inIndex,
             notes: _notes.text,
+            stepMode: mode,
+            incrementLbs: incrementLbs!,
+            levelKg: levelKg,
           ),
         );
       } else {
@@ -178,6 +230,9 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
             restSec: rest,
             includeInStrengthIndex: _inIndex,
             notes: _notes.text,
+            stepMode: mode,
+            incrementLbs: incrementLbs,
+            levelKg: levelKg,
           ),
         );
       }
@@ -197,6 +252,27 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
       setState(() => _busy = false);
       if (mounted) showError(context, e);
     }
+  }
+
+  /// Logged sets of levels without kg store level numbers (1.1.0); asks
+  /// before they are converted to kg or back.
+  Future<bool> _confirmConversion(StepMode mode, double? levelKg) async {
+    final original = _original;
+    if (original == null || !_typeLocked) return true;
+    final changed = original.copyWith(stepMode: mode, levelKg: levelKg);
+    final fromKg = storesKg(original);
+    if (fromKg == storesKg(changed)) return true;
+    final kg = fromKg ? original.levelKg : levelKg;
+    // Without kg per level the repository refuses with a message.
+    if (kg == null) return true;
+    return showConfirmDialog(
+      context,
+      title: fromKg ? S.convertToLevelsTitle : S.convertToKgTitle,
+      body: fromKg
+          ? S.convertToLevelsBody(formatKg(kg))
+          : S.convertToKgBody(formatKg(kg)),
+      confirmLabel: S.convert,
+    );
   }
 
   ExerciseTargets _targets() {
@@ -321,16 +397,7 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
                       ),
                   ],
                   gap,
-                  TextField(
-                    controller: _increment,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: S.fieldIncrement,
-                      errorText: _incrementError,
-                    ),
-                  ),
+                  _stepSection(settings),
                   gap,
                   TextField(
                     controller: _rest,
@@ -388,6 +455,109 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+extension on _ExerciseFormPageState {
+  /// "Gewichtsschritte": Standard / Eigene (kg or lbs) / Stufen (1.1.0).
+  Widget _stepSection(AppSettings settings) {
+    final theme = Theme.of(context);
+    final hintStyle = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final custom = _stepMode == StepMode.kg || _stepMode == StepMode.lbs;
+    final selected = custom ? StepMode.kg : _stepMode;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 8,
+      children: [
+        const _Label(S.fieldStep),
+        SegmentedButton<StepMode>(
+          showSelectedIcon: false,
+          segments: [
+            const ButtonSegment(
+              value: StepMode.standard,
+              label: Text(S.stepStandard),
+            ),
+            const ButtonSegment(value: StepMode.kg, label: Text(S.stepCustom)),
+            if (_type == ExerciseType.weightReps)
+              const ButtonSegment(
+                value: StepMode.levels,
+                label: Text(S.stepLevels),
+              ),
+          ],
+          selected: {selected},
+          onSelectionChanged: (v) => _update(() {
+            _stepMode = v.single == StepMode.kg
+                ? (_customUnit == WeightUnit.kg ? StepMode.kg : StepMode.lbs)
+                : v.single;
+          }),
+        ),
+        if (_stepMode == StepMode.standard)
+          Text(
+            S.stepStandardHint(
+              '${formatWeight(settings.defaultStep)} '
+              '${S.unit(settings.defaultStepUnit)}',
+            ),
+            style: hintStyle,
+          ),
+        if (custom) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 12,
+            children: [
+              Expanded(
+                child: TextField(
+                  key: const ValueKey('step-value'),
+                  controller: _customUnit == WeightUnit.kg
+                      ? _increment
+                      : _incrementLbs,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: '${S.fieldStepValue} (${S.unit(_customUnit)})',
+                    errorText: _incrementError,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: SegmentedButton<WeightUnit>(
+                  showSelectedIcon: false,
+                  segments: [
+                    for (final u in WeightUnit.values)
+                      ButtonSegment(value: u, label: Text(S.unit(u))),
+                  ],
+                  selected: {_customUnit},
+                  onSelectionChanged: (v) => _update(() {
+                    _customUnit = v.single;
+                    _stepMode = v.single == WeightUnit.kg
+                        ? StepMode.kg
+                        : StepMode.lbs;
+                    _incrementError = null;
+                  }),
+                ),
+              ),
+            ],
+          ),
+          if (_customUnit == WeightUnit.lbs)
+            Text(S.stepLbsHint, style: hintStyle),
+        ],
+        if (_stepMode == StepMode.levels) ...[
+          TextField(
+            controller: _levelKg,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: S.fieldLevelKg,
+              hintText: S.fieldLevelKgHint,
+              errorText: _levelKgError,
+            ),
+          ),
+          Text(S.stepLevelsHint, style: hintStyle),
+        ],
+      ],
     );
   }
 }

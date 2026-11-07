@@ -14,15 +14,30 @@ final class Exercise {
     required this.notes,
     required this.archived,
     required this.createdAt,
+    this.stepMode = StepMode.kg,
+    this.incrementLbs = defaultIncrementLbs,
+    this.levelKg,
   });
+
+  static const defaultIncrementLbs = 15.0;
 
   final int id;
   final String name;
   final ExerciseType type;
   final ExerciseCategory? category;
 
-  /// Step of the weight stepper.
+  /// Own step of the weight stepper in kg ([StepMode.kg]).
   final double incrementKg;
+
+  /// How the weight goes up and down (1.1.0).
+  final StepMode stepMode;
+
+  /// Own step in lbs ([StepMode.lbs]).
+  final double incrementLbs;
+
+  /// Kg per level ([StepMode.levels]); `null` = unknown, then sets store
+  /// the level number instead of kg.
+  final double? levelKg;
 
   /// Overrides the default rest time; `null` = use the default.
   final int? restSec;
@@ -44,6 +59,9 @@ final class Exercise {
     bool? includeInStrengthIndex,
     String? notes,
     bool? archived,
+    StepMode? stepMode,
+    double? incrementLbs,
+    Object? levelKg = unset,
   }) {
     return Exercise(
       id: id,
@@ -57,6 +75,9 @@ final class Exercise {
       notes: notes ?? this.notes,
       archived: archived ?? this.archived,
       createdAt: createdAt,
+      stepMode: stepMode ?? this.stepMode,
+      incrementLbs: incrementLbs ?? this.incrementLbs,
+      levelKg: pick<double?>(levelKg, this.levelKg),
     );
   }
 
@@ -72,7 +93,10 @@ final class Exercise {
       other.includeInStrengthIndex == includeInStrengthIndex &&
       other.notes == notes &&
       other.archived == archived &&
-      other.createdAt == createdAt;
+      other.createdAt == createdAt &&
+      other.stepMode == stepMode &&
+      other.incrementLbs == incrementLbs &&
+      other.levelKg == levelKg;
 
   @override
   int get hashCode => Object.hash(
@@ -86,6 +110,9 @@ final class Exercise {
     notes,
     archived,
     createdAt,
+    stepMode,
+    incrementLbs,
+    levelKg,
   );
 
   @override
@@ -102,6 +129,9 @@ final class ExerciseDraft {
     this.restSec,
     bool? includeInStrengthIndex,
     this.notes = '',
+    this.stepMode = StepMode.kg,
+    this.incrementLbs = Exercise.defaultIncrementLbs,
+    this.levelKg,
   }) : includeInStrengthIndex =
            includeInStrengthIndex ??
            // Same as ExerciseType.includeInStrengthIndexByDefault (const).
@@ -116,4 +146,7 @@ final class ExerciseDraft {
   final int? restSec;
   final bool includeInStrengthIndex;
   final String notes;
+  final StepMode stepMode;
+  final double incrementLbs;
+  final double? levelKg;
 }

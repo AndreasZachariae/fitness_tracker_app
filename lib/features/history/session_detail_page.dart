@@ -16,6 +16,7 @@ import '../../data/repositories/session_repository.dart';
 import '../../domain/history.dart';
 import '../../domain/models/models.dart';
 import '../../domain/records.dart';
+import '../../domain/weight_steps.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/exercise_type_icon.dart';
 import '../../widgets/snackbars.dart';
@@ -101,6 +102,10 @@ class _SessionDetailPageState extends ConsumerState<SessionDetailPage> {
       context,
       exercise: d.exercise,
       set: set,
+      step: weightStepOf(
+        d.exercise,
+        ref.read(settingsProvider).value ?? AppSettings.defaults,
+      ),
     );
     if (result == null) return;
     final repo = ref.read(sessionRepositoryProvider);
@@ -347,7 +352,7 @@ class _ExerciseCard extends StatelessWidget {
                       ),
                       Expanded(
                         child: Text(
-                          formatSingleSet(e.type, set),
+                          formatSingleSet(e.type, set, levels: levelsOf(e)),
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontFeatures: const [FontFeature.tabularFigures()],
                           ),

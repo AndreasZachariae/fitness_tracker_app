@@ -1,15 +1,17 @@
 import 'models/models.dart';
+import 'weight_steps.dart';
 
 /// Working sets only (SPEC §7).
 Iterable<SetEntry> workingSets(Iterable<SetEntry> sets) =>
     sets.where((s) => !s.isWarmup);
 
 /// Volume Σ weight × reps of working sets of `weight_reps` exercises
-/// (SPEC §7.6).
+/// (SPEC §7.6); levels without kg are left out (1.1.0).
 double sessionVolume(Iterable<SessionExerciseDetail> details) {
   var sum = 0.0;
   for (final d in details) {
     if (d.exercise.type != ExerciseType.weightReps) continue;
+    if (!storesKg(d.exercise)) continue;
     for (final s in workingSets(d.sets)) {
       sum += (s.weightKg ?? 0) * (s.reps ?? 0);
     }

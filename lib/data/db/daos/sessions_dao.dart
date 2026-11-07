@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../domain/models/models.dart';
+import '../../../domain/weight_steps.dart';
 import '../database.dart';
 import '../tables.dart';
 
@@ -103,9 +104,18 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
   Stream<Session?> watchById(int id) =>
       (select(sessions)..where((s) => s.id.equals(id))).watchSingleOrNull();
 
-  /// Every set with its session and exercise type, chronologically.
+  /// Every set with its session and exercise type, chronologically;
+  /// [storesKg] is false for levels without kg (1.1.0).
   Future<
-    List<({SetEntry set, int sessionId, int exerciseId, ExerciseType type})>
+    List<
+      ({
+        SetEntry set,
+        int sessionId,
+        int exerciseId,
+        ExerciseType type,
+        bool storesKg,
+      })
+    >
   >
   allSetsWithContext() async {
     final query =
@@ -129,6 +139,7 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
           sessionId: row.readTable(sessionExercises).sessionId,
           exerciseId: row.readTable(sessionExercises).exerciseId,
           type: row.readTable(exercises).type,
+          storesKg: storesKg(row.readTable(exercises)),
         ),
     ];
   }
