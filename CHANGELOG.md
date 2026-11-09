@@ -4,13 +4,29 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.2.2] – unveröffentlicht
+## [1.2.2] – 2026-11-09
 
 ### Neu
 - **Update-Hinweis beim Öffnen:** GymLog sucht jetzt bei jedem Öffnen nach einer neuen Version statt einmal am Tag. Ist eine da, zeigt es sie einmal mit ihren Neuerungen an und meldet sie per Benachrichtigung; während eines Trainings öffnet sich nichts von selbst.
 - **Blauer Punkt** am Zahnrad und bei „Über“, solange ein Update bereitsteht.
 - **Update-Seite:** „APK herunterladen“ lädt die neue Version im Browser – danach die Datei antippen und installieren, alle Trainings bleiben erhalten. „Auf GitHub ansehen“ öffnet die Release-Seite.
 - **Neuerungen zum Aufklappen** unter Einstellungen → Über.
+
+<details>
+<summary>Commits seit v1.2.1 (für Entwickler)</summary>
+
+#### Features
+- DEV app and in-app updates via GitHub (1.2.2) (`230e54e`)
+- publish releases with text and APK automatically (`e3c6a91`)
+
+#### Fehlerbehebungen
+- no self-install of updates, find updates on every opening (1.2.2) (`44b98e0`)
+
+#### Wartung
+- test dev update (`cf8d2ab`)
+- test dev update (`17e65a4`)
+
+</details>
 
 ## [1.2.1] – 2026-11-09
 
