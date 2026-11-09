@@ -62,7 +62,8 @@ Auf dem Handy liegen echte Trainingsdaten in der Release-App `de.gymlog.app`. De
 2. **Niemals** `adb uninstall`, `adb shell pm …`, `adb install …`, `flutter install`, `scripts/install-release.sh`,
    `scripts/build-release-apk.sh`, `scripts/release-build.sh`, `scripts/release.sh`, `scripts/release-dev.sh` oder
    `flutter build apk --release` ausführen (Release-Builds nutzen `.secrets/`; `release-dev.sh` veröffentlicht die
-   DEV-App auf GitHub). `~/.config/gymlog/` (GitHub-Token, nur auf dem PC) nie lesen. Kein `git push`, kein `git tag`, keine `gh`-Befehle. Releases startet nur
+   DEV-App auf GitHub) und `scripts/lib/github.sh` nicht einbinden. `~/.config/gymlog/` (GitHub-Token, nur auf dem PC)
+   nie lesen. Kein `git push`, kein `git tag`, keine `gh`-Befehle, keine Aufrufe der GitHub-API. Releases startet nur
    der Mensch auf seinem PC; im Container gibt es absichtlich keinen GitHub-Zugang.
    Interaktion mit dem Handy ausschließlich über `scripts/install-dev.sh` und `scripts/screenshot.sh` (nur Paket `de.gymlog.app.dev`).
 3. `.secrets/` weder lesen noch schreiben.

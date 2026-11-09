@@ -8,9 +8,10 @@
 #   3. zeigt den Release-Text und fragt nach – bis hierhin wird nichts veröffentlicht oder committet
 #   4. trägt Datum und Commits in CHANGELOG.md ein, committet "chore(release): vX.Y.Z", setzt den Tag vX.Y.Z und
 #      pusht main + Tag per SSH
-#   5. öffnet die vorausgefüllte Release-Seite im Browser: APK hineinziehen, "Publish release" (ein SSH-Schlüssel
-#      reicht für git, aber nicht für GitHubs Release-Schnittstelle; so braucht es weder gh noch einen Token)
-# Voraussetzungen auf dem PC: git, SSH-Schlüssel bei GitHub hinterlegt (ssh -T git@github.com), Docker.
+#   5. legt die GitHub-Release mit Text und APK an (über GitHubs Schnittstelle mit deinem Token; erst Entwurf, dann
+#      APK, dann veröffentlichen). Klappt das nicht, öffnet es wie früher die vorausgefüllte Seite im Browser.
+# Voraussetzungen auf dem PC: git, SSH-Schlüssel bei GitHub hinterlegt (ssh -T git@github.com), Docker, curl, python3,
+# GitHub-Token in ~/.config/gymlog/github-token (README, "Einmalig: GitHub-Token"; derselbe wie für release-dev.sh).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -36,6 +37,9 @@ step "Voraussetzungen"
 [ ! -f /.dockerenv ] || fail "Dieses Skript läuft auf dem PC, nicht im Container (dort gibt es absichtlich keinen GitHub-Zugang)."
 command -v git >/dev/null || fail "git fehlt."
 command -v docker >/dev/null || fail "docker fehlt."
+# shellcheck source=lib/github.sh
+source scripts/lib/github.sh
+github_init
 git ls-remote "$PUSH_URL" HEAD >/dev/null ||
   fail "Kein SSH-Zugang zu GitHub ($PUSH_URL). Prüfen mit: ssh -T git@github.com"
 docker compose ps --status running --services 2>/dev/null | grep -qx dev ||
@@ -104,6 +108,7 @@ echo "APK:         $APK ($(du -h "$APK" | cut -f1)), SHA-256 $SHA"
 echo "Schlüssel:   $DN"
 echo "             SHA-256 $CERT"
 echo "Push:        $UNPUSHED Commit(s) + Release-Commit nach origin/main (öffentlich: https://github.com/$REPO)"
+echo "GitHub:      Release $TAG mit diesem Text und $(basename "$APK"), danach \"Latest\""
 echo
 read -r -p "GymLog $VERSION jetzt veröffentlichen? Zum Bestätigen 'ja' eingeben: " ANSWER
 if [ "$ANSWER" != ja ]; then
@@ -132,45 +137,59 @@ fi
 
 git fetch --quiet origin main || true
 
-step "GitHub-Release anlegen (im Browser, etwa 1 Minute)"
-# Titel und Tag stehen in der Adresse; der Text auch, solange die Adresse nicht zu lang wird.
-SHORT_URL="https://github.com/$REPO/releases/new?tag=$TAG&title=GymLog%20$VERSION"
-NEW_URL="$SHORT_URL"
-BODY_IN_URL=no
-if command -v python3 >/dev/null; then
-  WITH_BODY="$SHORT_URL&body=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.stdin.read()))' <"$NOTES")"
-  # GitHub lehnt sehr lange Adressen ab; mit Sicherheitsabstand.
-  if [ "${#WITH_BODY}" -le 6000 ]; then
-    NEW_URL="$WITH_BODY"
-    BODY_IN_URL=yes
+# Notweg, wenn GitHubs Schnittstelle nicht will: vorausgefüllte Release-Seite im Browser, APK von Hand anhängen.
+browser_fallback() {
+  # Titel und Tag stehen in der Adresse; der Text auch, solange die Adresse nicht zu lang wird.
+  SHORT_URL="https://github.com/$REPO/releases/new?tag=$TAG&title=GymLog%20$VERSION"
+  NEW_URL="$SHORT_URL"
+  BODY_IN_URL=no
+  if command -v python3 >/dev/null; then
+    WITH_BODY="$SHORT_URL&body=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.stdin.read()))' <"$NOTES")"
+    # GitHub lehnt sehr lange Adressen ab; mit Sicherheitsabstand.
+    if [ "${#WITH_BODY}" -le 6000 ]; then
+      NEW_URL="$WITH_BODY"
+      BODY_IN_URL=yes
+    fi
   fi
-fi
-COPIED=no
-if [ "$BODY_IN_URL" = no ]; then
-  if command -v wl-copy >/dev/null && wl-copy <"$NOTES" 2>/dev/null; then COPIED=yes
-  elif command -v xclip >/dev/null && xclip -selection clipboard <"$NOTES" 2>/dev/null; then COPIED=yes
+  COPIED=no
+  if [ "$BODY_IN_URL" = no ]; then
+    if command -v wl-copy >/dev/null && wl-copy <"$NOTES" 2>/dev/null; then COPIED=yes
+    elif command -v xclip >/dev/null && xclip -selection clipboard <"$NOTES" 2>/dev/null; then COPIED=yes
+    fi
   fi
-fi
-for opener in xdg-open wslview open; do
-  if command -v "$opener" >/dev/null; then
-    "$opener" "$NEW_URL" >/dev/null 2>&1 &
-    break
-  fi
-done
+  for opener in xdg-open wslview open; do
+    if command -v "$opener" >/dev/null; then
+      "$opener" "$NEW_URL" >/dev/null 2>&1 &
+      break
+    fi
+  done
 
-echo "Commit und Tag $TAG sind auf GitHub. Jetzt im Browser (öffnet sich, sonst Link kopieren):"
-echo
-echo "  $SHORT_URL"
-echo
-if [ "$BODY_IN_URL" = yes ]; then
-  echo "  1. Tag $TAG, Titel und Text sind schon ausgefüllt (im geöffneten Fenster)."
-elif [ "$COPIED" = yes ]; then
-  echo "  1. Text ist in der Zwischenablage: ins Beschreibungsfeld einfügen."
+  echo "Commit und Tag $TAG sind auf GitHub, die Release fehlt noch. Jetzt im Browser (öffnet sich, sonst Link kopieren):"
+  echo
+  echo "  $SHORT_URL"
+  echo
+  if [ "$BODY_IN_URL" = yes ]; then
+    echo "  1. Tag $TAG, Titel und Text sind schon ausgefüllt (im geöffneten Fenster)."
+  elif [ "$COPIED" = yes ]; then
+    echo "  1. Text ist in der Zwischenablage: ins Beschreibungsfeld einfügen."
+  else
+    echo "  1. Text ins Beschreibungsfeld kopieren aus: $(pwd)/$NOTES"
+    echo "     (z. B. mit: cat $NOTES)"
+  fi
+  echo "  2. APK in das Feld \"Attach binaries\" ziehen: $(pwd)/$APK"
+  echo "  3. \"Set as the latest release\" angehakt lassen, \"Publish release\"."
+  echo
+  echo "Danach immer gültig zum Weitergeben: https://github.com/$REPO/releases/latest"
+}
+
+step "GitHub-Release anlegen (Text und APK)"
+if publish_release "$TAG" "$(git rev-parse HEAD)" "GymLog $VERSION" "$NOTES" "$APK" "gymlog-$VERSION.apk" false true; then
+  echo
+  echo "Fertig: GymLog $VERSION ist veröffentlicht."
+  echo "  $RELEASE_URL"
+  echo "Immer gültig zum Weitergeben: https://github.com/$REPO/releases/latest"
+  echo "GymLog am Handy bietet das Update beim nächsten Öffnen an (ab 1.2.2)."
 else
-  echo "  1. Text ins Beschreibungsfeld kopieren aus: $(pwd)/$NOTES"
-  echo "     (z. B. mit: cat $NOTES)"
+  step "GitHub-Release im Browser anlegen (Notweg, etwa 1 Minute)"
+  browser_fallback
 fi
-echo "  2. APK in das Feld \"Attach binaries\" ziehen: $(pwd)/$APK"
-echo "  3. \"Set as the latest release\" angehakt lassen, \"Publish release\"."
-echo
-echo "Danach immer gültig zum Weitergeben: https://github.com/$REPO/releases/latest"

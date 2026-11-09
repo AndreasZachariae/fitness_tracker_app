@@ -129,18 +129,8 @@ ersetzt wird (der Releases-Tab bleibt übersichtlich, „Latest“ bleibt die ec
 **Testliste fürs Handy** und die Änderungen. GymLog DEV findet sie beim nächsten Öffnen, meldet sie und bietet
 „Herunterladen und installieren“ an; die Testliste steht dort und unter Einstellungen → Über zum Aufklappen.
 
-**Einmalig: GitHub-Token auf dem PC** (bleibt auf dem PC, der Container sieht ihn nie):
-
-1. GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → „Generate new token“.
-2. Repository access: „Only select repositories“ → `fitness_tracker_app`. Permissions → Repository permissions →
-   **Contents: Read and write** (sonst nichts). Ablaufdatum z. B. 1 Jahr.
-3. Token speichern:
-   ```bash
-   mkdir -p ~/.config/gymlog
-   (umask 077; read -rsp "Token: " T && printf '%s' "$T" > ~/.config/gymlog/github-token)
-   ```
-
-**Jedes Mal, auf dem PC im Projektordner** (alles committet, Container läuft):
+Voraussetzung: der [GitHub-Token](#einmalig-github-token) auf dem PC. **Jedes Mal, auf dem PC im Projektordner**
+(alles committet, Container läuft):
 
 ```bash
 ./scripts/release-dev.sh           # Tests, DEV-APK bauen, main pushen, Vorab-Release "dev" ersetzen
@@ -209,15 +199,33 @@ und behält die Daten (gleicher Schlüssel).
 
 ---
 
+## Einmalig: GitHub-Token
+
+`release.sh` und `release-dev.sh` pushen mit deinem SSH-Schlüssel. Releases anlegen und die APK hochladen geht bei
+GitHub aber nicht über git, sondern nur über die Web-Schnittstelle – dafür braucht es einen Token. Er bleibt auf dem PC
+(außerhalb des Projektordners, der Container sieht ihn nie) und darf nur dieses eine Repository ändern.
+
+1. GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → „Generate new token“.
+2. Repository access: „Only select repositories“ → `fitness_tracker_app`. Permissions → Repository permissions →
+   **Contents: Read and write** (sonst nichts). Ablaufdatum z. B. 1 Jahr.
+3. Token auf dem PC speichern:
+   ```bash
+   mkdir -p ~/.config/gymlog
+   (umask 077; read -rsp "Token: " T && printf '%s' "$T" > ~/.config/gymlog/github-token)
+   ```
+
+Läuft er ab, melden beide Skripte das gleich am Anfang; dann einen neuen anlegen und die Datei überschreiben.
+
 ## Neue Version veröffentlichen (Release)
 
 Jede Version landet mit APK und Changelog unter
 <https://github.com/AndreasZachariae/fitness_tracker_app/releases>. Zum Weitergeben an Freunde immer diesen Link
 schicken, keine APK per Mail oder Teams: **<https://github.com/AndreasZachariae/fitness_tracker_app/releases/latest>**
 
-Das Release startest **du auf dem PC** (nicht im Container): Gepusht wird mit deinem SSH-Schlüssel, der bei GitHub
-hinterlegt ist. Der Container testet, baut und signiert nur und hat keinen Zugriff auf GitHub; Claude Code darf kein
-Release auslösen. Kontrolle des SSH-Zugangs: `ssh -T git@github.com` („successfully authenticated“).
+Das Release startest **du auf dem PC** (nicht im Container): Gepusht wird mit deinem SSH-Schlüssel, die Release mit
+Text und APK legt das Skript mit dem [GitHub-Token](#einmalig-github-token) an. Der Container testet, baut und signiert
+nur und hat keinen Zugriff auf GitHub; Claude Code darf kein Release auslösen. Kontrolle des SSH-Zugangs:
+`ssh -T git@github.com` („successfully authenticated“).
 
 **Jedes Mal – Checkliste:**
 
@@ -234,16 +242,15 @@ docker compose up -d               # Container muss laufen
 ./scripts/release.sh               # prüfen, bauen, Vorschau, nach "ja" veröffentlichen
 ```
 
-`release.sh` prüft alles (GitHub-Login, Branch `main`, alles committet, Stand von GitHub, neue Version und
+`release.sh` prüft alles (SSH-Zugang und Token, Branch `main`, alles committet, Stand von GitHub, neue Version und
 Build-Nummer, Roadmap `FINISHED`, Changelog), lässt im Container Tests laufen, die APK `dist/gymlog-X.Y.Z.apk` bauen
 und signieren und vergleicht den Signaturschlüssel mit den bisherigen Releases. Dann zeigt es den Release-Text.
 **Erst nach Eingabe von `ja`** trägt es Datum und Commits in `CHANGELOG.md` ein, committet, setzt den Tag `vX.Y.Z` und
 pusht `main` und Tag per SSH. Jede andere Antwort bricht ab, ohne etwas zu ändern.
 
-Zum Schluss öffnet es die Release-Seite im Browser mit Tag und Titel (und, wenn er kurz genug ist, dem Text). Dort:
-Text einfügen, falls er fehlt (liegt in der Zwischenablage oder in `dist/release-notes-X.Y.Z.md`), die APK
-`dist/gymlog-X.Y.Z.apk` in „Attach binaries“ ziehen, „Publish release“. Ein SSH-Schlüssel reicht nur für git, nicht
-für GitHubs Release-Schnittstelle – so braucht es weder die GitHub CLI noch einen Token.
+Zum Schluss legt es die GitHub-Release an: erst als Entwurf, dann lädt es die APK hoch und veröffentlicht sie als
+„Latest“ – niemand sieht eine Release ohne APK. Nichts mehr im Browser. Nur wenn GitHub dabei streikt, öffnet es wie
+früher die vorausgefüllte Release-Seite (APK in „Attach binaries“ ziehen, „Publish release“).
 
 Gut zu wissen:
 - Die APK enthält nur 64-Bit-ARM (~23 MB) und läuft auf praktisch jedem Handy ab Android 7.
@@ -273,6 +280,7 @@ Gut zu wissen:
 | `scripts/release.sh` | **PC** | Version als GitHub-Release veröffentlichen (nur du) |
 | `scripts/release-build.sh` | Container | wird von `release.sh` aufgerufen: testen, bauen, signieren, prüfen |
 | `scripts/release-notes.sh` | PC oder Container | Vorschau/Prüfung von Changelog und Release-Text |
+| `scripts/lib/github.sh` | **PC** | gemeinsamer GitHub-Teil von `release.sh` und `release-dev.sh` (Token, Release, Upload) |
 | `scripts/check.sh` | Container | Formatierung, Analyse, alle Tests |
 | `scripts/screenshot.sh` | Container | Screenshot vom Handy nach `build/screenshots/` |
 
@@ -290,7 +298,7 @@ Gut zu wissen:
 | `release.sh`: „läuft auf dem PC, nicht im Container“ | Terminal auf dem PC öffnen, im Projektordner starten. |
 | `release.sh`: „ANDEREN Schlüssel“ | `.secrets/` aus der Sicherung zurückholen; niemals mit einem neuen Schlüssel veröffentlichen. |
 | `release.sh`: Push fehlgeschlagen | Das Skript nennt den Befehl zum Zurücksetzen. |
-| `release-dev.sh`: „Token wird nicht akzeptiert“ | Token abgelaufen oder ohne „Contents: Read and write“ für dieses Repository: neuen anlegen (siehe DEV-App über GitHub). |
+| „Kein GitHub-Token“ / „Token wird nicht akzeptiert“ | Token fehlt, ist abgelaufen oder hat nicht „Contents: Read and write“ für dieses Repository: neu anlegen ([Einmalig: GitHub-Token](#einmalig-github-token)). |
 | DEV-Update: „App nicht installiert“ | Die DEV-App auf dem Handy hat einen anderen Debug-Schlüssel (Volume gelöscht): DEV-App deinstallieren, APK erneut installieren. Nur Testdaten. |
-| Release-Seite nicht geöffnet | Link aus der Ausgabe kopieren; Tag ist schon auf GitHub, die Release lässt sich jederzeit nachholen. |
+| `release.sh`: Release nur im Browser (Notweg) | GitHubs Schnittstelle hat nicht geantwortet; Commit und Tag sind schon auf GitHub. Release im geöffneten Fenster fertigstellen oder den Link aus der Ausgabe kopieren. |
 | Skripte melden `\r`-Fehler (Windows) | Projekt im WSL-Dateisystem ablegen; `.gitattributes` erzwingt LF. |

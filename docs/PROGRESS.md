@@ -176,6 +176,8 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         auch aus der Benachrichtigung und aus Über
   - [x] Über: „Neuerungen der neuesten Version“ bzw. „Testliste und Änderungen (DEV)“ zum Aufklappen
   - [x] Permission `REQUEST_INSTALL_PACKAGES` (vom Menschen freigegeben), CLAUDE.md-Regeln, Deny-Liste, README, Tests
+  - [x] Auf Wunsch: `release.sh` legt die Release mit Text und APK selbst an (gleicher Token, gemeinsamer Teil
+        `scripts/lib/github.sh`); der Browser nur noch als Notweg
 
 ## Annahmen
 - **1.2.2 Versionsnummer:** „DEV-App und Updates über GitHub“ als 1.2.2, damit die geplanten 1.3.0 (Automatische Buchung)
@@ -189,7 +191,10 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   alte Release und den Tag und legt beide neu an (der Tag zeigt auf den gepushten Commit). `release.sh` und
   `release-dev.sh` holen nur `main` und `v*`-Tags, damit der wandernde Tag nicht stört. Der GitHub-Token
   (fine-grained, nur dieses Repository, Contents: Read and write) liegt auf dem PC unter `~/.config/gymlog/github-token`,
-  außerhalb des Projektordners und damit außerhalb des Containers.
+  außerhalb des Projektordners und damit außerhalb des Containers. Derselbe Token dient seit 1.2.2 auch `release.sh`
+  (Wunsch des Menschen): Release erst als Entwurf anlegen, APK hochladen, dann veröffentlichen – so sieht weder ein
+  Mensch noch die Update-Suche eine Release ohne APK; scheitert ein Schritt, wird der Entwurf gelöscht und `release.sh`
+  öffnet wie früher die vorausgefüllte Seite im Browser.
 - **1.2.2 Testliste in der DEV-Release:** Der erste `###`-Abschnitt unter „Manuelle Tests am Handy“ in dieser Datei, also
   die neueste Testliste; dazu der oberste Changelog-Abschnitt, solange er „unveröffentlicht“ ist.
 - **1.2.2 Update-Suche:** Bei jedem Öffnen und Zurückkehren, höchstens alle 15 Minuten (GitHub erlaubt ohne Konto
@@ -681,7 +686,7 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
 
 ### 1.2.2 DEV-App und Updates über GitHub
-Nur, was live ausprobiert werden muss. Einmalig vorher: Token anlegen (README, „DEV-App über GitHub“).
+Nur, was live ausprobiert werden muss. Einmalig vorher: Token anlegen (README, „Einmalig: GitHub-Token“).
 - [ ] PC: `./scripts/release-dev.sh` läuft durch; auf GitHub gibt es genau eine Vorab-Release „GymLog DEV …“, „Latest“
   bleibt 1.2.1.
 - [ ] Handy: `gymlog-dev.apk` aus dieser Release im Browser laden und über die bisherige DEV-App installieren (klappt ohne
@@ -691,8 +696,9 @@ Nur, was live ausprobiert werden muss. Einmalig vorher: Token anlegen (README, �
 - [ ] „Herunterladen und installieren“: erst der Erklär-Dialog, Android-Freigabe erteilen, zurück, erneut tippen →
   Fortschritt, Android fragt, DEV-App startet mit neuer Version; Daten sind noch da.
 - [ ] „Auf GitHub ansehen“ öffnet die Release im Browser; die Seite wirkt auch im Dunkelmodus gut lesbar.
-- [ ] Echte App: 1.2.2 nach dem Release noch wie gewohnt installieren; das direkte Update lässt sich erst mit der
-  nächsten Version ausprobieren.
+- [ ] Release 1.2.2 mit `./scripts/release.sh`: Release erscheint ohne Browser mit Text und APK als „Latest“.
+- [ ] Echte App: 1.2.2 noch wie gewohnt installieren; das direkte Update lässt sich erst mit der nächsten Version
+  ausprobieren.
 
 ### 1.2.1 Verbesserungen
 Nur, was am Handy angesehen werden muss; Abläufe sind automatisch getestet.
