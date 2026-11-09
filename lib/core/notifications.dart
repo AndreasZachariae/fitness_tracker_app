@@ -10,8 +10,13 @@ enum NotificationChannel {
   /// Training days, open training, backup, streak.
   reminders('reminders', 'Erinnerungen'),
 
-  /// The rest countdown on the lock screen (silent).
-  rest('rest', 'Pause'),
+  /// Rest and set timer while GymLog is in the background (1.3.0; replaces
+  /// the silent channel "rest" of 1.2.0, which Android hid on the lock
+  /// screen). No sound; the end vibrates through the rest alarm.
+  timer('timer', 'Pause und Zeit'),
+
+  /// "Pause vorbei" / "Zeit um" at the end of a timer (1.3.0).
+  timerDone('timer_done', 'Pause vorbei und Zeit um'),
 
   /// New version on GitHub.
   updates('updates', 'Updates');
@@ -54,10 +59,12 @@ abstract interface class NotificationGateway {
     String? payload,
   });
 
-  /// Silent, ongoing countdown to [end] that disappears shortly after.
-  Future<void> showCountdown({
+  /// Ongoing timer without sound, also on the lock screen: counts down to
+  /// [at] ([countDown]) or up from [at] (1.3.0).
+  Future<void> showTimer({
     required int id,
-    required DateTime end,
+    required DateTime at,
+    required bool countDown,
     required String title,
     required String body,
   });
@@ -74,6 +81,9 @@ final class PlatformNotifications implements NotificationGateway {
   final _plugin = FlutterLocalNotificationsPlugin();
 
   static const _icon = 'ic_notification';
+
+  /// Channel of 1.2.0, replaced by [NotificationChannel.timer].
+  static const _oldRestChannel = 'rest';
 
   static Future<T?> _safe<T>(Future<T> Function() action) async {
     try {
@@ -97,6 +107,8 @@ final class PlatformNotifications implements NotificationGateway {
       ),
       onDidReceiveNotificationResponse: (r) => onTap(r.payload, r.actionId),
     );
+    // The importance of a channel cannot change; the old one goes (1.3.0).
+    await _android?.deleteNotificationChannel(channelId: _oldRestChannel);
     // The app was started by tapping a notification.
     final launch = await _plugin.getNotificationAppLaunchDetails();
     final response = launch?.notificationResponse;
@@ -119,12 +131,18 @@ final class PlatformNotifications implements NotificationGateway {
     channel.id,
     channel.label,
     icon: _icon,
-    importance: channel == NotificationChannel.rest
-        ? Importance.low
-        : Importance.high,
-    priority: channel == NotificationChannel.rest
-        ? Priority.low
-        : Priority.high,
+    importance: Importance.high,
+    priority: Priority.high,
+    // The end of a timer: visible on the lock screen, silent (the rest
+    // alarm vibrates; GymLog plays no sounds).
+    visibility: channel == NotificationChannel.timerDone
+        ? NotificationVisibility.public
+        : null,
+    playSound: channel != NotificationChannel.timerDone,
+    enableVibration: channel != NotificationChannel.timerDone,
+    category: channel == NotificationChannel.timerDone
+        ? AndroidNotificationCategory.alarm
+        : null,
     actions: [
       for (final b in buttons)
         AndroidNotificationAction(b.id, b.label, showsUserInterface: true),
@@ -179,39 +197,44 @@ final class PlatformNotifications implements NotificationGateway {
   );
 
   @override
-  Future<void> showCountdown({
+  Future<void> showTimer({
     required int id,
-    required DateTime end,
+    required DateTime at,
+    required bool countDown,
     required String title,
     required String body,
-  }) => _safe(() {
-    final remaining = end.difference(DateTime.now());
-    return _plugin.show(
+  }) => _safe(
+    () => _plugin.show(
       id: id,
       title: title,
       body: body,
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          NotificationChannel.rest.id,
-          NotificationChannel.rest.label,
+          NotificationChannel.timer.id,
+          NotificationChannel.timer.label,
           icon: _icon,
-          importance: Importance.low,
-          priority: Priority.low,
+          // "Default", not "low": Android hides silent notifications on the
+          // lock screen – the reason the rest timer did not show (1.3.0).
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+          visibility: NotificationVisibility.public,
           ongoing: true,
           onlyAlertOnce: true,
           playSound: false,
           enableVibration: false,
           showWhen: true,
-          when: end.millisecondsSinceEpoch,
+          when: at.millisecondsSinceEpoch,
           usesChronometer: true,
-          chronometerCountDown: true,
-          // Gone a little after the end (the alarm vibrates then).
-          timeoutAfter: remaining.inMilliseconds + 15000,
+          chronometerCountDown: countDown,
+          // A countdown makes room for "Pause vorbei" / "Zeit um".
+          timeoutAfter: countDown
+              ? at.difference(DateTime.now()).inMilliseconds.clamp(1, 1 << 31)
+              : null,
           category: AndroidNotificationCategory.stopwatch,
         ),
       ),
-    );
-  });
+    ),
+  );
 
   @override
   Future<void> cancel(int id) => _safe(() => _plugin.cancel(id: id));

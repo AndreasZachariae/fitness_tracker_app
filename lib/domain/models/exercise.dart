@@ -17,6 +17,7 @@ final class Exercise {
     this.stepMode = StepMode.kg,
     this.incrementLbs = defaultIncrementLbs,
     this.levelKg,
+    this.timerCountdown = false,
   });
 
   static const defaultIncrementLbs = 15.0;
@@ -38,6 +39,10 @@ final class Exercise {
   /// Kg per level ([StepMode.levels]); `null` = unknown, then sets store
   /// the level number instead of kg.
   final double? levelKg;
+
+  /// Timed exercises: the set timer counts down from the duration instead of
+  /// up (1.3.0); switched with the arrow next to the timer.
+  final bool timerCountdown;
 
   /// Overrides the default rest time; `null` = use the default.
   final int? restSec;
@@ -62,6 +67,7 @@ final class Exercise {
     StepMode? stepMode,
     double? incrementLbs,
     Object? levelKg = unset,
+    bool? timerCountdown,
   }) {
     return Exercise(
       id: id,
@@ -78,6 +84,7 @@ final class Exercise {
       stepMode: stepMode ?? this.stepMode,
       incrementLbs: incrementLbs ?? this.incrementLbs,
       levelKg: pick<double?>(levelKg, this.levelKg),
+      timerCountdown: timerCountdown ?? this.timerCountdown,
     );
   }
 
@@ -96,7 +103,8 @@ final class Exercise {
       other.createdAt == createdAt &&
       other.stepMode == stepMode &&
       other.incrementLbs == incrementLbs &&
-      other.levelKg == levelKg;
+      other.levelKg == levelKg &&
+      other.timerCountdown == timerCountdown;
 
   @override
   int get hashCode => Object.hash(
@@ -113,6 +121,7 @@ final class Exercise {
     stepMode,
     incrementLbs,
     levelKg,
+    timerCountdown,
   );
 
   @override

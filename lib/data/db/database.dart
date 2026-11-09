@@ -47,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
   final Clock? libraryClock;
 
   /// Current schema version. Changes only via migration (CLAUDE.md, rule 4).
-  static const currentSchemaVersion = 4;
+  static const currentSchemaVersion = 5;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -123,6 +123,10 @@ class AppDatabase extends _$AppDatabase {
         ]) {
           await m.addColumn(settings, column);
         }
+      },
+      // 1.3.0: countdown for the set timer of timed exercises.
+      from4To5: (m, schema) async {
+        await m.addColumn(schema.exercises, schema.exercises.timerCountdown);
       },
     ),
     beforeOpen: (details) async {

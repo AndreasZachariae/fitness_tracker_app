@@ -4,6 +4,18 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
+## [1.3.0] – unveröffentlicht
+
+### Neu
+- **Countdown für Zeitübungen:** Der Pfeil neben „Start“ schaltet zwischen Hochzählen und Countdown um. Der Countdown startet bei der eingestellten Dauer (wie bisher vom letzten Mal übernommen), vibriert bei 0 und übernimmt die Zeit. GymLog merkt sich die Einstellung pro Übung.
+- **„Pause vorbei“ und „Zeit um“** erscheinen am Ende auch als Benachrichtigung auf dem Sperrbildschirm.
+
+### Geändert
+- **Deutlich stärkere Vibration** am Ende der Pause, nach „Satz speichern“ und bei Rekorden.
+- **Timer auf dem Sperrbildschirm:** Pausen-Countdown und Zeitübungen sind jetzt wirklich auf dem Sperrbildschirm zu sehen. Der Schalter heißt „Timer auf dem Sperrbildschirm“.
+- Tippt man eine Übung an, scrollt die Liste, bis ihr Anfang oben sichtbar ist.
+- „Start“ bei einer Zeitübung beendet eine noch laufende Pause.
+
 ## [1.2.2] – 2026-11-09
 
 ### Neu

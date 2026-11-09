@@ -174,6 +174,21 @@ class $ExercisesTable extends Exercises
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _timerCountdownMeta = const VerificationMeta(
+    'timerCountdown',
+  );
+  @override
+  late final GeneratedColumn<bool> timerCountdown = GeneratedColumn<bool>(
+    'timer_countdown',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("timer_countdown" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -189,6 +204,7 @@ class $ExercisesTable extends Exercises
     stepMode,
     incrementLbs,
     levelKg,
+    timerCountdown,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -274,6 +290,15 @@ class $ExercisesTable extends Exercises
         levelKg.isAcceptableOrUnknown(data['level_kg']!, _levelKgMeta),
       );
     }
+    if (data.containsKey('timer_countdown')) {
+      context.handle(
+        _timerCountdownMeta,
+        timerCountdown.isAcceptableOrUnknown(
+          data['timer_countdown']!,
+          _timerCountdownMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -341,6 +366,10 @@ class $ExercisesTable extends Exercises
         DriftSqlType.double,
         data['${effectivePrefix}level_kg'],
       ),
+      timerCountdown: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}timer_countdown'],
+      )!,
     );
   }
 
@@ -373,6 +402,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
   final Value<StepMode> stepMode;
   final Value<double> incrementLbs;
   final Value<double?> levelKg;
+  final Value<bool> timerCountdown;
   const ExercisesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -387,6 +417,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     this.stepMode = const Value.absent(),
     this.incrementLbs = const Value.absent(),
     this.levelKg = const Value.absent(),
+    this.timerCountdown = const Value.absent(),
   });
   ExercisesCompanion.insert({
     this.id = const Value.absent(),
@@ -402,6 +433,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     this.stepMode = const Value.absent(),
     this.incrementLbs = const Value.absent(),
     this.levelKg = const Value.absent(),
+    this.timerCountdown = const Value.absent(),
   }) : name = Value(name),
        type = Value(type),
        includeInStrengthIndex = Value(includeInStrengthIndex),
@@ -420,6 +452,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     Expression<String>? stepMode,
     Expression<double>? incrementLbs,
     Expression<double>? levelKg,
+    Expression<bool>? timerCountdown,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -436,6 +469,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
       if (stepMode != null) 'step_mode': stepMode,
       if (incrementLbs != null) 'increment_lbs': incrementLbs,
       if (levelKg != null) 'level_kg': levelKg,
+      if (timerCountdown != null) 'timer_countdown': timerCountdown,
     });
   }
 
@@ -453,6 +487,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     Value<StepMode>? stepMode,
     Value<double>? incrementLbs,
     Value<double?>? levelKg,
+    Value<bool>? timerCountdown,
   }) {
     return ExercisesCompanion(
       id: id ?? this.id,
@@ -469,6 +504,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
       stepMode: stepMode ?? this.stepMode,
       incrementLbs: incrementLbs ?? this.incrementLbs,
       levelKg: levelKg ?? this.levelKg,
+      timerCountdown: timerCountdown ?? this.timerCountdown,
     );
   }
 
@@ -522,6 +558,9 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     if (levelKg.present) {
       map['level_kg'] = Variable<double>(levelKg.value);
     }
+    if (timerCountdown.present) {
+      map['timer_countdown'] = Variable<bool>(timerCountdown.value);
+    }
     return map;
   }
 
@@ -540,7 +579,8 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
           ..write('createdAt: $createdAt, ')
           ..write('stepMode: $stepMode, ')
           ..write('incrementLbs: $incrementLbs, ')
-          ..write('levelKg: $levelKg')
+          ..write('levelKg: $levelKg, ')
+          ..write('timerCountdown: $timerCountdown')
           ..write(')'))
         .toString();
   }
@@ -565,6 +605,7 @@ class _$ExerciseInsertable implements Insertable<Exercise> {
       stepMode: Value(_object.stepMode),
       incrementLbs: Value(_object.incrementLbs),
       levelKg: Value(_object.levelKg),
+      timerCountdown: Value(_object.timerCountdown),
     ).toColumns(false);
   }
 }
@@ -4702,6 +4743,7 @@ typedef $$ExercisesTableCreateCompanionBuilder = ExercisesCompanion Function({
   Value<StepMode> stepMode,
   Value<double> incrementLbs,
   Value<double?> levelKg,
+  Value<bool> timerCountdown,
 });
 typedef $$ExercisesTableUpdateCompanionBuilder = ExercisesCompanion Function({
   Value<int> id,
@@ -4717,6 +4759,7 @@ typedef $$ExercisesTableUpdateCompanionBuilder = ExercisesCompanion Function({
   Value<StepMode> stepMode,
   Value<double> incrementLbs,
   Value<double?> levelKg,
+  Value<bool> timerCountdown,
 });
 
 final class $$ExercisesTableReferences
@@ -4836,6 +4879,11 @@ class $$ExercisesTableFilterComposer
 
   ColumnFilters<double> get levelKg => $composableBuilder(
     column: $table.levelKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get timerCountdown => $composableBuilder(
+    column: $table.timerCountdown,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4963,6 +5011,11 @@ class $$ExercisesTableOrderingComposer
     column: $table.levelKg,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get timerCountdown => $composableBuilder(
+    column: $table.timerCountdown,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ExercisesTableAnnotationComposer
@@ -5018,6 +5071,11 @@ class $$ExercisesTableAnnotationComposer
 
   GeneratedColumn<double> get levelKg =>
       $composableBuilder(column: $table.levelKg, builder: (column) => column);
+
+  GeneratedColumn<bool> get timerCountdown => $composableBuilder(
+    column: $table.timerCountdown,
+    builder: (column) => column,
+  );
 
   Expression<T> planExercisesRefs<T extends Object>(
     Expression<T> Function($$PlanExercisesTableAnnotationComposer a) f,
@@ -5114,6 +5172,7 @@ class $$ExercisesTableTableManager
                 Value<StepMode> stepMode = const Value.absent(),
                 Value<double> incrementLbs = const Value.absent(),
                 Value<double?> levelKg = const Value.absent(),
+                Value<bool> timerCountdown = const Value.absent(),
               }) => ExercisesCompanion(
                 id: id,
                 name: name,
@@ -5128,6 +5187,7 @@ class $$ExercisesTableTableManager
                 stepMode: stepMode,
                 incrementLbs: incrementLbs,
                 levelKg: levelKg,
+                timerCountdown: timerCountdown,
               ),
           createCompanionCallback:
               ({
@@ -5144,6 +5204,7 @@ class $$ExercisesTableTableManager
                 Value<StepMode> stepMode = const Value.absent(),
                 Value<double> incrementLbs = const Value.absent(),
                 Value<double?> levelKg = const Value.absent(),
+                Value<bool> timerCountdown = const Value.absent(),
               }) => ExercisesCompanion.insert(
                 id: id,
                 name: name,
@@ -5158,6 +5219,7 @@ class $$ExercisesTableTableManager
                 stepMode: stepMode,
                 incrementLbs: incrementLbs,
                 levelKg: levelKg,
+                timerCountdown: timerCountdown,
               ),
           withReferenceMapper: (p0) => p0
               .map(

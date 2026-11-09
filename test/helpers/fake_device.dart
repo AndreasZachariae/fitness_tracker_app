@@ -105,17 +105,18 @@ final class FakeNotifications implements NotificationGateway {
   ));
 
   @override
-  Future<void> showCountdown({
+  Future<void> showTimer({
     required int id,
-    required DateTime end,
+    required DateTime at,
+    required bool countDown,
     required String title,
     required String body,
   }) async => shown.add((
     id: id,
-    at: end,
+    at: at,
     title: title,
     body: body,
-    payload: null,
+    payload: countDown ? 'countDown' : 'countUp',
     buttons: const [],
   ));
 

@@ -253,6 +253,8 @@ abstract final class S {
   static const addWeight = 'Gewicht hinzufügen';
   static const stopwatchStart = 'Start';
   static const stopwatchStop = 'Stopp';
+  static const timerCountsUp = 'Zählt hoch – antippen für Countdown';
+  static const timerCountsDown = 'Countdown – antippen zum Hochzählen';
   static const enterWeight = 'Gewicht in kg';
   static const enterReps = 'Wiederholungen';
   static const enterDuration = 'Dauer (Sekunden oder m:ss)';
@@ -697,6 +699,12 @@ abstract final class S {
   static const notifyUpdateBody = 'Tippe, um die Neuerungen anzusehen.';
   static const notifyRestTitle = 'Pause';
   static const notifyRestBody = 'Danach geht es mit dem nächsten Satz weiter.';
+  static const notifyRestDoneTitle = 'Pause vorbei';
+  static const notifyRestDoneBody = 'Weiter mit dem nächsten Satz.';
+  static const notifySetTimerBody = 'Satz läuft';
+  static const notifySetTimerDoneTitle = 'Zeit um';
+  static String notifySetTimerDoneBody(String exercise) =>
+      '$exercise – jetzt „Satz speichern“.';
 
   // Settings → Benachrichtigungen
   static const settingNotifyEvening = 'Abend vorher';
@@ -706,9 +714,10 @@ abstract final class S {
   static String settingNotifyBeforeSubtitle(int minutes) =>
       '${_inTime(minutes)} vorher, mit Motivationsspruch';
   static const settingBeforeMinutes = 'Wie lange vorher';
-  static const settingNotifyRest = 'Pause auf dem Sperrbildschirm';
+  static const settingNotifyRest = 'Timer auf dem Sperrbildschirm';
   static const settingNotifyRestSubtitle =
-      'Countdown, wenn GymLog im Hintergrund ist';
+      'Pause und Zeitübungen, wenn GymLog im Hintergrund ist, mit Hinweis am '
+      'Ende';
   static const settingNotifyOpenSession = 'Training noch offen';
   static const settingNotifyOpenSessionSubtitle =
       '3 Stunden nach dem letzten Satz';

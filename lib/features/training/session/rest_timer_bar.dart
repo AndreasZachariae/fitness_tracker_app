@@ -7,7 +7,6 @@ import '../../../core/clock.dart';
 import '../../../core/device.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/l10n/strings_de.dart';
-import '../../../core/notifications.dart';
 import '../../../core/theme/gym_colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../data/providers.dart';
@@ -15,6 +14,7 @@ import '../../../domain/models/models.dart';
 import '../../../domain/reminders.dart';
 import '../../../domain/rest_timer.dart';
 import '../../../widgets/ticker.dart';
+import 'background_timer.dart';
 
 /// In-memory changes of the rest timer: ±15 s per set, skipped sets and
 /// sets whose end was already signalled.
@@ -64,6 +64,11 @@ class RestTimerController extends Notifier<RestAdjustments> {
   );
 }
 
+const TimerNotificationIds restNotificationIds = (
+  timer: ReminderIds.rest,
+  done: ReminderIds.restDone,
+);
+
 final restTimerProvider =
     NotifierProvider<RestTimerController, RestAdjustments>(
       RestTimerController.new,
@@ -71,7 +76,8 @@ final restTimerProvider =
 
 /// "Pause 1:12" above the navigation bar (SPEC §6.2.1). In the foreground
 /// the app vibrates at the end itself; when it goes to the background
-/// during a rest, a [RestAlarm] takes over (1.0.1). No notifications.
+/// during a rest, Android takes over: [RestAlarm] vibrates (1.0.1), the
+/// countdown and "Pause vorbei" show on the lock screen (1.2.0, 1.3.0).
 class RestTimerBar extends ConsumerStatefulWidget {
   const RestTimerBar({super.key});
 
@@ -112,35 +118,32 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
         if (running == null ||
             _alarm == running ||
             settings == null ||
-            !settings.vibrationEnabled ||
             !settings.restTimerEnabled ||
             adjustments.skipped.contains(running.setId) ||
             adjustments.signalled.contains(running.setId)) {
           return;
         }
         _alarm = running;
-        unawaited(ref.read(restAlarmProvider).schedule(running.end));
-        // Countdown on the lock screen (1.2.0).
-        if (settings.notifyRest) {
-          unawaited(
-            ref
-                .read(notificationGatewayProvider)
-                .showCountdown(
-                  id: ReminderIds.rest,
-                  end: running.end,
-                  title: S.notifyRestTitle,
-                  body: S.notifyRestBody,
-                ),
-          );
-        }
+        unawaited(
+          handTimerToAndroid(
+            ref,
+            settings: settings,
+            ids: restNotificationIds,
+            texts: const (
+              title: S.notifyRestTitle,
+              body: S.notifyRestBody,
+              doneTitle: S.notifyRestDoneTitle,
+              doneBody: S.notifyRestDoneBody,
+            ),
+            at: running.end,
+            countDown: true,
+          ),
+        );
       case AppLifecycleState.resumed:
         final alarm = _alarm;
         if (alarm == null) return;
         _alarm = null;
-        unawaited(ref.read(restAlarmProvider).cancel());
-        unawaited(
-          ref.read(notificationGatewayProvider).cancel(ReminderIds.rest),
-        );
+        unawaited(takeTimerBack(ref, restNotificationIds));
         // The alarm has vibrated already; do not vibrate a second time.
         if (!ref.read(clockProvider).now().isBefore(alarm.end)) {
           ref.read(restTimerProvider.notifier).markSignalled(alarm.setId);

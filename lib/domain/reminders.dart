@@ -77,6 +77,13 @@ abstract final class ReminderIds {
   static const update = 400000001;
   static const rest = 400000002;
 
+  /// Set timer of a timed exercise (1.3.0).
+  static const setTimer = 400000003;
+
+  /// "Pause vorbei" / "Zeit um", scheduled for the end (1.3.0).
+  static const restDone = 400000004;
+  static const setTimerDone = 400000005;
+
   static int evening(LocalDate day, int planId) =>
       _evening + _dayKey(day) * 1000 + planId % 1000;
 

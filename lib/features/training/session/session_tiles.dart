@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/format/exercise_format.dart';
@@ -23,6 +25,12 @@ abstract interface class SessionTileActions {
   Future<void> finishExercise(SessionExerciseDetail detail);
   Future<void> editSet(SessionExerciseDetail detail, SetEntry set);
   Future<void> editNote(SessionExerciseDetail detail);
+
+  /// The timer of a timed exercise counts down (1.3.0), kept per exercise.
+  Future<void> setTimerCountdown(SessionExerciseDetail detail, bool countDown);
+
+  /// The timer of a set started: a running rest is over.
+  void timerStarted(SessionExerciseDetail detail);
 }
 
 /// Short red highlight of a tile that just set a record (SPEC §7.7).
@@ -164,8 +172,14 @@ class ActiveExerciseCard extends StatefulWidget {
     required this.step,
     this.records = const {},
     this.highlight = false,
+    this.scrollIntoView = false,
+    this.onScrolledIntoView,
     super.key,
   });
+
+  /// Just became active: scroll so that its start is visible (1.3.0).
+  final bool scrollIntoView;
+  final VoidCallback? onScrolledIntoView;
 
   final SessionExerciseDetail detail;
   final int index;
@@ -225,8 +239,30 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.scrollIntoView) _scrollIntoView();
+  }
+
+  void _scrollIntoView() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onScrolledIntoView?.call();
+      // Its top at the top of the list: the header and the input show.
+      unawaited(
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        ),
+      );
+    });
+  }
+
+  @override
   void didUpdateWidget(ActiveExerciseCard old) {
     super.didUpdateWidget(old);
+    if (widget.scrollIntoView && !old.scrollIntoView) _scrollIntoView();
     final setsChanged = old.detail.sets.length != widget.detail.sets.length;
     final otherExercise =
         old.detail.sessionExercise.id != widget.detail.sessionExercise.id;
@@ -429,6 +465,13 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                       step: widget.step,
                       values: _values,
                       onChanged: (v) => setState(() => _values = v),
+                      countDown: d.exercise.timerCountdown,
+                      exerciseName: d.exercise.name,
+                      onToggleCountdown: () => widget.actions.setTimerCountdown(
+                        d,
+                        !d.exercise.timerCountdown,
+                      ),
+                      onTimerStarted: () => widget.actions.timerStarted(d),
                     ),
                     const SizedBox(height: 16),
                     FilledButton.icon(

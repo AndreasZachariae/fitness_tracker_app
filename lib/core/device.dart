@@ -34,8 +34,17 @@ abstract interface class ScreenAwake {
 final class PlatformFeedback implements DeviceFeedback {
   const PlatformFeedback();
 
-  /// Wait, buzz, pause, buzz, pause, buzz (ms).
-  static const restOverPattern = [0, 150, 120, 150, 120, 150];
+  /// Wait, buzz, pause, buzz, pause, long buzz (ms); 1.3.0: much stronger
+  /// than before (3 × 150 ms), at full strength. Same as RestAlarm.kt.
+  static const restOverPattern = [0, 500, 250, 500, 250, 800];
+  static const restOverIntensities = [0, 255, 0, 255, 0, 255];
+
+  /// A short, clearly noticeable knock after "Satz speichern" (1.3.0).
+  static const setSavedMs = 90;
+
+  /// Two knocks for a record (1.3.0).
+  static const recordPattern = [0, 150, 100, 350];
+  static const recordIntensities = [0, 255, 0, 255];
 
   static Future<void> _safe(Future<void> Function() action) async {
     try {
@@ -45,18 +54,42 @@ final class PlatformFeedback implements DeviceFeedback {
     }
   }
 
-  @override
-  Future<void> setSaved() => _safe(HapticFeedback.lightImpact);
-
-  @override
-  Future<void> record() => _safe(HapticFeedback.mediumImpact);
-
-  @override
-  Future<void> restOver() => _safe(() async {
+  /// Vibrates with the motor at full strength; falls back to the system
+  /// haptics where there is no vibrator.
+  static Future<void> _buzz(
+    Future<void> Function() vibrate,
+    Future<void> Function() fallback,
+  ) => _safe(() async {
     if (await Vibration.hasVibrator()) {
-      await Vibration.vibrate(pattern: restOverPattern);
+      await vibrate();
+    } else {
+      await fallback();
     }
   });
+
+  @override
+  Future<void> setSaved() => _buzz(
+    () => Vibration.vibrate(duration: setSavedMs, amplitude: 255),
+    HapticFeedback.heavyImpact,
+  );
+
+  @override
+  Future<void> record() => _buzz(
+    () => Vibration.vibrate(
+      pattern: recordPattern,
+      intensities: recordIntensities,
+    ),
+    HapticFeedback.heavyImpact,
+  );
+
+  @override
+  Future<void> restOver() => _buzz(
+    () => Vibration.vibrate(
+      pattern: restOverPattern,
+      intensities: restOverIntensities,
+    ),
+    HapticFeedback.heavyImpact,
+  );
 }
 
 final class PlatformRestAlarm implements RestAlarm {

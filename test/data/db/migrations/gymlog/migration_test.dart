@@ -9,6 +9,7 @@ import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v4.dart' as v4;
+import 'generated/schema_v5.dart' as v5;
 
 /// Migrations must keep every user data row (CLAUDE.md, rule 4).
 void main() {
@@ -492,6 +493,71 @@ void main() {
         expect(s.bookingUrl, contains('optioffice.eu'));
         expect((s.lastUpdateCheckAt, s.latestVersion), (null, null));
         expect(s.notificationsAsked, 0);
+      },
+    );
+  });
+
+  test('migration from v4 to v5: exercises keep everything, the set timer '
+      'counts up (1.3.0)', () async {
+    const t = '2026-11-09T17:00:00.000Z';
+    const oldExercises = [
+      v4.ExercisesData(
+        id: 1,
+        name: 'Plank',
+        type: 'timed',
+        category: 'core',
+        incrementKg: 2.5,
+        restSec: 45,
+        includeInStrengthIndex: 0,
+        notes: 'Ellbogen unter den Schultern',
+        archived: 0,
+        createdAt: t,
+        stepMode: 'kg',
+        incrementLbs: 15,
+      ),
+      v4.ExercisesData(
+        id: 2,
+        name: 'Beinpresse',
+        type: 'weight_reps',
+        incrementKg: 5,
+        includeInStrengthIndex: 1,
+        notes: '',
+        archived: 1,
+        createdAt: t,
+        stepMode: 'levels',
+        incrementLbs: 15,
+        levelKg: 4.5,
+      ),
+    ];
+    await verifier.testWithDataIntegrity(
+      oldVersion: 4,
+      newVersion: 5,
+      createOld: v4.DatabaseAtV4.new,
+      createNew: v5.DatabaseAtV5.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insertAll(oldDb.exercises, oldExercises);
+      },
+      validateItems: (newDb) async {
+        expect(await newDb.select(newDb.exercises).get(), [
+          for (final e in oldExercises)
+            v5.ExercisesData(
+              id: e.id,
+              name: e.name,
+              type: e.type,
+              category: e.category,
+              incrementKg: e.incrementKg,
+              restSec: e.restSec,
+              includeInStrengthIndex: e.includeInStrengthIndex,
+              notes: e.notes,
+              archived: e.archived,
+              createdAt: e.createdAt,
+              stepMode: e.stepMode,
+              incrementLbs: e.incrementLbs,
+              levelKg: e.levelKg,
+              timerCountdown: 0,
+            ),
+        ]);
       },
     );
   });

@@ -64,6 +64,9 @@ class Exercises extends Table {
       .check(incrementLbs.isBiggerThanValue(0))();
   RealColumn get levelKg =>
       real().nullable().check(levelKg.isBiggerThanValue(0))();
+  // Schema 5 (1.3.0): the set timer of timed exercises counts down.
+  BoolColumn get timerCountdown =>
+      boolean().withDefault(const Constant(false))();
 }
 
 @UseRowClass(Plan, generateInsertable: true)

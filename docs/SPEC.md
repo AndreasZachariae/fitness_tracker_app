@@ -195,7 +195,10 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
       - `weight_reps`: Stepper Gewicht `[−] 62,5 kg [+]` (Schritt nach den Gewichtsschritten der Übung; bei Stufen „Stufe · 45 kg“ und die Stufennummer), Stepper Wdh `[−] 10 [+]`.
       - `bodyweight`: Stepper Zusatzgewicht (Anzeige „+0 kg“, „+10 kg“, „−20 kg“), Stepper Wdh.
       - `timed`: großer Stoppuhr-Button „Start“ → läuft sichtbar → „Stopp“ übernimmt die Dauer; daneben Stepper Dauer (±5 s, `m:ss`);
-        Zusatzgewicht eingeklappt hinter „Gewicht hinzufügen“.
+        Zusatzgewicht eingeklappt hinter „Gewicht hinzufügen“. Ab 1.3.0 schaltet ein Pfeil rechts neben dem Button zwischen
+        Hochzählen (↑) und Countdown (↓) um, gemerkt pro Übung (`exercises.timerCountdown`, nicht während der Timer läuft).
+        Der Countdown startet beim Wert des Dauer-Steppers (ohne Wert 60 s), vibriert bei 0 wie das Pausenende und übernimmt die
+        volle Dauer; „Stopp“ vorher übernimmt die bis dahin gelaufene Zeit. „Start“ beendet eine laufende Pause.
       - Tap auf eine Zahl öffnet die Zahlentastatur zur direkten Eingabe.
     - Optionaler Vorschlags-Chip (§7.2) über den Steppern: „Vorschlag: +2,5 kg“ – Tap übernimmt, „×“ verwirft.
     - Primärbutton **„Satz speichern“** (volle Breite, mind. 56 dp). Darunter klein: „+1 Satz“, „Überspringen“,
@@ -207,7 +210,8 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
   Ab 1.0.1 ohne Snackbar (Sätze lassen sich jederzeit bearbeiten oder löschen).
   Ist `targetSets` erreicht → Status `done`, Kachel klappt zu. Danach **keine** automatische Aktivierung der nächsten Übung
   (außer Einstellung `autoActivateNext`); stattdessen wird die nächste offene Kachel dezent markiert.
-- Tap auf eine andere offene Übung macht sie aktiv; die bisher aktive wird `pending` und behält ihre Sätze.
+- Tap auf eine andere offene Übung macht sie aktiv; die bisher aktive wird `pending` und behält ihre Sätze. Ab 1.3.0 scrollt
+  die Liste dann (wie bei jeder neu aktiven Übung) so, dass der Anfang der aufgeklappten Übung oben steht.
 - **Reihenfolge** während der Session: nur `pending`/`active` sind verschiebbar; `done`/`skipped` bleiben an ihrer Stelle.
 - **„+ Übung hinzufügen“** unter der Liste fügt nur der Session hinzu (gleiches Bottom Sheet wie 6.1).
 - **Display bleibt an**, solange eine Session aktiv ist und `keepScreenOn` gesetzt ist.
@@ -221,9 +225,13 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
 - Leiste am unteren Rand über der NavigationBar: „Pause 1:12“, Fortschrittsbalken, Buttons „−15 s“, „+15 s“, „Überspringen“.
 - Dauer: `restSec` der Session-Übung → der Übung → `defaultRestSec`. Ende = `completedAt` des letzten Satzes + Dauer
   (+/− Anpassungen im State). Dadurch nach App-Neustart korrekt rekonstruierbar.
-- Bei 0: Vibrationsmuster (3 × kurz, wenn `vibrationEnabled`), Leiste wechselt für 10 s auf „Pause vorbei“.
+- Bei 0: Vibrationsmuster (wenn `vibrationEnabled`; ab 1.3.0 deutlich stärker: 500 – 500 – 800 ms bei voller Stärke statt
+  3 × 150 ms), Leiste wechselt für 10 s auf „Pause vorbei“.
 - Ab 1.0.1 auch im Hintergrund und bei gesperrtem Display: Geht die App während einer Pause in den Hintergrund, vibriert
-  ein exakter Android-Alarm zum Pausenende (gleiches Muster). Keine Benachrichtigungen in v1.
+  ein exakter Android-Alarm zum Pausenende (gleiches Muster). Ab 1.2.0 mit Countdown-Benachrichtigung (`notifyRest`), ab
+  1.3.0 auf einem Kanal, den Android auch auf dem Sperrbildschirm zeigt, und am Ende die Benachrichtigung „Pause vorbei“
+  (lautlos, die Vibration kommt vom Alarm). Dasselbe gilt für den Timer einer Zeitübung: Countdown mit Alarm und „Zeit um“,
+  Hochzählen nur als laufende Zeit. Zurück in der App verschwinden die Benachrichtigungen.
 - Nach „Beenden“ oder „Verwerfen“ endet die laufende Pause (keine Leiste, keine Vibration).
 
 ### 6.3 Session beenden

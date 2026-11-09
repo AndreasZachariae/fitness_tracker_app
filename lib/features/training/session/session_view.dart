@@ -52,6 +52,12 @@ class _SessionViewState extends ConsumerState<SessionView>
     if (_heldSuperset != id) setState(() => _heldSuperset = id);
   }
 
+  /// The active exercise of the last build; when it changes (tapped or the
+  /// next one after the last set), the new one scrolls into view (1.3.0).
+  int? _lastActiveId;
+  bool _activeKnown = false;
+  int? _scrollToId;
+
   /// Session exercise that just set a record (red flash, SPEC §7.7).
   int? _flashId;
   Timer? _flashTimer;
@@ -102,6 +108,27 @@ class _SessionViewState extends ConsumerState<SessionView>
             .read(sessionRepositoryProvider)
             .activate(detail.sessionExercise.id);
       });
+
+  @override
+  Future<void> setTimerCountdown(
+    SessionExerciseDetail detail,
+    bool countDown,
+  ) => _guard(
+    () => ref
+        .read(exerciseRepositoryProvider)
+        .setTimerCountdown(detail.exercise.id, countDown),
+  );
+
+  @override
+  void timerStarted(SessionExerciseDetail detail) {
+    // The next set has begun: no rest bar and no rest vibration any more.
+    final details =
+        ref.read(sessionDetailsProvider(_session.id)).value ?? const [];
+    ref.read(restTimerProvider.notifier).skipAll([
+      for (final d in details)
+        for (final s in d.sets) s.id,
+    ]);
+  }
 
   @override
   Future<void> addTargetSet(SessionExerciseDetail detail) => _guard(
@@ -363,6 +390,17 @@ class _SessionViewState extends ConsumerState<SessionView>
     final hasActive = exercises.any(
       (e) => e.status == SessionExerciseStatus.active,
     );
+    if (loaded != null) {
+      final activeId = exercises
+          .where((e) => e.status == SessionExerciseStatus.active)
+          .firstOrNull
+          ?.id;
+      if (_activeKnown && activeId != _lastActiveId && activeId != null) {
+        _scrollToId = activeId;
+      }
+      _lastActiveId = activeId;
+      _activeKnown = true;
+    }
     int? nextId;
     if (!hasActive) {
       final completed = exercises.where((e) => e.completedAt != null).toList()
@@ -446,6 +484,8 @@ class _SessionViewState extends ConsumerState<SessionView>
         step: _stepOf(d.exercise),
         records: records,
         highlight: _flashId == d.sessionExercise.id,
+        scrollIntoView: _scrollToId == d.sessionExercise.id,
+        onScrolledIntoView: () => _scrollToId = null,
       ),
       SessionExerciseStatus.pending => PendingExerciseTile(
         key: key,

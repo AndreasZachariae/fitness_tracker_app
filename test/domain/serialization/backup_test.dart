@@ -27,7 +27,7 @@ void main() {
   test('header fields (SPEC §8.2)', () {
     final json = jsonDecode(encodeBackup(backup)) as Map<String, Object?>;
     expect(json['format'], 'gymlog-backup');
-    expect(json['formatVersion'], 4);
+    expect(json['formatVersion'], 5);
     expect(json['schemaVersion'], 1);
     expect(json['appVersion'], '1.0.0+12');
     expect(json['exportedAt'], isA<String>());
@@ -165,6 +165,56 @@ void main() {
     expect(decoded.settings.bookingUrl, AppSettings.defaultBookingUrl);
   });
 
+  test('countdown of the set timer: round trip; format 4 counts up '
+      '(1.3.0)', () {
+    final timedId = demo.exercises
+        .firstWhere((e) => e.type == ExerciseType.timed)
+        .id;
+    final withCountdown = BackupData(
+      dataset: Dataset(
+        exercises: [
+          for (final e in demo.exercises)
+            e.copyWith(timerCountdown: e.id == timedId),
+        ],
+        plans: demo.plans,
+        planExercises: demo.planExercises,
+        planGroups: demo.planGroups,
+        planSchedules: demo.planSchedules,
+        sessions: demo.sessions,
+        sessionExercises: demo.sessionExercises,
+        sessionSupersets: demo.sessionSupersets,
+        sets: demo.sets,
+        bodyWeights: demo.bodyWeights,
+      ),
+      settings: settings,
+      schemaVersion: 5,
+      appVersion: '1.3.0+18',
+      exportedAt: testNow,
+    );
+    final text = encodeBackup(withCountdown);
+    final decoded = decodeBackup(text);
+    expect(
+      [
+        for (final e in decoded.dataset.exercises)
+          if (e.timerCountdown) e.id,
+      ],
+      [timedId],
+    );
+
+    final j = jsonDecode(text) as Map<String, Object?>;
+    j['formatVersion'] = 4;
+    for (final e
+        in (j['data']! as Map<String, Object?>)['exercises']!
+            as List<Object?>) {
+      (e! as Map<String, Object?>).remove('timerCountdown');
+    }
+    expect(
+      decodeBackup(jsonEncode(j)).dataset.exercises
+          .any((e) => e.timerCountdown),
+      isFalse,
+    );
+  });
+
   test('training days: round trip and validation (1.2.0)', () {
     final planId = demo.plans.first.id;
     final withDays = BackupData(
@@ -247,7 +297,7 @@ void main() {
       (
         'newer version',
         () {
-          final j = json()..['formatVersion'] = 5;
+          final j = json()..['formatVersion'] = 6;
           return jsonEncode(j);
         },
         BackupError.newerVersion,

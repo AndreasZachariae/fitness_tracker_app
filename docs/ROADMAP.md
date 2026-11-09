@@ -60,9 +60,16 @@ STATUS: FINISHED
     - Die DEV-Release enthält die Testliste fürs Handy (aus PROGRESS.md) und die Änderungen.
     - Beide Apps (echte und DEV) suchen bei jedem Öffnen nach einem Update. Ist eines da: Benachrichtigung und Info in der App mit mehreren Optionen – Link zu GitHub (herunterladen, Changelog lesen) und ein Knopf, der direkt herunterlädt und installiert (neues Recht nötig).
     - Den Changelog bzw. die Testliste kann man in der App aufklappen.
-Version 1.3.0 (Automatische Buchung)
+Version 1.3.0 (Verbesserungen während dem Training)
+STATUS: FINISHED
+    - Bei Zeitübungen sollte man pro Satz einstellen können ob der zähler hochzählt oder wie ein Countdown runterzählt. Evtl einfach durch einen kleinen Pfeil rechts daneben entweder hoch oder runter umswiztchen. Und damit dann auch eine default Zeit pro Hochzahlen runterzählen oder pro Satz machen die per default angenommen wird
+    - Vibrationen deutlich stärker 
+    - Timer wird nicht auf dem Sperrbildschirm angezeigt
+    - Benachrichtigung auf Sperrbildschirm wenn Pausentimer abgelaufen ist
+    - Wenn ich übung abtippen sollte die ganze übung sichtbar aufklappen sein bzw nach oben scrollen damit der Anfang sichtbar ist
+Version 1.X.0 (Automatische Buchung)
 STATUS: PLANNED
     - Nutze die öffentliche website um eine Buchung durchzuführen.
     - In den einstellungen unter der Buchungswebsite ein Button zum hinterlegen der Buchungsdaten. Dort muss man Email, Anrede, Vornamen, Nachnamen Mobilnummer hinterlegen.
-Version 1.4.0 (Robot Tamagochi)
+Version 1.X.0 (Robot Tamagochi)
 STATUS: PLANNED

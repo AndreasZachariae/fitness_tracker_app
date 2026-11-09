@@ -87,6 +87,10 @@ class SetInput extends StatefulWidget {
     required this.values,
     required this.onChanged,
     this.showStopwatch = true,
+    this.countDown = false,
+    this.onToggleCountdown,
+    this.onTimerStarted,
+    this.exerciseName = '',
     super.key,
   });
 
@@ -99,6 +103,18 @@ class SetInput extends StatefulWidget {
 
   /// `false` when editing a stored set.
   final bool showStopwatch;
+
+  /// Timed exercises: the timer counts down from the duration (1.3.0).
+  final bool countDown;
+
+  /// The arrow next to the timer; null hides it.
+  final VoidCallback? onToggleCountdown;
+
+  /// "Start" of the timer (ends a running rest).
+  final VoidCallback? onTimerStarted;
+
+  /// For the timer on the lock screen.
+  final String exerciseName;
 
   @override
   State<SetInput> createState() => _SetInputState();
@@ -233,6 +249,17 @@ class _SetInputState extends State<SetInput> {
         children: [
           if (widget.showStopwatch) ...[
             StopwatchButton(
+              countDown: widget.countDown,
+              targetSec: _v.durationSec,
+              label: widget.exerciseName,
+              onToggleDirection: widget.onToggleCountdown,
+              onStarted: () {
+                // The countdown needs a duration; shown in the stepper too.
+                if (widget.countDown && _v.durationSec == null) {
+                  _emit(_v.copyWith(durationSec: defaultCountdownSec));
+                }
+                widget.onTimerStarted?.call();
+              },
               onStopped: (s) => _emit(_v.copyWith(durationSec: s)),
             ),
             gap,

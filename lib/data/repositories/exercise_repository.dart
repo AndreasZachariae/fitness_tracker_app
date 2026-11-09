@@ -116,6 +116,16 @@ class ExerciseRepository {
     );
   });
 
+  /// Whether the set timer of this timed exercise counts down (1.3.0).
+  Future<void> setTimerCountdown(int id, bool countdown) =>
+      _db.transaction(() async {
+        final existing = await _db.exercisesDao.findById(id);
+        if (existing == null) throw NotFoundException('exercise', id);
+        await _db.exercisesDao.updateExercise(
+          existing.copyWith(timerCountdown: countdown),
+        );
+      });
+
   /// Removes the exercise from all plans; deletes it if it was never
   /// trained, otherwise archives it so the history stays intact.
   Future<ExerciseRemoval> deleteOrArchive(int id) => _db.transaction(() async {

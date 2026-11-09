@@ -181,8 +181,38 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         Zurückkehren höchstens jede Minute, Anfragen mit ETag; blauer Punkt an Zahnrad und „Über“
   - [x] Auf Wunsch: `release.sh` legt die Release mit Text und APK selbst an (gleicher Token, gemeinsamer Teil
         `scripts/lib/github.sh`); der Browser nur noch als Notweg
+- [x] 1.3.0 Verbesserungen während des Trainings (`docs/ROADMAP.md`, 1.3.0+18)
+  - [x] Zeitübungen: Pfeil neben dem Timer schaltet Hochzählen/Countdown, pro Übung gemerkt (Schema 5, additiv:
+        `exercises.timer_countdown`, Backup-Format 5); Countdown startet beim Wert des Dauer-Steppers (vorbefüllt wie
+        bisher: letzter Satz, letztes Training, Planziel; sonst 60 s), vibriert am Ende und übernimmt die Zeit
+  - [x] Vibrationen deutlich stärker (längere Impulse, volle Stärke), auch die Hintergrund-Vibration
+  - [x] Sperrbildschirm: Pausen- und Satz-Timer als Benachrichtigung, die dort wirklich erscheint (neuer Kanal, nicht
+        „lautlos“, öffentlich sichtbar); am Ende „Pause vorbei“ bzw. „Zeit um“ als Benachrichtigung
+  - [x] Angetippte (oder automatisch nächste) Übung scrollt so, dass ihr Anfang sichtbar ist
+  - [x] Tests, CHANGELOG, Testliste
 
 ## Annahmen
+- **1.3.0 Countdown für Zeitübungen:** Die Richtung (Pfeil ↑ Hochzählen / ↓ Countdown) gilt pro Übung und wird gemerkt
+  (Schema 5, additiv: `exercises.timer_countdown`, Standard Hochzählen; Backup-Format 5, ältere Backups → Hochzählen); so
+  ist sie für jeden Satz umschaltbar und beim nächsten Training schon richtig eingestellt. Während der Timer läuft, ist
+  der Pfeil gesperrt. Die „Standardzeit“ des Countdowns ist der Wert des Dauer-Steppers, also wie bisher vorbefüllt
+  (letzter Satz, sonst letztes Training, sonst Planziel); ohne Wert 60 s. Bei 0 stoppt er (keine Überzeit), vibriert wie
+  das Pausenende und übernimmt die volle Dauer; „Stopp“ vorher übernimmt die gelaufene Zeit. Gespeichert wird weiter erst
+  mit „Satz speichern“. „Start“ beendet eine noch laufende Pause (sonst kämen zwei Alarme in die Quere).
+- **1.3.0 Vibration:** Pausenende/Countdown-Ende 500 – 250 – 500 – 250 – 800 ms bei voller Stärke (vorher 3 × 150 ms),
+  im Vordergrund und über den Hintergrund-Alarm gleich. „Satz speichern“ 90 ms und Rekord zwei Stöße, jeweils mit dem
+  Vibrationsmotor bei voller Stärke statt der Systemhaptik (die hängt von der Haptik-Einstellung des Handys ab und war
+  kaum spürbar).
+- **1.3.0 Sperrbildschirm:** Ursache, dass der Pausen-Countdown dort fehlte: Der Kanal „Pause“ (1.2.0) war „niedrig“, also
+  lautlos, und Android blendet lautlose Benachrichtigungen auf dem Sperrbildschirm standardmäßig aus. Die Wichtigkeit
+  eines Kanals lässt sich nicht nachträglich ändern; daher neuer Kanal „Pause und Zeit“ (Standard-Wichtigkeit, ohne Ton
+  und Vibration, öffentlich sichtbar), der alte wird beim Start gelöscht. Am Ende eines Countdowns kommt auf dem Kanal
+  „Pause vorbei und Zeit um“ (hoch, öffentlich, lautlos – vibriert wird über den Alarm) „Pause vorbei“ bzw. „Zeit um“.
+  Beides steuert der bisherige Schalter, jetzt „Timer auf dem Sperrbildschirm“; die Benachrichtigungen kommen auch bei
+  ausgeschalteter Vibration. Zurück in der App werden sie entfernt.
+- **1.3.0 Scrollen:** Immer wenn während des Trainings eine andere Übung aktiv wird (angetippt, „Wieder öffnen“ oder
+  automatisch die nächste), scrollt die Liste ihren Anfang nach oben; beim Öffnen des Trainings nicht. Die letzten
+  Übungen der Liste können nicht weiter als bis zum Listenende scrollen, sind dann aber ganz sichtbar.
 - **1.2.2 Versionsnummer:** „DEV-App und Updates über GitHub“ als 1.2.2, damit die geplanten 1.3.0 (Automatische Buchung)
   und 1.4.0 ihre Nummern behalten.
 - **1.2.2 DEV-Build für GitHub:** Eigener Build-Typ `beta` (Release-Modus, schnell wie die echte App, aber Paket
@@ -690,6 +720,14 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.3.0 Verbesserungen während des Trainings
+Nur, was live ausprobiert werden muss; Abläufe sind automatisch getestet.
+- [ ] Vibration deutlich stärker: nach „Satz speichern“, bei einem Rekord, am Pausenende in der App und bei gesperrtem Display.
+- [ ] Pause läuft, Display sperren: Der Countdown steht auf dem Sperrbildschirm; am Ende vibriert es und „Pause vorbei“ erscheint dort.
+- [ ] Zeitübung: Pfeil neben „Start“ auf ↓ stellen, Countdown starten, Display sperren: Countdown auf dem Sperrbildschirm, am Ende Vibration und „Zeit um“. Beim nächsten Satz/Training steht der Pfeil noch auf ↓.
+- [ ] Zeitübung mit ↑ (Hochzählen), Display sperren: die laufende Zeit steht auf dem Sperrbildschirm.
+- [ ] Eine weiter unten liegende Übung antippen: Die Liste scrollt, bis ihr Anfang oben steht; alles fühlt sich ruhig an (kein Springen).
 
 ### 1.2.2 DEV-App und Updates über GitHub
 Nur, was live ausprobiert werden muss. Einmalig vorher: Token anlegen (README, „Einmalig: GitHub-Token“).

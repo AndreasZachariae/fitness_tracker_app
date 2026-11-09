@@ -10,7 +10,9 @@ const backupFormat = 'gymlog-backup';
 
 /// 2 (M9): `planGroups`, `sessionSupersets`, `planExercises[].groupId` and
 /// `sessionExercises[].supersetId`. Version 1 files are still read.
-const backupFormatVersion = 4;
+/// 3 (1.1.0): weight steps. 4 (1.2.0): training days, notifications.
+/// 5 (1.3.0): `exercises[].timerCountdown`.
+const backupFormatVersion = 5;
 
 final class BackupData {
   const BackupData({
@@ -121,6 +123,7 @@ String encodeBackup(BackupData b) {
             'stepMode': e.stepMode.code,
             'incrementLbs': e.incrementLbs,
             'levelKg': e.levelKg,
+            'timerCountdown': e.timerCountdown,
           },
       ],
       'plans': [
@@ -385,6 +388,7 @@ BackupData decodeBackup(String text) {
   final v2 = version >= 2;
   final v3 = version >= 3;
   final v4 = version >= 4;
+  final v5 = version >= 5;
   final dataset = Dataset(
     exercises: _list(
       data,
@@ -419,6 +423,7 @@ BackupData decodeBackup(String text) {
                   StepMode.levels
             ? v3LevelKg
             : null,
+        timerCountdown: v5 && r.boolean('timerCountdown'),
       ),
     ),
     plans: _list(

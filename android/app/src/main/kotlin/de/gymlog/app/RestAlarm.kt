@@ -13,15 +13,17 @@ import android.os.Vibrator
 import android.os.VibratorManager
 
 /**
- * Vibrates at the end of a rest while GymLog is in the background or the screen is locked (1.0.1).
+ * Vibrates at the end of a rest (1.0.1) or of a countdown of a timed set (1.3.0) while GymLog is in the background
+ * or the screen is locked.
  * An exact system alarm wakes [RestAlarmReceiver]; no notification, no service. In the foreground the
  * Dart side vibrates itself and cancels the alarm.
  */
 object RestAlarm {
     const val CHANNEL = "de.gymlog.app/rest_alarm"
 
-    /** Same pattern as PlatformFeedback.restOverPattern: wait, buzz, pause, buzz, pause, buzz (ms). */
-    val PATTERN = longArrayOf(0, 150, 120, 150, 120, 150)
+    /** Same as PlatformFeedback.restOverPattern: wait, buzz, pause, buzz, pause, long buzz (ms), full strength (1.3.0). */
+    val PATTERN = longArrayOf(0, 500, 250, 500, 250, 800)
+    val AMPLITUDES = intArrayOf(0, 255, 0, 255, 0, 255)
 
     private fun intent(context: Context): PendingIntent = PendingIntent.getBroadcast(
         context,
@@ -57,14 +59,19 @@ class RestAlarmReceiver : BroadcastReceiver() {
         if (vibrator == null || !vibrator.hasVibrator()) return
         // Usage "alarm": Android lets background apps vibrate only for alarms, calls and notifications.
         val audio = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build()
-        when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> vibrator.vibrate(
-                VibrationEffect.createWaveform(RestAlarm.PATTERN, -1),
-                VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ALARM),
-            )
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ->
-                vibrator.vibrate(VibrationEffect.createWaveform(RestAlarm.PATTERN, -1), audio)
-            else -> vibrator.vibrate(RestAlarm.PATTERN, -1, audio)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            vibrator.vibrate(RestAlarm.PATTERN, -1, audio)
+            return
+        }
+        val effect = if (vibrator.hasAmplitudeControl()) {
+            VibrationEffect.createWaveform(RestAlarm.PATTERN, RestAlarm.AMPLITUDES, -1)
+        } else {
+            VibrationEffect.createWaveform(RestAlarm.PATTERN, -1)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            vibrator.vibrate(effect, VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ALARM))
+        } else {
+            vibrator.vibrate(effect, audio)
         }
     }
 }
