@@ -119,8 +119,10 @@ void main() {
       await tester.tap(find.byTooltip(S.openSettings));
       await settle(tester);
       await scrollThrough(find.byType(ListView).first);
-      await tester.drag(find.byType(ListView).first, const Offset(0, 5000));
-      await tester.pumpAndSettle();
+      // Open again: starts at the top (the page got longer in 1.2.0).
+      await back();
+      await tester.tap(find.byTooltip(S.openSettings));
+      await settle(tester);
       await tester.tap(find.text(S.settingsExercises));
       await settle(tester);
       await tester.tap(find.text('Bankdrücken'));

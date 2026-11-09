@@ -26,6 +26,39 @@ class PlanRepository {
 
   Future<Plan?> findById(int id) => _db.plansDao.findById(id);
 
+  /// Training days of all plans (1.2.0).
+  Stream<List<PlanScheduleEntry>> watchAllSchedules() =>
+      _db.plansDao.watchAllSchedules();
+
+  Future<List<PlanScheduleEntry>> getSchedules(int planId) =>
+      _db.plansDao.getSchedules(planId);
+
+  Future<List<PlanScheduleEntry>> getAllSchedules() =>
+      _db.plansDao.getAllSchedules();
+
+  /// Sets the training days of a plan: weekday (1 = Monday … 7 = Sunday) →
+  /// local time in minutes after midnight (1.2.0).
+  Future<void> setSchedule(int planId, Map<int, int> days) =>
+      _db.transaction(() async {
+        if (await _db.plansDao.findById(planId) == null) {
+          throw NotFoundException('plan', planId);
+        }
+        for (final MapEntry(key: day, value: minute) in days.entries) {
+          if (day < 1 || day > 7) throw InvalidValueException('weekday', day);
+          if (minute < 0 || minute >= 24 * 60) {
+            throw InvalidValueException('minuteOfDay', minute);
+          }
+        }
+        await _db.plansDao.replaceSchedules(planId, days);
+      });
+
+  /// Marks a plan as currently trained or not (1.2.0).
+  Future<void> setActive(int planId, bool active) => _db.transaction(() async {
+    final plan = await _db.plansDao.findById(planId);
+    if (plan == null) throw NotFoundException('plan', planId);
+    await _db.plansDao.updatePlan(plan.copyWith(active: active));
+  });
+
   /// Exercises of a plan in order.
   Stream<List<PlanEntry>> watchEntries(int planId) =>
       _db.plansDao.watchEntries(planId);
@@ -51,14 +84,7 @@ class PlanRepository {
   Future<void> rename(int id, String name) => _db.transaction(() async {
     final plan = await _require(id);
     final cleaned = await _checkName(name, excludeId: id);
-    await _db.plansDao.updatePlan(
-      Plan(
-        id: plan.id,
-        name: cleaned,
-        position: plan.position,
-        createdAt: plan.createdAt,
-      ),
-    );
+    await _db.plansDao.updatePlan(plan.copyWith(name: cleaned));
   });
 
   /// Copies a plan with all exercises and targets; returns the new id.

@@ -6,7 +6,9 @@ import '../tables.dart';
 
 part 'plans_dao.g.dart';
 
-@DriftAccessor(tables: [Plans, PlanExercises, PlanGroups, Exercises])
+@DriftAccessor(
+  tables: [Plans, PlanExercises, PlanGroups, PlanSchedules, Exercises],
+)
 class PlansDao extends DatabaseAccessor<AppDatabase> with _$PlansDaoMixin {
   PlansDao(super.attachedDatabase);
 
@@ -30,6 +32,42 @@ class PlansDao extends DatabaseAccessor<AppDatabase> with _$PlansDaoMixin {
 
   Future<int> deleteById(int id) =>
       (delete(plans)..where((p) => p.id.equals(id))).go();
+
+  /// Training days of all plans (1.2.0), by weekday.
+  Stream<List<PlanScheduleEntry>> watchAllSchedules() =>
+      (select(planSchedules)..orderBy([
+            (s) => OrderingTerm.asc(s.planId),
+            (s) => OrderingTerm.asc(s.weekday),
+          ]))
+          .watch();
+
+  Future<List<PlanScheduleEntry>> getAllSchedules() =>
+      (select(planSchedules)..orderBy([
+            (s) => OrderingTerm.asc(s.planId),
+            (s) => OrderingTerm.asc(s.weekday),
+          ]))
+          .get();
+
+  Future<List<PlanScheduleEntry>> getSchedules(int planId) =>
+      (select(planSchedules)
+            ..where((s) => s.planId.equals(planId))
+            ..orderBy([(s) => OrderingTerm.asc(s.weekday)]))
+          .get();
+
+  /// Replaces the training days of [planId] (weekday → minute of day).
+  Future<void> replaceSchedules(int planId, Map<int, int> days) async {
+    await (delete(planSchedules)..where((s) => s.planId.equals(planId))).go();
+    await batch(
+      (b) => b.insertAll(planSchedules, [
+        for (final MapEntry(key: weekday, value: minute) in days.entries)
+          PlanSchedulesCompanion.insert(
+            planId: planId,
+            weekday: weekday,
+            minuteOfDay: minute,
+          ),
+      ]),
+    );
+  }
 
   Future<int> nextPlanPosition() async {
     final max = plans.position.max();

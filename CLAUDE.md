@@ -67,9 +67,11 @@ Auf dem Handy liegen echte Trainingsdaten in der Release-App `de.gymlog.app`. De
 4. Datenbankschema nur per Migration ändern: `schemaVersion` + 1, Schema-Dump (`drift_dev schema dump`), Migrationstest.
    Keine destruktiven Migrationen, kein Drop/Recreate von Tabellen mit Nutzerdaten.
 5. Jeder erfasste Satz wird **sofort** in der Datenbank gespeichert, nie erst beim Beenden der Session.
-6. Keine `INTERNET`-Permission im Haupt-Manifest, keine Analytics, keine Crash-Reporter, keine Laufzeit-Downloads
-   (Schriften als Assets bündeln). Erlaubte Permissions: `VIBRATE`, für die Pausen-Vibration im Hintergrund (1.0.1, vom
-   Menschen freigegeben) `USE_EXACT_ALARM` und `SCHEDULE_EXACT_ALARM` mit `maxSdkVersion="32"`. Keine weiteren.
+6. Keine Analytics, keine Crash-Reporter, keine Laufzeit-Downloads (Schriften als Assets bündeln). Erlaubte Permissions
+   (jeweils vom Menschen freigegeben): `VIBRATE`; `USE_EXACT_ALARM` und `SCHEDULE_EXACT_ALARM` mit `maxSdkVersion="32"`
+   (Pausen-Vibration, 1.0.1); `POST_NOTIFICATIONS` und `RECEIVE_BOOT_COMPLETED` (Erinnerungen, 1.2.0); `INTERNET`
+   **ausschließlich** für die tägliche Update-Abfrage der GitHub-Releases (1.2.0, abschaltbar). Kein anderer Netzzugriff,
+   keine weiteren Permissions.
 
 ## Konventionen
 

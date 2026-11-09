@@ -8,13 +8,17 @@ import '../../core/format/formatters.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../core/router.dart';
 import '../../data/db/database.dart';
+import '../../data/notifications/update_checker.dart';
 import '../../data/providers.dart';
 import '../../domain/models/models.dart';
+import '../../domain/reminders.dart';
 import '../../widgets/number_stepper.dart';
 import '../../widgets/snackbars.dart';
+import '../notifications/reminder_sync.dart';
 import 'data/backup_hint.dart';
 import 'data/data_actions.dart';
 import 'dev_tools_section.dart';
+import 'notification_settings.dart';
 
 /// Settings, shown above the tab shell (SPEC §6.7).
 class SettingsPage extends ConsumerWidget {
@@ -125,6 +129,8 @@ class SettingsPage extends ConsumerWidget {
                   onChanged: (v) =>
                       update((s) => s.copyWith(autoActivateNext: v)),
                 ),
+                const _Header(S.sectionNotifications),
+                NotificationSettings(settings: settings, update: update),
                 const _Header(S.sectionAppearance),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -200,6 +206,16 @@ class SettingsPage extends ConsumerWidget {
                   ),
                 ),
                 const _Header(S.sectionAbout),
+                if (settings.latestVersion case final latest?
+                    when info != null && isNewerVersion(latest, info.version))
+                  ListTile(
+                    leading: const Icon(Icons.system_update_outlined),
+                    title: Text(S.updateAvailable(latest)),
+                    trailing: FilledButton.tonal(
+                      onPressed: () => openInBrowser(latestReleaseUrl),
+                      child: const Text(S.updateDownload),
+                    ),
+                  ),
                 ListTile(
                   title: const Text(S.appVersion),
                   trailing: Text(info?.version ?? '–'),

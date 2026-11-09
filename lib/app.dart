@@ -7,6 +7,7 @@ import 'core/router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/providers.dart';
 import 'domain/models/enums.dart';
+import 'features/notifications/reminder_sync.dart';
 
 /// German (Germany) is the only supported locale.
 const appUiLocale = Locale('de', 'DE');
@@ -32,6 +33,8 @@ class GymLogApp extends ConsumerWidget {
       supportedLocales: const [appUiLocale],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       routerConfig: ref.watch(routerProvider),
+      // Reminders and the update check (1.2.0).
+      builder: (context, child) => ReminderSync(child: child!),
     );
   }
 }

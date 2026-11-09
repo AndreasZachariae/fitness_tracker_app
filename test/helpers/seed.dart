@@ -39,3 +39,10 @@ Future<int> addExercise(
 ]) => r.exercises.create(
   ExerciseDraft(name: name, type: type, category: category),
 );
+
+/// Closes an open bottom sheet by tapping above it, e.g. the training days
+/// sheet that opens after creating a plan (1.2.0).
+Future<void> closeSheet(WidgetTester tester) async {
+  await tester.tapAt(const Offset(200, 40));
+  await settle(tester);
+}

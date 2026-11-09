@@ -429,14 +429,22 @@ void main() {
     ) async {
       await seed(tester);
       await openSettings(tester, S.settingsPlans);
-      expect(find.text(S.exerciseCount(1)), findsOneWidget);
-      expect(find.text(S.exerciseCount(0)), findsOneWidget);
+      // With the training days since 1.2.0.
+      expect(
+        find.text('${S.exerciseCount(1)} · ${S.noTrainingDays}'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('${S.exerciseCount(0)} · ${S.noTrainingDays}'),
+        findsOneWidget,
+      );
 
       await tester.tap(find.text(S.newPlan));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'Beine');
       await tester.tap(find.text(S.create));
       await settle(tester);
+      await closeSheet(tester);
       expect(find.text('Beine'), findsOneWidget);
 
       await tester.tap(find.byTooltip(S.moreActions).first);
@@ -447,7 +455,10 @@ void main() {
       await tester.tap(find.widgetWithText(TextButton, S.duplicate));
       await settle(tester);
       expect(find.text(S.copyName('Oberkörper')), findsOneWidget);
-      expect(find.text(S.exerciseCount(1)), findsNWidgets(2));
+      expect(
+        find.text('${S.exerciseCount(1)} · ${S.noTrainingDays}'),
+        findsNWidgets(2),
+      );
 
       await tester.tap(find.byTooltip(S.moreActions).first);
       await tester.pumpAndSettle();

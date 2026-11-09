@@ -41,6 +41,8 @@ const _dev = _Variant(
   label: 'DEV',
 );
 
+const _notification = _Variant([], Color(0x00000000), Color(0xFFFFFFFF));
+
 String _hex(Color c) =>
     '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
@@ -165,6 +167,21 @@ void main() {
     await loader.load();
     await _generate(_release);
     await _generate(_dev);
+    // Status bar icon of notifications (1.2.0): white on transparent, 24 dp.
+    for (final MapEntry(key: name, value: scale) in _densities.entries) {
+      final size = (24 * scale).round();
+      _write(
+        'android/app/src/main/res/drawable-$name/ic_notification.png',
+        await _png(size, (c) {
+          c.scale(size / 24);
+          // The 66 dp safe zone of the symbol onto 22 dp.
+          c.translate(12, 12);
+          c.scale(22 / 66);
+          c.translate(-54, -54);
+          _paintSymbol(c, _notification);
+        }),
+      );
+    }
     // Adaptive icon (Android 8+) and themed icon (Android 13+).
     const adaptive =
         '<?xml version="1.0" encoding="utf-8"?>\n'

@@ -65,6 +65,9 @@ class SessionRepository {
   /// Finished sessions, newest first.
   Stream<List<Session>> watchFinished() => _db.sessionsDao.watchFinished();
 
+  /// Finished sessions, newest first (1.2.0: reminders).
+  Future<List<Session>> getFinished() => _db.sessionsDao.finishedSessions();
+
   /// Last finished performance per exercise id ("Zuletzt: …").
   Stream<Map<int, LastPerformance>> watchLastPerformances() =>
       _db.sessionsDao.watchLastPerformances();

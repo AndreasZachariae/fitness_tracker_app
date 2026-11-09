@@ -673,4 +673,121 @@ abstract final class S {
     WeightUnit.kg => unitKg,
     WeightUnit.lbs => unitLbs,
   };
+
+  // Notifications (1.2.0)
+  static const sectionNotifications = 'Benachrichtigungen';
+  static String notifyEveningTitle(String plan, String time) =>
+      'Morgen um $time: $plan';
+  static const notifyEveningBody = 'Denk dran, einen Slot zu buchen.';
+  static const bookSlot = 'Slot buchen';
+  static String notifyBeforeTitle(int minutes, String plan) =>
+      'In ${_inTime(minutes)}: $plan';
+  static String _inTime(int minutes) => minutes % 60 != 0
+      ? '$minutes Minuten'
+      : minutes == 60
+      ? '1 Stunde'
+      : '${minutes ~/ 60} Stunden';
+  static const notifyOpenSessionTitle = 'Training noch offen';
+  static const notifyOpenSessionBody =
+      'Seit 3 Stunden kein neuer Satz. Tippe, um es zu beenden oder '
+      'weiterzumachen.';
+  static const notifyBackupTitle = 'Zeit für ein Backup';
+  static const notifyBackupBody =
+      'Sichere deine Trainings in den Einstellungen unter „Daten“.';
+  static const notifyStreakTitle = 'Deine Serie ist in Gefahr';
+  static String notifyStreakBody(int weeks) =>
+      '${weeks == 1 ? '1 Woche' : '$weeks Wochen'} in Folge – trainiere bis '
+      'Sonntag, damit sie hält.';
+  static String notifyUpdateTitle(String version) => 'GymLog $version ist da';
+  static const notifyUpdateBody = 'Tippe, um die neue Version zu laden.';
+  static const notifyRestTitle = 'Pause';
+  static const notifyRestBody = 'Danach geht es mit dem nächsten Satz weiter.';
+
+  // Settings → Benachrichtigungen
+  static const settingNotifyEvening = 'Abend vorher';
+  static String settingNotifyEveningSubtitle(String time) =>
+      'Um $time an den Trainingstag erinnern, mit „Slot buchen“';
+  static const settingNotifyBefore = 'Vor dem Training';
+  static String settingNotifyBeforeSubtitle(int minutes) =>
+      '${_inTime(minutes)} vorher, mit Motivationsspruch';
+  static const settingBeforeMinutes = 'Wie lange vorher';
+  static const settingNotifyRest = 'Pause auf dem Sperrbildschirm';
+  static const settingNotifyRestSubtitle =
+      'Countdown, wenn GymLog im Hintergrund ist';
+  static const settingNotifyOpenSession = 'Training noch offen';
+  static const settingNotifyOpenSessionSubtitle =
+      '3 Stunden nach dem letzten Satz';
+  static const settingNotifyBackup = 'Backup-Erinnerung';
+  static const settingNotifyBackupSubtitle =
+      'Wenn das letzte Backup älter ist als eingestellt';
+  static const settingNotifyStreak = 'Serie in Gefahr';
+  static const settingNotifyStreakSubtitle =
+      'Samstag 18 Uhr, wenn diese Woche noch kein Training war';
+  static const settingCheckUpdates = 'Nach Updates suchen';
+  static const settingCheckUpdatesSubtitle =
+      'Einmal am Tag auf GitHub nachsehen (einziger Internetzugriff)';
+  static const settingBookingUrl = 'Buchungsseite';
+  static const settingBookingUrlHint = 'https://…';
+  static const errorBookingUrl =
+      'Gib eine Adresse ein, die mit https:// beginnt.';
+  static String updateAvailable(String version) =>
+      'Neue Version $version verfügbar';
+  static const updateDownload = 'Herunterladen';
+
+  // Plans: training days
+  static const planSchedule = 'Trainingstage';
+  static const planScheduleTitle = 'Trainingstage und Uhrzeit';
+  static const planActive = 'Aktiv';
+  static const planActiveSubtitle =
+      'Wird gerade trainiert: Erinnerungen an diesen Tagen. Inaktive Pläne '
+      'sind ausgegraut.';
+  static const weekdays = [
+    'Montag',
+    'Dienstag',
+    'Mittwoch',
+    'Donnerstag',
+    'Freitag',
+    'Samstag',
+    'Sonntag',
+  ];
+  static const changeTime = 'Uhrzeit ändern';
+  static String planScheduleSummary(List<String> days) => days.join(', ');
+  static const noTrainingDays = 'Keine festen Trainingstage';
+  static const planInactive = 'inaktiv';
+
+  /// Motivational lines for the reminder before a training (1.2.0).
+  static const motivation = [
+    'Keine Ausreden, du faule Sau. Die Hanteln warten nicht.',
+    'Nicht nur LLMs wollen trainiert werden. Heute bist du dran.',
+    'Deine Muskeln haben einen Pull Request gestellt. Approve it.',
+    'Gradient Descent gilt auch fürs Bauchfett: ein Schritt nach dem anderen.',
+    'Overfitting aufs Sofa erkannt. Mehr Trainingsdaten nötig!',
+    'Your body called. It wants more than 2 FPS.',
+    'Skip leg day? Segmentation fault (core dumped).',
+    'Hardware-Upgrade fällig. Bitte im Studio abholen.',
+    'Kein Training ist wie Code ohne Tests: rächt sich später.',
+    'Torque it up! Deine Aktuatoren brauchen Last.',
+    'Wer rastet, der rostet. Frag mal die alten Industrieroboter.',
+    'Dein Sofa hat 99 % Uptime. Zeit für einen geplanten Ausfall.',
+    'Loss Function: Ausreden. Minimiere sie.',
+    'sudo make me strong – funktioniert nur im Studio.',
+    'while (alive) { train(); } – heute kein break.',
+    'Muskelkater ist nur ein Warning, kein Error.',
+    'Error 404: Motivation not found. Zum Glück gibt es Disziplin.',
+    'Your neural net is fine. Your glutes need backprop.',
+    'Kein Roboter wird im Standby-Modus stärker.',
+    'Die KI kann dir viel abnehmen. Die Klimmzüge nicht.',
+    'Echtzeit-Anforderung: Training startet bald. Keine Latenz!',
+    'Deine Endeffektoren vermissen die Langhantel.',
+    'Reinforcement Learning live: Reward ist der Pump.',
+    'Du bist kein Embedded-System. Du darfst mehr als 3 Watt verbrauchen.',
+    'Merge-Konflikt zwischen Couch und Gym? Gym gewinnt.',
+    'Kalibrierung abgeschlossen. Jetzt fehlt nur noch die Last.',
+    'Faul rumliegen kann jeder Staubsaugerroboter. Du kannst mehr.',
+    'Deploy to production: dein Bizeps. Heute.',
+    'Low battery? Das Studio ist deine Ladestation.',
+    'Attention is all you need – und ein bisschen Eisen.',
+    'Schwach sein ist ein Bug. Training ist der Fix.',
+    'Your gains are not going to train themselves. Not even with GPUs.',
+  ];
 }

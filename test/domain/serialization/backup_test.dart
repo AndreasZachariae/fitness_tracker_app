@@ -27,13 +27,14 @@ void main() {
   test('header fields (SPEC §8.2)', () {
     final json = jsonDecode(encodeBackup(backup)) as Map<String, Object?>;
     expect(json['format'], 'gymlog-backup');
-    expect(json['formatVersion'], 3);
+    expect(json['formatVersion'], 4);
     expect(json['schemaVersion'], 1);
     expect(json['appVersion'], '1.0.0+12');
     expect(json['exportedAt'], isA<String>());
     expect((json['data']! as Map).keys, [
       'exercises',
       'plans',
+      'planSchedules',
       'planExercises',
       'planGroups',
       'sessions',
@@ -133,6 +134,87 @@ void main() {
     expect(decoded.settings.defaultStepUnit, WeightUnit.lbs);
   });
 
+  test('format 3 backups (before 1.2.0): plans active, no training days, '
+      'notification defaults', () {
+    final j = jsonDecode(encodeBackup(backup)) as Map<String, Object?>;
+    j['formatVersion'] = 3;
+    final data = j['data']! as Map<String, Object?>;
+    data.remove('planSchedules');
+    for (final p in data['plans']! as List<Object?>) {
+      (p! as Map<String, Object?>).remove('active');
+    }
+    final settings = data['settings']! as Map<String, Object?>;
+    for (final key in [
+      'notifyEvening',
+      'eveningMinute',
+      'notifyBefore',
+      'beforeMinutes',
+      'notifyRest',
+      'notifyOpenSession',
+      'notifyBackup',
+      'notifyStreak',
+      'checkUpdates',
+      'bookingUrl',
+    ]) {
+      settings.remove(key);
+    }
+    final decoded = decodeBackup(jsonEncode(j));
+    expect(decoded.dataset.plans.every((p) => p.active), isTrue);
+    expect(decoded.dataset.planSchedules, isEmpty);
+    expect(decoded.settings.notifyEvening, isTrue);
+    expect(decoded.settings.bookingUrl, AppSettings.defaultBookingUrl);
+  });
+
+  test('training days: round trip and validation (1.2.0)', () {
+    final planId = demo.plans.first.id;
+    final withDays = BackupData(
+      dataset: Dataset(
+        exercises: demo.exercises,
+        plans: [for (final p in demo.plans) p.copyWith(active: p.id == planId)],
+        planExercises: demo.planExercises,
+        planGroups: demo.planGroups,
+        planSchedules: [
+          PlanScheduleEntry(
+            id: 1,
+            planId: planId,
+            weekday: 1,
+            minuteOfDay: 1080,
+          ),
+          PlanScheduleEntry(
+            id: 2,
+            planId: planId,
+            weekday: 4,
+            minuteOfDay: 1110,
+          ),
+        ],
+        sessions: demo.sessions,
+        sessionExercises: demo.sessionExercises,
+        sessionSupersets: demo.sessionSupersets,
+        sets: demo.sets,
+        bodyWeights: demo.bodyWeights,
+      ),
+      settings: settings.copyWith(eveningMinute: 19 * 60, notifyStreak: false),
+      schemaVersion: 4,
+      appVersion: '1.2.0+15',
+      exportedAt: testNow,
+    );
+    final decoded = decodeBackup(encodeBackup(withDays));
+    expect(decoded.dataset.planSchedules, withDays.dataset.planSchedules);
+    expect(decoded.dataset.plans, withDays.dataset.plans);
+    expect(decoded.settings.eveningMinute, 19 * 60);
+    expect(decoded.settings.notifyStreak, isFalse);
+
+    final j = jsonDecode(encodeBackup(withDays)) as Map<String, Object?>;
+    final days =
+        (j['data']! as Map<String, Object?>)['planSchedules']! as List<Object?>;
+    (days.last! as Map<String, Object?>)['weekday'] = 1;
+    expect(
+      () => decodeBackup(jsonEncode(j)),
+      throwsA(isA<BackupFormatException>()),
+      reason: 'two times Monday',
+    );
+  });
+
   test('preview: trainings, period, body weights', () {
     final p = previewOf(demo);
     expect(p.trainings, demo.sessions.length);
@@ -165,7 +247,7 @@ void main() {
       (
         'newer version',
         () {
-          final j = json()..['formatVersion'] = 4;
+          final j = json()..['formatVersion'] = 5;
           return jsonEncode(j);
         },
         BackupError.newerVersion,

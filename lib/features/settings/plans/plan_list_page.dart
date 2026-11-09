@@ -7,8 +7,9 @@ import '../../../domain/models/models.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/snackbars.dart';
 import 'plan_actions.dart';
+import 'plan_schedule_sheet.dart';
 
-enum _PlanAction { rename, duplicate, delete }
+enum _PlanAction { schedule, rename, duplicate, delete }
 
 /// Settings → Pläne: order of the plan chips and plan management.
 class PlanListPage extends ConsumerStatefulWidget {
@@ -39,6 +40,8 @@ class _PlanListPageState extends ConsumerState<PlanListPage> {
 
   Future<void> _onAction(_PlanAction action, Plan plan) async {
     switch (action) {
+      case _PlanAction.schedule:
+        await showPlanScheduleSheet(context, plan);
       case _PlanAction.rename:
         await renamePlanWithDialog(context, ref, plan);
       case _PlanAction.duplicate:
@@ -52,6 +55,8 @@ class _PlanListPageState extends ConsumerState<PlanListPage> {
   Widget build(BuildContext context) {
     final plans = _pending ?? ref.watch(plansProvider).value;
     final counts = ref.watch(planEntryCountsProvider).value ?? const {};
+    final schedules =
+        ref.watch(planSchedulesProvider).value ?? const <PlanScheduleEntry>[];
 
     return Scaffold(
       appBar: AppBar(title: const Text(S.plansTitle)),
@@ -75,8 +80,20 @@ class _PlanListPageState extends ConsumerState<PlanListPage> {
             final plan = list[i];
             return ListTile(
               key: ValueKey(plan.id),
-              title: Text(plan.name),
-              subtitle: Text(S.exerciseCount(counts[plan.id] ?? 0)),
+              title: Text(
+                plan.active ? plan.name : '${plan.name} (${S.planInactive})',
+                style: plan.active
+                    ? null
+                    : TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+              ),
+              subtitle: Text(
+                '${S.exerciseCount(counts[plan.id] ?? 0)} · '
+                '${formatPlanSchedule([for (final d in schedules)
+                  if (d.planId == plan.id) d])}',
+              ),
+              onTap: () => showPlanScheduleSheet(context, plan),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -84,6 +101,10 @@ class _PlanListPageState extends ConsumerState<PlanListPage> {
                     tooltip: S.moreActions,
                     onSelected: (a) => _onAction(a, plan),
                     itemBuilder: (_) => const [
+                      PopupMenuItem(
+                        value: _PlanAction.schedule,
+                        child: Text(S.planSchedule),
+                      ),
                       PopupMenuItem(
                         value: _PlanAction.rename,
                         child: Text(S.rename),

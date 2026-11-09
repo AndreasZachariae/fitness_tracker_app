@@ -8,6 +8,7 @@ final class Plan {
     required this.name,
     required this.position,
     required this.createdAt,
+    this.active = true,
   });
 
   final int id;
@@ -19,19 +20,62 @@ final class Plan {
   /// UTC.
   final DateTime createdAt;
 
+  /// Currently trained (1.2.0): only active plans remind; inactive ones are
+  /// shown greyed out.
+  final bool active;
+
+  Plan copyWith({String? name, int? position, bool? active}) => Plan(
+    id: id,
+    name: name ?? this.name,
+    position: position ?? this.position,
+    createdAt: createdAt,
+    active: active ?? this.active,
+  );
+
   @override
   bool operator ==(Object other) =>
       other is Plan &&
       other.id == id &&
       other.name == name &&
       other.position == position &&
-      other.createdAt == createdAt;
+      other.createdAt == createdAt &&
+      other.active == active;
 
   @override
-  int get hashCode => Object.hash(id, name, position, createdAt);
+  int get hashCode => Object.hash(id, name, position, createdAt, active);
 
   @override
   String toString() => 'Plan($id, $name)';
+}
+
+/// A training day of a plan (table `plan_schedules`, 1.2.0): weekday
+/// 1 = Monday … 7 = Sunday, local time as minutes after midnight.
+final class PlanScheduleEntry {
+  const PlanScheduleEntry({
+    required this.id,
+    required this.planId,
+    required this.weekday,
+    required this.minuteOfDay,
+  });
+
+  final int id;
+  final int planId;
+  final int weekday;
+  final int minuteOfDay;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PlanScheduleEntry &&
+      other.id == id &&
+      other.planId == planId &&
+      other.weekday == weekday &&
+      other.minuteOfDay == minuteOfDay;
+
+  @override
+  int get hashCode => Object.hash(id, planId, weekday, minuteOfDay);
+
+  @override
+  String toString() => 'PlanScheduleEntry($planId, $weekday, $minuteOfDay)';
 }
 
 /// An exercise in a plan with its targets (table `plan_exercises`).

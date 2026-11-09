@@ -34,7 +34,7 @@ void main() {
     }
   });
 
-  test('main manifest: no INTERNET; VIBRATE and the exact alarm only', () {
+  test('main manifest: only the approved permissions', () {
     final manifest = File('android/app/src/main/AndroidManifest.xml')
         .readAsStringSync();
     final permissions = RegExp(r'uses-permission\s+android:name="([^"]+)"')
@@ -42,10 +42,15 @@ void main() {
         .map((m) => m.group(1))
         .toList();
     // Exact alarm for the rest-over vibration in the background (1.0.1).
+    // 1.2.0 (approved): notifications, rescheduling after a reboot and the
+    // daily update check on GitHub – the only network access.
     expect(permissions, [
       'android.permission.VIBRATE',
       'android.permission.USE_EXACT_ALARM',
       'android.permission.SCHEDULE_EXACT_ALARM',
+      'android.permission.POST_NOTIFICATIONS',
+      'android.permission.RECEIVE_BOOT_COMPLETED',
+      'android.permission.INTERNET',
     ]);
     expect(
       manifest,

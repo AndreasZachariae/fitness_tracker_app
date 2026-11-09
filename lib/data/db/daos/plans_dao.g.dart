@@ -8,6 +8,7 @@ mixin _$PlansDaoMixin on DatabaseAccessor<AppDatabase> {
   $ExercisesTable get exercises => attachedDatabase.exercises;
   $PlanGroupsTable get planGroups => attachedDatabase.planGroups;
   $PlanExercisesTable get planExercises => attachedDatabase.planExercises;
+  $PlanSchedulesTable get planSchedules => attachedDatabase.planSchedules;
   PlansDaoManager get managers => PlansDaoManager(this);
 }
 
@@ -22,4 +23,6 @@ class PlansDaoManager {
       $$PlanGroupsTableTableManager(_db.attachedDatabase, _db.planGroups);
   $$PlanExercisesTableTableManager get planExercises =>
       $$PlanExercisesTableTableManager(_db.attachedDatabase, _db.planExercises);
+  $$PlanSchedulesTableTableManager get planSchedules =>
+      $$PlanSchedulesTableTableManager(_db.attachedDatabase, _db.planSchedules);
 }

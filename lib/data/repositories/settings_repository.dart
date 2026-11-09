@@ -26,6 +26,10 @@ class SettingsRepository {
           lastBackupAt: changed.lastBackupAt == null
               ? null
               : storageTime(changed.lastBackupAt!),
+          lastUpdateCheckAt: changed.lastUpdateCheckAt == null
+              ? null
+              : storageTime(changed.lastUpdateCheckAt!),
+          bookingUrl: changed.bookingUrl.trim(),
         );
         await _db.settingsDao.write(normalized);
         return normalized;
@@ -38,6 +42,16 @@ class SettingsRepository {
     if (s.defaultSets < 1 || s.defaultSets > 10) {
       throw InvalidValueException('defaultSets', s.defaultSets);
     }
+    // 1.2.0
+    if (s.eveningMinute < 0 || s.eveningMinute >= 24 * 60) {
+      throw InvalidValueException('eveningMinute', s.eveningMinute);
+    }
+    if (s.beforeMinutes < 5 || s.beforeMinutes > 24 * 60) {
+      throw InvalidValueException('beforeMinutes', s.beforeMinutes);
+    }
+    if (!isValidBookingUrl(s.bookingUrl)) {
+      throw InvalidValueException('bookingUrl', s.bookingUrl);
+    }
     if (s.defaultRestSec < 0 || s.defaultRestSec > 3600) {
       throw InvalidValueException('defaultRestSec', s.defaultRestSec);
     }
@@ -45,4 +59,12 @@ class SettingsRepository {
       throw InvalidValueException('backupReminderDays', s.backupReminderDays);
     }
   }
+}
+
+/// An https address (1.2.0); empty means "no booking page".
+bool isValidBookingUrl(String url) {
+  final t = url.trim();
+  if (t.isEmpty) return true;
+  final uri = Uri.tryParse(t);
+  return uri != null && uri.scheme == 'https' && uri.host.isNotEmpty;
 }

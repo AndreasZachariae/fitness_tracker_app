@@ -23,6 +23,7 @@ part 'database.g.dart';
     Plans,
     PlanExercises,
     PlanGroups,
+    PlanSchedules,
     Sessions,
     SessionExercises,
     SessionSupersets,
@@ -46,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
   final Clock? libraryClock;
 
   /// Current schema version. Changes only via migration (CLAUDE.md, rule 4).
-  static const currentSchemaVersion = 3;
+  static const currentSchemaVersion = 4;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -98,6 +99,30 @@ class AppDatabase extends _$AppDatabase {
             );
         await setMode(v3StandardStepExercises, 'standard');
         await setMode(v3LevelExercises, 'levels', v3LevelKg);
+      },
+      // 1.2.0: training days of plans, notifications, update check.
+      from3To4: (m, schema) async {
+        await m.addColumn(schema.plans, schema.plans.active);
+        await m.createTable(schema.planSchedules);
+        await m.createIndex(schema.planSchedulesDay);
+        final settings = schema.appSettings;
+        for (final column in [
+          settings.notifyEvening,
+          settings.eveningMinute,
+          settings.notifyBefore,
+          settings.beforeMinutes,
+          settings.notifyRest,
+          settings.notifyOpenSession,
+          settings.notifyBackup,
+          settings.notifyStreak,
+          settings.checkUpdates,
+          settings.bookingUrl,
+          settings.lastUpdateCheckAt,
+          settings.latestVersion,
+          settings.notificationsAsked,
+        ]) {
+          await m.addColumn(settings, column);
+        }
       },
     ),
     beforeOpen: (details) async {

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../core/clock.dart';
+import '../core/notifications.dart';
 import '../domain/history.dart';
 import '../domain/models/models.dart';
 import '../domain/records.dart';
@@ -10,6 +11,8 @@ import 'db/database.dart';
 import 'demo/dev_tools.dart';
 import 'io/data_transfer_service.dart';
 import 'io/file_gateway.dart';
+import 'notifications/reminder_service.dart';
+import 'notifications/update_checker.dart';
 import 'repositories/body_weight_repository.dart';
 import 'repositories/exercise_repository.dart';
 import 'repositories/maintenance_repository.dart';
@@ -178,5 +181,35 @@ final dataTransferProvider = Provider<DataTransferService>(
       final info = await ref.read(appInfoProvider.future);
       return '${info.version}+${info.buildNumber}';
     },
+  ),
+);
+
+/// Training days of all plans (1.2.0).
+final planSchedulesProvider = StreamProvider<List<PlanScheduleEntry>>(
+  (ref) => ref.watch(planRepositoryProvider).watchAllSchedules(),
+);
+
+final reminderServiceProvider = Provider<ReminderService>(
+  (ref) => ReminderService(
+    gateway: ref.watch(notificationGatewayProvider),
+    plans: ref.watch(planRepositoryProvider),
+    sessions: ref.watch(sessionRepositoryProvider),
+    settings: ref.watch(settingsRepositoryProvider),
+    clock: ref.watch(clockProvider),
+  ),
+);
+
+final releaseSourceProvider = Provider<ReleaseSource>(
+  (ref) => const GitHubReleases(),
+);
+
+final updateCheckerProvider = Provider<UpdateChecker>(
+  (ref) => UpdateChecker(
+    source: ref.watch(releaseSourceProvider),
+    settings: ref.watch(settingsRepositoryProvider),
+    gateway: ref.watch(notificationGatewayProvider),
+    clock: ref.watch(clockProvider),
+    installedVersion: () async =>
+        (await ref.read(appInfoProvider.future)).version,
   ),
 );

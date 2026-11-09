@@ -627,8 +627,21 @@ class $PlansTable extends Plans with TableInfo<$PlansTable, Plan> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _activeMeta = const VerificationMeta('active');
   @override
-  List<GeneratedColumn> get $columns => [id, name, position, createdAt];
+  late final GeneratedColumn<bool> active = GeneratedColumn<bool>(
+    'active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, position, createdAt, active];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -668,6 +681,12 @@ class $PlansTable extends Plans with TableInfo<$PlansTable, Plan> {
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('active')) {
+      context.handle(
+        _activeMeta,
+        active.isAcceptableOrUnknown(data['active']!, _activeMeta),
+      );
+    }
     return context;
   }
 
@@ -693,6 +712,10 @@ class $PlansTable extends Plans with TableInfo<$PlansTable, Plan> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      active: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}active'],
+      )!,
     );
   }
 
@@ -707,17 +730,20 @@ class PlansCompanion extends UpdateCompanion<Plan> {
   final Value<String> name;
   final Value<int> position;
   final Value<DateTime> createdAt;
+  final Value<bool> active;
   const PlansCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.position = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.active = const Value.absent(),
   });
   PlansCompanion.insert({
     this.id = const Value.absent(),
     required String name,
     required int position,
     required DateTime createdAt,
+    this.active = const Value.absent(),
   }) : name = Value(name),
        position = Value(position),
        createdAt = Value(createdAt);
@@ -726,12 +752,14 @@ class PlansCompanion extends UpdateCompanion<Plan> {
     Expression<String>? name,
     Expression<int>? position,
     Expression<DateTime>? createdAt,
+    Expression<bool>? active,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (position != null) 'position': position,
       if (createdAt != null) 'created_at': createdAt,
+      if (active != null) 'active': active,
     });
   }
 
@@ -740,12 +768,14 @@ class PlansCompanion extends UpdateCompanion<Plan> {
     Value<String>? name,
     Value<int>? position,
     Value<DateTime>? createdAt,
+    Value<bool>? active,
   }) {
     return PlansCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       position: position ?? this.position,
       createdAt: createdAt ?? this.createdAt,
+      active: active ?? this.active,
     );
   }
 
@@ -764,6 +794,9 @@ class PlansCompanion extends UpdateCompanion<Plan> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (active.present) {
+      map['active'] = Variable<bool>(active.value);
+    }
     return map;
   }
 
@@ -773,7 +806,8 @@ class PlansCompanion extends UpdateCompanion<Plan> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('position: $position, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('active: $active')
           ..write(')'))
         .toString();
   }
@@ -789,6 +823,7 @@ class _$PlanInsertable implements Insertable<Plan> {
       name: Value(_object.name),
       position: Value(_object.position),
       createdAt: Value(_object.createdAt),
+      active: Value(_object.active),
     ).toColumns(false);
   }
 }
@@ -1557,6 +1592,236 @@ class _$PlanExerciseInsertable implements Insertable<PlanExercise> {
 extension PlanExerciseToInsertable on PlanExercise {
   _$PlanExerciseInsertable toInsertable() {
     return _$PlanExerciseInsertable(this);
+  }
+}
+
+class $PlanSchedulesTable extends PlanSchedules
+    with TableInfo<$PlanSchedulesTable, PlanScheduleEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlanSchedulesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<int> planId = GeneratedColumn<int>(
+    'plan_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES plans (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _weekdayMeta = const VerificationMeta(
+    'weekday',
+  );
+  @override
+  late final GeneratedColumn<int> weekday = GeneratedColumn<int>(
+    'weekday',
+    aliasedName,
+    false,
+    check: () => ComparableExpr(weekday).isBetweenValues(1, 7),
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _minuteOfDayMeta = const VerificationMeta(
+    'minuteOfDay',
+  );
+  @override
+  late final GeneratedColumn<int> minuteOfDay = GeneratedColumn<int>(
+    'minute_of_day',
+    aliasedName,
+    false,
+    check: () => ComparableExpr(minuteOfDay).isBetweenValues(0, 24 * 60 - 1),
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, planId, weekday, minuteOfDay];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'plan_schedules';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PlanScheduleEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_planIdMeta);
+    }
+    if (data.containsKey('weekday')) {
+      context.handle(
+        _weekdayMeta,
+        weekday.isAcceptableOrUnknown(data['weekday']!, _weekdayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_weekdayMeta);
+    }
+    if (data.containsKey('minute_of_day')) {
+      context.handle(
+        _minuteOfDayMeta,
+        minuteOfDay.isAcceptableOrUnknown(
+          data['minute_of_day']!,
+          _minuteOfDayMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_minuteOfDayMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PlanScheduleEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PlanScheduleEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}plan_id'],
+      )!,
+      weekday: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weekday'],
+      )!,
+      minuteOfDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}minute_of_day'],
+      )!,
+    );
+  }
+
+  @override
+  $PlanSchedulesTable createAlias(String alias) {
+    return $PlanSchedulesTable(attachedDatabase, alias);
+  }
+}
+
+class PlanSchedulesCompanion extends UpdateCompanion<PlanScheduleEntry> {
+  final Value<int> id;
+  final Value<int> planId;
+  final Value<int> weekday;
+  final Value<int> minuteOfDay;
+  const PlanSchedulesCompanion({
+    this.id = const Value.absent(),
+    this.planId = const Value.absent(),
+    this.weekday = const Value.absent(),
+    this.minuteOfDay = const Value.absent(),
+  });
+  PlanSchedulesCompanion.insert({
+    this.id = const Value.absent(),
+    required int planId,
+    required int weekday,
+    required int minuteOfDay,
+  }) : planId = Value(planId),
+       weekday = Value(weekday),
+       minuteOfDay = Value(minuteOfDay);
+  static Insertable<PlanScheduleEntry> custom({
+    Expression<int>? id,
+    Expression<int>? planId,
+    Expression<int>? weekday,
+    Expression<int>? minuteOfDay,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (planId != null) 'plan_id': planId,
+      if (weekday != null) 'weekday': weekday,
+      if (minuteOfDay != null) 'minute_of_day': minuteOfDay,
+    });
+  }
+
+  PlanSchedulesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? planId,
+    Value<int>? weekday,
+    Value<int>? minuteOfDay,
+  }) {
+    return PlanSchedulesCompanion(
+      id: id ?? this.id,
+      planId: planId ?? this.planId,
+      weekday: weekday ?? this.weekday,
+      minuteOfDay: minuteOfDay ?? this.minuteOfDay,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (planId.present) {
+      map['plan_id'] = Variable<int>(planId.value);
+    }
+    if (weekday.present) {
+      map['weekday'] = Variable<int>(weekday.value);
+    }
+    if (minuteOfDay.present) {
+      map['minute_of_day'] = Variable<int>(minuteOfDay.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlanSchedulesCompanion(')
+          ..write('id: $id, ')
+          ..write('planId: $planId, ')
+          ..write('weekday: $weekday, ')
+          ..write('minuteOfDay: $minuteOfDay')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class _$PlanScheduleEntryInsertable implements Insertable<PlanScheduleEntry> {
+  PlanScheduleEntry _object;
+  _$PlanScheduleEntryInsertable(this._object);
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    return PlanSchedulesCompanion(
+      id: Value(_object.id),
+      planId: Value(_object.planId),
+      weekday: Value(_object.weekday),
+      minuteOfDay: Value(_object.minuteOfDay),
+    ).toColumns(false);
+  }
+}
+
+extension PlanScheduleEntryToInsertable on PlanScheduleEntry {
+  _$PlanScheduleEntryInsertable toInsertable() {
+    return _$PlanScheduleEntryInsertable(this);
   }
 }
 
@@ -3319,6 +3584,186 @@ class $AppSettingsTableTable extends AppSettingsTable
     requiredDuringInsert: false,
     defaultValue: const Constant('lbs'),
   ).withConverter<WeightUnit>($AppSettingsTableTable.$converterdefaultStepUnit);
+  static const VerificationMeta _notifyEveningMeta = const VerificationMeta(
+    'notifyEvening',
+  );
+  @override
+  late final GeneratedColumn<bool> notifyEvening = GeneratedColumn<bool>(
+    'notify_evening',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("notify_evening" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _eveningMinuteMeta = const VerificationMeta(
+    'eveningMinute',
+  );
+  @override
+  late final GeneratedColumn<int> eveningMinute = GeneratedColumn<int>(
+    'evening_minute',
+    aliasedName,
+    false,
+    check: () => ComparableExpr(eveningMinute).isBetweenValues(0, 24 * 60 - 1),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(20 * 60),
+  );
+  static const VerificationMeta _notifyBeforeMeta = const VerificationMeta(
+    'notifyBefore',
+  );
+  @override
+  late final GeneratedColumn<bool> notifyBefore = GeneratedColumn<bool>(
+    'notify_before',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("notify_before" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _beforeMinutesMeta = const VerificationMeta(
+    'beforeMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> beforeMinutes = GeneratedColumn<int>(
+    'before_minutes',
+    aliasedName,
+    false,
+    check: () => ComparableExpr(beforeMinutes).isBetweenValues(5, 24 * 60),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(60),
+  );
+  static const VerificationMeta _notifyRestMeta = const VerificationMeta(
+    'notifyRest',
+  );
+  @override
+  late final GeneratedColumn<bool> notifyRest = GeneratedColumn<bool>(
+    'notify_rest',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("notify_rest" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _notifyOpenSessionMeta = const VerificationMeta(
+    'notifyOpenSession',
+  );
+  @override
+  late final GeneratedColumn<bool> notifyOpenSession = GeneratedColumn<bool>(
+    'notify_open_session',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("notify_open_session" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _notifyBackupMeta = const VerificationMeta(
+    'notifyBackup',
+  );
+  @override
+  late final GeneratedColumn<bool> notifyBackup = GeneratedColumn<bool>(
+    'notify_backup',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("notify_backup" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _notifyStreakMeta = const VerificationMeta(
+    'notifyStreak',
+  );
+  @override
+  late final GeneratedColumn<bool> notifyStreak = GeneratedColumn<bool>(
+    'notify_streak',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("notify_streak" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _checkUpdatesMeta = const VerificationMeta(
+    'checkUpdates',
+  );
+  @override
+  late final GeneratedColumn<bool> checkUpdates = GeneratedColumn<bool>(
+    'check_updates',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("check_updates" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _bookingUrlMeta = const VerificationMeta(
+    'bookingUrl',
+  );
+  @override
+  late final GeneratedColumn<String> bookingUrl = GeneratedColumn<String>(
+    'booking_url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(AppSettings.defaultBookingUrl),
+  );
+  static const VerificationMeta _lastUpdateCheckAtMeta = const VerificationMeta(
+    'lastUpdateCheckAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastUpdateCheckAt =
+      GeneratedColumn<DateTime>(
+        'last_update_check_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _latestVersionMeta = const VerificationMeta(
+    'latestVersion',
+  );
+  @override
+  late final GeneratedColumn<String> latestVersion = GeneratedColumn<String>(
+    'latest_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notificationsAskedMeta =
+      const VerificationMeta('notificationsAsked');
+  @override
+  late final GeneratedColumn<bool> notificationsAsked = GeneratedColumn<bool>(
+    'notifications_asked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("notifications_asked" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3334,6 +3779,19 @@ class $AppSettingsTableTable extends AppSettingsTable
     backupReminderDays,
     defaultStep,
     defaultStepUnit,
+    notifyEvening,
+    eveningMinute,
+    notifyBefore,
+    beforeMinutes,
+    notifyRest,
+    notifyOpenSession,
+    notifyBackup,
+    notifyStreak,
+    checkUpdates,
+    bookingUrl,
+    lastUpdateCheckAt,
+    latestVersion,
+    notificationsAsked,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3440,6 +3898,117 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('notify_evening')) {
+      context.handle(
+        _notifyEveningMeta,
+        notifyEvening.isAcceptableOrUnknown(
+          data['notify_evening']!,
+          _notifyEveningMeta,
+        ),
+      );
+    }
+    if (data.containsKey('evening_minute')) {
+      context.handle(
+        _eveningMinuteMeta,
+        eveningMinute.isAcceptableOrUnknown(
+          data['evening_minute']!,
+          _eveningMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notify_before')) {
+      context.handle(
+        _notifyBeforeMeta,
+        notifyBefore.isAcceptableOrUnknown(
+          data['notify_before']!,
+          _notifyBeforeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('before_minutes')) {
+      context.handle(
+        _beforeMinutesMeta,
+        beforeMinutes.isAcceptableOrUnknown(
+          data['before_minutes']!,
+          _beforeMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notify_rest')) {
+      context.handle(
+        _notifyRestMeta,
+        notifyRest.isAcceptableOrUnknown(data['notify_rest']!, _notifyRestMeta),
+      );
+    }
+    if (data.containsKey('notify_open_session')) {
+      context.handle(
+        _notifyOpenSessionMeta,
+        notifyOpenSession.isAcceptableOrUnknown(
+          data['notify_open_session']!,
+          _notifyOpenSessionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notify_backup')) {
+      context.handle(
+        _notifyBackupMeta,
+        notifyBackup.isAcceptableOrUnknown(
+          data['notify_backup']!,
+          _notifyBackupMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notify_streak')) {
+      context.handle(
+        _notifyStreakMeta,
+        notifyStreak.isAcceptableOrUnknown(
+          data['notify_streak']!,
+          _notifyStreakMeta,
+        ),
+      );
+    }
+    if (data.containsKey('check_updates')) {
+      context.handle(
+        _checkUpdatesMeta,
+        checkUpdates.isAcceptableOrUnknown(
+          data['check_updates']!,
+          _checkUpdatesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('booking_url')) {
+      context.handle(
+        _bookingUrlMeta,
+        bookingUrl.isAcceptableOrUnknown(data['booking_url']!, _bookingUrlMeta),
+      );
+    }
+    if (data.containsKey('last_update_check_at')) {
+      context.handle(
+        _lastUpdateCheckAtMeta,
+        lastUpdateCheckAt.isAcceptableOrUnknown(
+          data['last_update_check_at']!,
+          _lastUpdateCheckAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('latest_version')) {
+      context.handle(
+        _latestVersionMeta,
+        latestVersion.isAcceptableOrUnknown(
+          data['latest_version']!,
+          _latestVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notifications_asked')) {
+      context.handle(
+        _notificationsAskedMeta,
+        notificationsAsked.isAcceptableOrUnknown(
+          data['notifications_asked']!,
+          _notificationsAskedMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3505,6 +4074,58 @@ class $AppSettingsTableTable extends AppSettingsTable
           data['${effectivePrefix}default_step_unit'],
         )!,
       ),
+      notifyEvening: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}notify_evening'],
+      )!,
+      eveningMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}evening_minute'],
+      )!,
+      notifyBefore: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}notify_before'],
+      )!,
+      beforeMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}before_minutes'],
+      )!,
+      notifyRest: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}notify_rest'],
+      )!,
+      notifyOpenSession: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}notify_open_session'],
+      )!,
+      notifyBackup: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}notify_backup'],
+      )!,
+      notifyStreak: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}notify_streak'],
+      )!,
+      checkUpdates: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}check_updates'],
+      )!,
+      bookingUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}booking_url'],
+      )!,
+      lastUpdateCheckAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_update_check_at'],
+      ),
+      latestVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}latest_version'],
+      ),
+      notificationsAsked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}notifications_asked'],
+      )!,
     );
   }
 
@@ -3533,6 +4154,19 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
   final Value<int> backupReminderDays;
   final Value<double> defaultStep;
   final Value<WeightUnit> defaultStepUnit;
+  final Value<bool> notifyEvening;
+  final Value<int> eveningMinute;
+  final Value<bool> notifyBefore;
+  final Value<int> beforeMinutes;
+  final Value<bool> notifyRest;
+  final Value<bool> notifyOpenSession;
+  final Value<bool> notifyBackup;
+  final Value<bool> notifyStreak;
+  final Value<bool> checkUpdates;
+  final Value<String> bookingUrl;
+  final Value<DateTime?> lastUpdateCheckAt;
+  final Value<String?> latestVersion;
+  final Value<bool> notificationsAsked;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
     this.defaultSets = const Value.absent(),
@@ -3547,6 +4181,19 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     this.backupReminderDays = const Value.absent(),
     this.defaultStep = const Value.absent(),
     this.defaultStepUnit = const Value.absent(),
+    this.notifyEvening = const Value.absent(),
+    this.eveningMinute = const Value.absent(),
+    this.notifyBefore = const Value.absent(),
+    this.beforeMinutes = const Value.absent(),
+    this.notifyRest = const Value.absent(),
+    this.notifyOpenSession = const Value.absent(),
+    this.notifyBackup = const Value.absent(),
+    this.notifyStreak = const Value.absent(),
+    this.checkUpdates = const Value.absent(),
+    this.bookingUrl = const Value.absent(),
+    this.lastUpdateCheckAt = const Value.absent(),
+    this.latestVersion = const Value.absent(),
+    this.notificationsAsked = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
     this.id = const Value.absent(),
@@ -3562,6 +4209,19 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     this.backupReminderDays = const Value.absent(),
     this.defaultStep = const Value.absent(),
     this.defaultStepUnit = const Value.absent(),
+    this.notifyEvening = const Value.absent(),
+    this.eveningMinute = const Value.absent(),
+    this.notifyBefore = const Value.absent(),
+    this.beforeMinutes = const Value.absent(),
+    this.notifyRest = const Value.absent(),
+    this.notifyOpenSession = const Value.absent(),
+    this.notifyBackup = const Value.absent(),
+    this.notifyStreak = const Value.absent(),
+    this.checkUpdates = const Value.absent(),
+    this.bookingUrl = const Value.absent(),
+    this.lastUpdateCheckAt = const Value.absent(),
+    this.latestVersion = const Value.absent(),
+    this.notificationsAsked = const Value.absent(),
   });
   static Insertable<AppSettings> custom({
     Expression<int>? id,
@@ -3577,6 +4237,19 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     Expression<int>? backupReminderDays,
     Expression<double>? defaultStep,
     Expression<String>? defaultStepUnit,
+    Expression<bool>? notifyEvening,
+    Expression<int>? eveningMinute,
+    Expression<bool>? notifyBefore,
+    Expression<int>? beforeMinutes,
+    Expression<bool>? notifyRest,
+    Expression<bool>? notifyOpenSession,
+    Expression<bool>? notifyBackup,
+    Expression<bool>? notifyStreak,
+    Expression<bool>? checkUpdates,
+    Expression<String>? bookingUrl,
+    Expression<DateTime>? lastUpdateCheckAt,
+    Expression<String>? latestVersion,
+    Expression<bool>? notificationsAsked,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3594,6 +4267,19 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
         'backup_reminder_days': backupReminderDays,
       if (defaultStep != null) 'default_step': defaultStep,
       if (defaultStepUnit != null) 'default_step_unit': defaultStepUnit,
+      if (notifyEvening != null) 'notify_evening': notifyEvening,
+      if (eveningMinute != null) 'evening_minute': eveningMinute,
+      if (notifyBefore != null) 'notify_before': notifyBefore,
+      if (beforeMinutes != null) 'before_minutes': beforeMinutes,
+      if (notifyRest != null) 'notify_rest': notifyRest,
+      if (notifyOpenSession != null) 'notify_open_session': notifyOpenSession,
+      if (notifyBackup != null) 'notify_backup': notifyBackup,
+      if (notifyStreak != null) 'notify_streak': notifyStreak,
+      if (checkUpdates != null) 'check_updates': checkUpdates,
+      if (bookingUrl != null) 'booking_url': bookingUrl,
+      if (lastUpdateCheckAt != null) 'last_update_check_at': lastUpdateCheckAt,
+      if (latestVersion != null) 'latest_version': latestVersion,
+      if (notificationsAsked != null) 'notifications_asked': notificationsAsked,
     });
   }
 
@@ -3611,6 +4297,19 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     Value<int>? backupReminderDays,
     Value<double>? defaultStep,
     Value<WeightUnit>? defaultStepUnit,
+    Value<bool>? notifyEvening,
+    Value<int>? eveningMinute,
+    Value<bool>? notifyBefore,
+    Value<int>? beforeMinutes,
+    Value<bool>? notifyRest,
+    Value<bool>? notifyOpenSession,
+    Value<bool>? notifyBackup,
+    Value<bool>? notifyStreak,
+    Value<bool>? checkUpdates,
+    Value<String>? bookingUrl,
+    Value<DateTime?>? lastUpdateCheckAt,
+    Value<String?>? latestVersion,
+    Value<bool>? notificationsAsked,
   }) {
     return AppSettingsTableCompanion(
       id: id ?? this.id,
@@ -3626,6 +4325,19 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
       backupReminderDays: backupReminderDays ?? this.backupReminderDays,
       defaultStep: defaultStep ?? this.defaultStep,
       defaultStepUnit: defaultStepUnit ?? this.defaultStepUnit,
+      notifyEvening: notifyEvening ?? this.notifyEvening,
+      eveningMinute: eveningMinute ?? this.eveningMinute,
+      notifyBefore: notifyBefore ?? this.notifyBefore,
+      beforeMinutes: beforeMinutes ?? this.beforeMinutes,
+      notifyRest: notifyRest ?? this.notifyRest,
+      notifyOpenSession: notifyOpenSession ?? this.notifyOpenSession,
+      notifyBackup: notifyBackup ?? this.notifyBackup,
+      notifyStreak: notifyStreak ?? this.notifyStreak,
+      checkUpdates: checkUpdates ?? this.checkUpdates,
+      bookingUrl: bookingUrl ?? this.bookingUrl,
+      lastUpdateCheckAt: lastUpdateCheckAt ?? this.lastUpdateCheckAt,
+      latestVersion: latestVersion ?? this.latestVersion,
+      notificationsAsked: notificationsAsked ?? this.notificationsAsked,
     );
   }
 
@@ -3677,6 +4389,45 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
         ),
       );
     }
+    if (notifyEvening.present) {
+      map['notify_evening'] = Variable<bool>(notifyEvening.value);
+    }
+    if (eveningMinute.present) {
+      map['evening_minute'] = Variable<int>(eveningMinute.value);
+    }
+    if (notifyBefore.present) {
+      map['notify_before'] = Variable<bool>(notifyBefore.value);
+    }
+    if (beforeMinutes.present) {
+      map['before_minutes'] = Variable<int>(beforeMinutes.value);
+    }
+    if (notifyRest.present) {
+      map['notify_rest'] = Variable<bool>(notifyRest.value);
+    }
+    if (notifyOpenSession.present) {
+      map['notify_open_session'] = Variable<bool>(notifyOpenSession.value);
+    }
+    if (notifyBackup.present) {
+      map['notify_backup'] = Variable<bool>(notifyBackup.value);
+    }
+    if (notifyStreak.present) {
+      map['notify_streak'] = Variable<bool>(notifyStreak.value);
+    }
+    if (checkUpdates.present) {
+      map['check_updates'] = Variable<bool>(checkUpdates.value);
+    }
+    if (bookingUrl.present) {
+      map['booking_url'] = Variable<String>(bookingUrl.value);
+    }
+    if (lastUpdateCheckAt.present) {
+      map['last_update_check_at'] = Variable<DateTime>(lastUpdateCheckAt.value);
+    }
+    if (latestVersion.present) {
+      map['latest_version'] = Variable<String>(latestVersion.value);
+    }
+    if (notificationsAsked.present) {
+      map['notifications_asked'] = Variable<bool>(notificationsAsked.value);
+    }
     return map;
   }
 
@@ -3695,7 +4446,20 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
           ..write('lastBackupAt: $lastBackupAt, ')
           ..write('backupReminderDays: $backupReminderDays, ')
           ..write('defaultStep: $defaultStep, ')
-          ..write('defaultStepUnit: $defaultStepUnit')
+          ..write('defaultStepUnit: $defaultStepUnit, ')
+          ..write('notifyEvening: $notifyEvening, ')
+          ..write('eveningMinute: $eveningMinute, ')
+          ..write('notifyBefore: $notifyBefore, ')
+          ..write('beforeMinutes: $beforeMinutes, ')
+          ..write('notifyRest: $notifyRest, ')
+          ..write('notifyOpenSession: $notifyOpenSession, ')
+          ..write('notifyBackup: $notifyBackup, ')
+          ..write('notifyStreak: $notifyStreak, ')
+          ..write('checkUpdates: $checkUpdates, ')
+          ..write('bookingUrl: $bookingUrl, ')
+          ..write('lastUpdateCheckAt: $lastUpdateCheckAt, ')
+          ..write('latestVersion: $latestVersion, ')
+          ..write('notificationsAsked: $notificationsAsked')
           ..write(')'))
         .toString();
   }
@@ -3720,6 +4484,19 @@ class _$AppSettingsInsertable implements Insertable<AppSettings> {
       backupReminderDays: Value(_object.backupReminderDays),
       defaultStep: Value(_object.defaultStep),
       defaultStepUnit: Value(_object.defaultStepUnit),
+      notifyEvening: Value(_object.notifyEvening),
+      eveningMinute: Value(_object.eveningMinute),
+      notifyBefore: Value(_object.notifyBefore),
+      beforeMinutes: Value(_object.beforeMinutes),
+      notifyRest: Value(_object.notifyRest),
+      notifyOpenSession: Value(_object.notifyOpenSession),
+      notifyBackup: Value(_object.notifyBackup),
+      notifyStreak: Value(_object.notifyStreak),
+      checkUpdates: Value(_object.checkUpdates),
+      bookingUrl: Value(_object.bookingUrl),
+      lastUpdateCheckAt: Value(_object.lastUpdateCheckAt),
+      latestVersion: Value(_object.latestVersion),
+      notificationsAsked: Value(_object.notificationsAsked),
     ).toColumns(false);
   }
 }
@@ -3737,6 +4514,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PlansTable plans = $PlansTable(this);
   late final $PlanGroupsTable planGroups = $PlanGroupsTable(this);
   late final $PlanExercisesTable planExercises = $PlanExercisesTable(this);
+  late final $PlanSchedulesTable planSchedules = $PlanSchedulesTable(this);
   late final $SessionsTable sessions = $SessionsTable(this);
   late final $SessionSupersetsTable sessionSupersets = $SessionSupersetsTable(
     this,
@@ -3769,6 +4547,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index planGroupsPlan = Index(
     'plan_groups_plan',
     'CREATE INDEX plan_groups_plan ON plan_groups (plan_id)',
+  );
+  late final Index planSchedulesDay = Index(
+    'plan_schedules_day',
+    'CREATE UNIQUE INDEX plan_schedules_day ON plan_schedules (plan_id, weekday)',
   );
   late final Index sessionsStartedAt = Index(
     'sessions_started_at',
@@ -3808,6 +4590,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     plans,
     planGroups,
     planExercises,
+    planSchedules,
     sessions,
     sessionSupersets,
     sessionExercises,
@@ -3819,6 +4602,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     planExercisesPlan,
     planExercisesExercise,
     planGroupsPlan,
+    planSchedulesDay,
     sessionsStartedAt,
     sessionsSingleActive,
     sessionExercisesSession,
@@ -3848,6 +4632,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('plan_exercises', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'plans',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('plan_schedules', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -4457,12 +5248,14 @@ typedef $$PlansTableCreateCompanionBuilder = PlansCompanion Function({
   required String name,
   required int position,
   required DateTime createdAt,
+  Value<bool> active,
 });
 typedef $$PlansTableUpdateCompanionBuilder = PlansCompanion Function({
   Value<int> id,
   Value<String> name,
   Value<int> position,
   Value<DateTime> createdAt,
+  Value<bool> active,
 });
 
 final class $$PlansTableReferences
@@ -4500,6 +5293,24 @@ final class $$PlansTableReferences
     ).filter((f) => f.planId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_planExercisesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PlanSchedulesTable, List<PlanScheduleEntry>>
+  _planSchedulesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.planSchedules,
+    aliasName: 'plans__id__plan_schedules__plan_id',
+  );
+
+  $$PlanSchedulesTableProcessedTableManager get planSchedulesRefs {
+    final manager = $$PlanSchedulesTableTableManager(
+      $_db,
+      $_db.planSchedules,
+    ).filter((f) => f.planId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_planSchedulesRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -4573,6 +5384,11 @@ class $$PlansTableFilterComposer extends Composer<_$AppDatabase, $PlansTable> {
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> planGroupsRefs(
     Expression<bool> Function($$PlanGroupsTableFilterComposer f) f,
   ) {
@@ -4614,6 +5430,31 @@ class $$PlansTableFilterComposer extends Composer<_$AppDatabase, $PlansTable> {
           }) => $$PlanExercisesTableFilterComposer(
             $db: $db,
             $table: $db.planExercises,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> planSchedulesRefs(
+    Expression<bool> Function($$PlanSchedulesTableFilterComposer f) f,
+  ) {
+    final $$PlanSchedulesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.planSchedules,
+      getReferencedColumn: (t) => t.planId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlanSchedulesTableFilterComposer(
+            $db: $db,
+            $table: $db.planSchedules,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4702,6 +5543,11 @@ class $$PlansTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PlansTableAnnotationComposer
@@ -4724,6 +5570,9 @@ class $$PlansTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get active =>
+      $composableBuilder(column: $table.active, builder: (column) => column);
 
   Expression<T> planGroupsRefs<T extends Object>(
     Expression<T> Function($$PlanGroupsTableAnnotationComposer a) f,
@@ -4766,6 +5615,31 @@ class $$PlansTableAnnotationComposer
           }) => $$PlanExercisesTableAnnotationComposer(
             $db: $db,
             $table: $db.planExercises,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> planSchedulesRefs<T extends Object>(
+    Expression<T> Function($$PlanSchedulesTableAnnotationComposer a) f,
+  ) {
+    final $$PlanSchedulesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.planSchedules,
+      getReferencedColumn: (t) => t.planId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlanSchedulesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.planSchedules,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4842,6 +5716,7 @@ class $$PlansTableTableManager
           PrefetchHooks Function({
             bool planGroupsRefs,
             bool planExercisesRefs,
+            bool planSchedulesRefs,
             bool sessionsRefs,
             bool appSettingsTableRefs,
           })
@@ -4863,11 +5738,13 @@ class $$PlansTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<int> position = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> active = const Value.absent(),
               }) => PlansCompanion(
                 id: id,
                 name: name,
                 position: position,
                 createdAt: createdAt,
+                active: active,
               ),
           createCompanionCallback:
               ({
@@ -4875,11 +5752,13 @@ class $$PlansTableTableManager
                 required String name,
                 required int position,
                 required DateTime createdAt,
+                Value<bool> active = const Value.absent(),
               }) => PlansCompanion.insert(
                 id: id,
                 name: name,
                 position: position,
                 createdAt: createdAt,
+                active: active,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -4893,6 +5772,7 @@ class $$PlansTableTableManager
               ({
                 planGroupsRefs = false,
                 planExercisesRefs = false,
+                planSchedulesRefs = false,
                 sessionsRefs = false,
                 appSettingsTableRefs = false,
               }) {
@@ -4901,6 +5781,7 @@ class $$PlansTableTableManager
                   explicitlyWatchedTables: [
                     if (planGroupsRefs) db.planGroups,
                     if (planExercisesRefs) db.planExercises,
+                    if (planSchedulesRefs) db.planSchedules,
                     if (sessionsRefs) db.sessions,
                     if (appSettingsTableRefs) db.appSettingsTable,
                   ],
@@ -4943,6 +5824,26 @@ class $$PlansTableTableManager
                                 table,
                                 p0,
                               ).planExercisesRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'plan_id',
+                          typedResults: items,
+                        ),
+                      if (planSchedulesRefs)
+                        await $_getPrefetchedDataByColumns<
+                          Plan,
+                          $PlansTable,
+                          PlanScheduleEntry,
+                          $PlanSchedulesTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PlansTableReferences
+                              ._planSchedulesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PlansTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).planSchedulesRefs,
                           currentColumn: 'id',
                           referencedColumn: 'plan_id',
                           typedResults: items,
@@ -5010,6 +5911,7 @@ typedef $$PlansTableProcessedTableManager =
       PrefetchHooks Function({
         bool planGroupsRefs,
         bool planExercisesRefs,
+        bool planSchedulesRefs,
         bool sessionsRefs,
         bool appSettingsTableRefs,
       })
@@ -6020,6 +6922,303 @@ typedef $$PlanExercisesTableProcessedTableManager =
       (PlanExercise, $$PlanExercisesTableReferences),
       PlanExercise,
       PrefetchHooks Function({bool planId, bool exerciseId, bool groupId})
+    >;
+typedef $$PlanSchedulesTableCreateCompanionBuilder =
+    PlanSchedulesCompanion Function({
+      Value<int> id,
+      required int planId,
+      required int weekday,
+      required int minuteOfDay,
+    });
+typedef $$PlanSchedulesTableUpdateCompanionBuilder =
+    PlanSchedulesCompanion Function({
+      Value<int> id,
+      Value<int> planId,
+      Value<int> weekday,
+      Value<int> minuteOfDay,
+    });
+
+final class $$PlanSchedulesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $PlanSchedulesTable, PlanScheduleEntry> {
+  $$PlanSchedulesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PlansTable _planIdTable(_$AppDatabase db) =>
+      db.plans.createAlias('plan_schedules__plan_id__plans__id');
+
+  $$PlansTableProcessedTableManager get planId {
+    final $_column = $_itemColumn<int>('plan_id')!;
+
+    final manager = $$PlansTableTableManager(
+      $_db,
+      $_db.plans,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_planIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PlanSchedulesTableFilterComposer
+    extends Composer<_$AppDatabase, $PlanSchedulesTable> {
+  $$PlanSchedulesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weekday => $composableBuilder(
+    column: $table.weekday,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get minuteOfDay => $composableBuilder(
+    column: $table.minuteOfDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PlansTableFilterComposer get planId {
+    final $$PlansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.plans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlansTableFilterComposer(
+            $db: $db,
+            $table: $db.plans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlanSchedulesTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlanSchedulesTable> {
+  $$PlanSchedulesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weekday => $composableBuilder(
+    column: $table.weekday,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get minuteOfDay => $composableBuilder(
+    column: $table.minuteOfDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PlansTableOrderingComposer get planId {
+    final $$PlansTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.plans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlansTableOrderingComposer(
+            $db: $db,
+            $table: $db.plans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlanSchedulesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlanSchedulesTable> {
+  $$PlanSchedulesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get weekday =>
+      $composableBuilder(column: $table.weekday, builder: (column) => column);
+
+  GeneratedColumn<int> get minuteOfDay => $composableBuilder(
+    column: $table.minuteOfDay,
+    builder: (column) => column,
+  );
+
+  $$PlansTableAnnotationComposer get planId {
+    final $$PlansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.plans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.plans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlanSchedulesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PlanSchedulesTable,
+          PlanScheduleEntry,
+          $$PlanSchedulesTableFilterComposer,
+          $$PlanSchedulesTableOrderingComposer,
+          $$PlanSchedulesTableAnnotationComposer,
+          $$PlanSchedulesTableCreateCompanionBuilder,
+          $$PlanSchedulesTableUpdateCompanionBuilder,
+          (PlanScheduleEntry, $$PlanSchedulesTableReferences),
+          PlanScheduleEntry,
+          PrefetchHooks Function({bool planId})
+        > {
+  $$PlanSchedulesTableTableManager(_$AppDatabase db, $PlanSchedulesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PlanSchedulesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlanSchedulesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlanSchedulesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> planId = const Value.absent(),
+                Value<int> weekday = const Value.absent(),
+                Value<int> minuteOfDay = const Value.absent(),
+              }) => PlanSchedulesCompanion(
+                id: id,
+                planId: planId,
+                weekday: weekday,
+                minuteOfDay: minuteOfDay,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int planId,
+                required int weekday,
+                required int minuteOfDay,
+              }) => PlanSchedulesCompanion.insert(
+                id: id,
+                planId: planId,
+                weekday: weekday,
+                minuteOfDay: minuteOfDay,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PlanSchedulesTable, PlanScheduleEntry>(table),
+                  $$PlanSchedulesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({planId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (planId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.planId,
+                        referencedTable: $$PlanSchedulesTableReferences
+                            ._planIdTable(db),
+                        referencedColumn: $$PlanSchedulesTableReferences
+                            ._planIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PlanSchedulesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PlanSchedulesTable,
+      PlanScheduleEntry,
+      $$PlanSchedulesTableFilterComposer,
+      $$PlanSchedulesTableOrderingComposer,
+      $$PlanSchedulesTableAnnotationComposer,
+      $$PlanSchedulesTableCreateCompanionBuilder,
+      $$PlanSchedulesTableUpdateCompanionBuilder,
+      (PlanScheduleEntry, $$PlanSchedulesTableReferences),
+      PlanScheduleEntry,
+      PrefetchHooks Function({bool planId})
     >;
 typedef $$SessionsTableCreateCompanionBuilder = SessionsCompanion Function({
   Value<int> id,
@@ -8213,6 +9412,19 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<int> backupReminderDays,
       Value<double> defaultStep,
       Value<WeightUnit> defaultStepUnit,
+      Value<bool> notifyEvening,
+      Value<int> eveningMinute,
+      Value<bool> notifyBefore,
+      Value<int> beforeMinutes,
+      Value<bool> notifyRest,
+      Value<bool> notifyOpenSession,
+      Value<bool> notifyBackup,
+      Value<bool> notifyStreak,
+      Value<bool> checkUpdates,
+      Value<String> bookingUrl,
+      Value<DateTime?> lastUpdateCheckAt,
+      Value<String?> latestVersion,
+      Value<bool> notificationsAsked,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
     AppSettingsTableCompanion Function({
@@ -8229,6 +9441,19 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<int> backupReminderDays,
       Value<double> defaultStep,
       Value<WeightUnit> defaultStepUnit,
+      Value<bool> notifyEvening,
+      Value<int> eveningMinute,
+      Value<bool> notifyBefore,
+      Value<int> beforeMinutes,
+      Value<bool> notifyRest,
+      Value<bool> notifyOpenSession,
+      Value<bool> notifyBackup,
+      Value<bool> notifyStreak,
+      Value<bool> checkUpdates,
+      Value<String> bookingUrl,
+      Value<DateTime?> lastUpdateCheckAt,
+      Value<String?> latestVersion,
+      Value<bool> notificationsAsked,
     });
 
 final class $$AppSettingsTableTableReferences
@@ -8328,6 +9553,71 @@ class $$AppSettingsTableTableFilterComposer
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
+  ColumnFilters<bool> get notifyEvening => $composableBuilder(
+    column: $table.notifyEvening,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get eveningMinute => $composableBuilder(
+    column: $table.eveningMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get notifyBefore => $composableBuilder(
+    column: $table.notifyBefore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get beforeMinutes => $composableBuilder(
+    column: $table.beforeMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get notifyRest => $composableBuilder(
+    column: $table.notifyRest,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get notifyOpenSession => $composableBuilder(
+    column: $table.notifyOpenSession,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get notifyBackup => $composableBuilder(
+    column: $table.notifyBackup,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get notifyStreak => $composableBuilder(
+    column: $table.notifyStreak,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get checkUpdates => $composableBuilder(
+    column: $table.checkUpdates,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookingUrl => $composableBuilder(
+    column: $table.bookingUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastUpdateCheckAt => $composableBuilder(
+    column: $table.lastUpdateCheckAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get latestVersion => $composableBuilder(
+    column: $table.latestVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get notificationsAsked => $composableBuilder(
+    column: $table.notificationsAsked,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$PlansTableFilterComposer get lastSelectedPlanId {
     final $$PlansTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -8421,6 +9711,71 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get notifyEvening => $composableBuilder(
+    column: $table.notifyEvening,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get eveningMinute => $composableBuilder(
+    column: $table.eveningMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get notifyBefore => $composableBuilder(
+    column: $table.notifyBefore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get beforeMinutes => $composableBuilder(
+    column: $table.beforeMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get notifyRest => $composableBuilder(
+    column: $table.notifyRest,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get notifyOpenSession => $composableBuilder(
+    column: $table.notifyOpenSession,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get notifyBackup => $composableBuilder(
+    column: $table.notifyBackup,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get notifyStreak => $composableBuilder(
+    column: $table.notifyStreak,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get checkUpdates => $composableBuilder(
+    column: $table.checkUpdates,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookingUrl => $composableBuilder(
+    column: $table.bookingUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastUpdateCheckAt => $composableBuilder(
+    column: $table.lastUpdateCheckAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get latestVersion => $composableBuilder(
+    column: $table.latestVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get notificationsAsked => $composableBuilder(
+    column: $table.notificationsAsked,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PlansTableOrderingComposer get lastSelectedPlanId {
     final $$PlansTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -8511,6 +9866,71 @@ class $$AppSettingsTableTableAnnotationComposer
         builder: (column) => column,
       );
 
+  GeneratedColumn<bool> get notifyEvening => $composableBuilder(
+    column: $table.notifyEvening,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get eveningMinute => $composableBuilder(
+    column: $table.eveningMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get notifyBefore => $composableBuilder(
+    column: $table.notifyBefore,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get beforeMinutes => $composableBuilder(
+    column: $table.beforeMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get notifyRest => $composableBuilder(
+    column: $table.notifyRest,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get notifyOpenSession => $composableBuilder(
+    column: $table.notifyOpenSession,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get notifyBackup => $composableBuilder(
+    column: $table.notifyBackup,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get notifyStreak => $composableBuilder(
+    column: $table.notifyStreak,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get checkUpdates => $composableBuilder(
+    column: $table.checkUpdates,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bookingUrl => $composableBuilder(
+    column: $table.bookingUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastUpdateCheckAt => $composableBuilder(
+    column: $table.lastUpdateCheckAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get latestVersion => $composableBuilder(
+    column: $table.latestVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get notificationsAsked => $composableBuilder(
+    column: $table.notificationsAsked,
+    builder: (column) => column,
+  );
+
   $$PlansTableAnnotationComposer get lastSelectedPlanId {
     final $$PlansTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -8578,6 +9998,19 @@ class $$AppSettingsTableTableTableManager
                 Value<int> backupReminderDays = const Value.absent(),
                 Value<double> defaultStep = const Value.absent(),
                 Value<WeightUnit> defaultStepUnit = const Value.absent(),
+                Value<bool> notifyEvening = const Value.absent(),
+                Value<int> eveningMinute = const Value.absent(),
+                Value<bool> notifyBefore = const Value.absent(),
+                Value<int> beforeMinutes = const Value.absent(),
+                Value<bool> notifyRest = const Value.absent(),
+                Value<bool> notifyOpenSession = const Value.absent(),
+                Value<bool> notifyBackup = const Value.absent(),
+                Value<bool> notifyStreak = const Value.absent(),
+                Value<bool> checkUpdates = const Value.absent(),
+                Value<String> bookingUrl = const Value.absent(),
+                Value<DateTime?> lastUpdateCheckAt = const Value.absent(),
+                Value<String?> latestVersion = const Value.absent(),
+                Value<bool> notificationsAsked = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
                 defaultSets: defaultSets,
@@ -8592,6 +10025,19 @@ class $$AppSettingsTableTableTableManager
                 backupReminderDays: backupReminderDays,
                 defaultStep: defaultStep,
                 defaultStepUnit: defaultStepUnit,
+                notifyEvening: notifyEvening,
+                eveningMinute: eveningMinute,
+                notifyBefore: notifyBefore,
+                beforeMinutes: beforeMinutes,
+                notifyRest: notifyRest,
+                notifyOpenSession: notifyOpenSession,
+                notifyBackup: notifyBackup,
+                notifyStreak: notifyStreak,
+                checkUpdates: checkUpdates,
+                bookingUrl: bookingUrl,
+                lastUpdateCheckAt: lastUpdateCheckAt,
+                latestVersion: latestVersion,
+                notificationsAsked: notificationsAsked,
               ),
           createCompanionCallback:
               ({
@@ -8608,6 +10054,19 @@ class $$AppSettingsTableTableTableManager
                 Value<int> backupReminderDays = const Value.absent(),
                 Value<double> defaultStep = const Value.absent(),
                 Value<WeightUnit> defaultStepUnit = const Value.absent(),
+                Value<bool> notifyEvening = const Value.absent(),
+                Value<int> eveningMinute = const Value.absent(),
+                Value<bool> notifyBefore = const Value.absent(),
+                Value<int> beforeMinutes = const Value.absent(),
+                Value<bool> notifyRest = const Value.absent(),
+                Value<bool> notifyOpenSession = const Value.absent(),
+                Value<bool> notifyBackup = const Value.absent(),
+                Value<bool> notifyStreak = const Value.absent(),
+                Value<bool> checkUpdates = const Value.absent(),
+                Value<String> bookingUrl = const Value.absent(),
+                Value<DateTime?> lastUpdateCheckAt = const Value.absent(),
+                Value<String?> latestVersion = const Value.absent(),
+                Value<bool> notificationsAsked = const Value.absent(),
               }) => AppSettingsTableCompanion.insert(
                 id: id,
                 defaultSets: defaultSets,
@@ -8622,6 +10081,19 @@ class $$AppSettingsTableTableTableManager
                 backupReminderDays: backupReminderDays,
                 defaultStep: defaultStep,
                 defaultStepUnit: defaultStepUnit,
+                notifyEvening: notifyEvening,
+                eveningMinute: eveningMinute,
+                notifyBefore: notifyBefore,
+                beforeMinutes: beforeMinutes,
+                notifyRest: notifyRest,
+                notifyOpenSession: notifyOpenSession,
+                notifyBackup: notifyBackup,
+                notifyStreak: notifyStreak,
+                checkUpdates: checkUpdates,
+                bookingUrl: bookingUrl,
+                lastUpdateCheckAt: lastUpdateCheckAt,
+                latestVersion: latestVersion,
+                notificationsAsked: notificationsAsked,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -8700,6 +10172,8 @@ class $AppDatabaseManager {
       $$PlanGroupsTableTableManager(_db, _db.planGroups);
   $$PlanExercisesTableTableManager get planExercises =>
       $$PlanExercisesTableTableManager(_db, _db.planExercises);
+  $$PlanSchedulesTableTableManager get planSchedules =>
+      $$PlanSchedulesTableTableManager(_db, _db.planSchedules);
   $$SessionsTableTableManager get sessions =>
       $$SessionsTableTableManager(_db, _db.sessions);
   $$SessionSupersetsTableTableManager get sessionSupersets =>

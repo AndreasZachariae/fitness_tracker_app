@@ -148,6 +148,15 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         Rekorden; Stufen ohne kg nicht im Volumen
   - [x] Umrechnen beim Wechsel zwischen „Stufen ohne kg“ und kg (mit Rückfrage), Backup-Format 3, CSV-Spalten
   - [x] Tests (Domain, Migration mit Daten, Repository, Widgets), CHANGELOG, Testliste
+- [x] 1.2.0 Benachrichtigungen (`docs/ROADMAP.md`, 1.2.0+15)
+  - [x] Schema 4 (additiv): `plans.active`, Tabelle `plan_schedules` (Wochentag + Uhrzeit), Einstellungen für
+        Benachrichtigungen, Buchungslink, Update-Prüfung
+  - [x] Pläne: Trainingstage mit Uhrzeit beim Anlegen und Bearbeiten, „aktiv“; inaktive Pläne ausgegraut
+  - [x] Erinnerungen (flutter_local_notifications, offline): Abend vorher mit „Slot buchen“, 1 h vorher mit
+        Motivationsspruch, Training noch offen (3 h), Backup fällig, Serie in Gefahr (Sa 18 Uhr); nach Neustart neu geplant
+  - [x] Pause als Countdown-Benachrichtigung auf dem Sperrbildschirm
+  - [x] Update-Hinweis: höchstens einmal am Tag GitHub-Releases abfragen (einziger Internetzugriff), Link im Browser
+  - [x] Einstellungen → Benachrichtigungen; Backup-Format 4; Demo-Pläne mit Trainingstagen; Tests; CHANGELOG; Testliste
 
 ## Annahmen
 
@@ -550,6 +559,37 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   Statistik und Rekorde zeigen „Stufe“ statt kg; `e1rm_kg` im CSV bleibt dort leer.
 - **1.1.0 Stufen nur für Gewicht × Wdh:** Bei Körpergewicht und Zeit ergibt „Stufe“ keinen Sinn; dort gibt es Standard
   und Eigene.
+- **1.2.0 Entscheidungen des Menschen:** Update-Prüfung mit Link im Browser (kein Herunterladen in der App, keine
+  Installationsrechte); Berechtigungen `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `INTERNET` (nur Update-Abfrage);
+  alle vier Zusatz-Benachrichtigungen (Pause auf dem Sperrbildschirm, Training noch offen, Backup, Serie in Gefahr);
+  Buchungslink in den Einstellungen, vorbelegt mit der optioffice-Seite des Studios, „Slot buchen“ öffnet sie.
+- **1.2.0 Umsetzung Erinnerungen:** `flutter_local_notifications` 22.3.3 (23.x verlangt compileSdk 37, im Container ist
+  SDK 36). Geplant wird mit absoluten UTC-Zeitpunkten (keine Zeitzonen-Datenbank nötig), jeweils für die nächsten 14 Tage;
+  `ReminderSync` plant nach jeder relevanten Änderung (Pläne, Trainingstage, Einstellungen, Training, Sätze, Verlauf) und
+  bei jeder Rückkehr in die App alles neu (alte geplante Erinnerungen im eigenen Id-Bereich werden vorher gelöscht). Nach
+  einem Neustart stellt das Paket die geplanten Benachrichtigungen selbst wieder her. Die Logik ist reines Dart
+  (`lib/domain/reminders.dart`) und getestet. Die Berechtigung fragt GymLog einmal beim ersten Start mit 1.2.0.
+  Desugaring (`desugar_jdk_libs`) ist für das Paket nötig.
+- **1.2.0 Regeln der Erinnerungen:** Abend vorher zur eingestellten Uhrzeit am Vortag; „vor dem Training“ X Minuten vorher,
+  nicht wenn heute schon ein Training läuft; mehrere aktive Pläne am selben Tag erinnern jeweils einzeln; nur Zeitpunkte in
+  der Zukunft. „Training noch offen“ 3 h nach dem letzten Satz (ohne Satz nach dem Start). Backup: 19 Uhr am Tag, an dem
+  die Erinnerung fällig wird; schon überfällig → sonntags 19 Uhr (einmal pro Woche); ohne Trainings keine Erinnerung,
+  ohne jedes Backup noch am selben Abend. Serie: Samstag 18 Uhr, wenn eine Serie läuft und diese Woche noch kein Training
+  war. Die Motivationssprüche (32, deutsch/englisch, mit Robotik-/KI-/Software-Witzen) wechseln je Tag und Plan.
+- **1.2.0 Pause auf dem Sperrbildschirm:** Geht die App während einer Pause in den Hintergrund, erscheint eine stille,
+  feste Benachrichtigung mit Android-Countdown bis zum Pausenende; sie verschwindet 15 s danach von selbst bzw. beim
+  Zurückkehren. Die Vibration kommt weiter vom Alarm aus 1.0.1 (funktioniert auch ohne Benachrichtigungsrecht).
+- **1.2.0 Update-Prüfung:** Einmal pro 24 h beim Öffnen bzw. Zurückkehren eine GET-Anfrage an
+  `api.github.com/repos/…/releases/latest` (nur `tag_name` wird gelesen, kein Konto, keine Daten). Neuere Version →
+  einmal pro Version eine Benachrichtigung und dauerhaft ein Hinweis unter Einstellungen → Über mit „Herunterladen“
+  (öffnet die Release-Seite im Browser). Offline oder Fehler → still, nächster Versuch beim nächsten Öffnen.
+- **1.2.0 Trainingstage:** Neu angehakte Tage übernehmen die zuletzt gesetzte Uhrzeit (sonst 18:00). Beim Duplizieren
+  werden Trainingstage nicht kopiert (sonst doppelte Erinnerungen). Inaktive Pläne bleiben auswählbar, nur ausgegraut.
+  Backup-Format 4 enthält Trainingstage, „aktiv“ und die Benachrichtigungs-Einstellungen; Gerätezustand (Berechtigung
+  gefragt, letzte Update-Prüfung) nicht.
+- **1.2.0 Tests:** Das Synchronisations-Widget ist in den allgemeinen Oberflächentests abgeschaltet
+  (`reminderSyncEnabledProvider`), weil echte Datei-Ein-/Ausgabe und simulierte Zeit sonst ineinandergreifen; eigene Tests
+  prüfen es eingeschaltet.
 
 ## Datenbank-Migrationen (ab Schema 2)
 
@@ -566,11 +606,26 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 | Paket | Zweck | Begründung | seit |
 |---|---|---|---|
 | `package_info_plus` | App-Version und Build-Nummer für „Über“ und das Backup-Feld `appVersion` | Version steht nur im Manifest; Flutter Community Plus, aktiv gepflegt, war bereits indirekt über `share_plus` enthalten | M8 |
+| `flutter_local_notifications` 22.x | Erinnerungen und Pausen-Countdown als Android-Benachrichtigungen | Verbreitetes, aktiv gepflegtes Paket; offline, keine Analytics; 22.x, weil 23.x compileSdk 37 verlangt | 1.2.0 |
+| `timezone` | Zeitpunkte für geplante Benachrichtigungen | Wird von flutter_local_notifications verlangt; genutzt nur als UTC | 1.2.0 |
+| `url_launcher` | Buchungsseite und Release-Seite im Browser öffnen | Offizielles Flutter-Paket; GymLog selbst lädt dabei nichts | 1.2.0 |
 | `flutter_localizations` (SDK) | Deutsche Material-Texte (DatePicker, Tooltips wie „Zurück“) | Für Locale `de_DE` in `MaterialApp` nötig, Teil des Flutter-SDK | M0 |
 
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.2.0 Benachrichtigungen
+Nur, was am Handy geprüft werden muss; Zeitpunkte, Texte, Einstellungen und Synchronisierung sind automatisch getestet.
+- [ ] Erster Start nach dem Update: Android fragt einmal nach Benachrichtigungen → „Zulassen“.
+- [ ] Einen Plan auf einen Trainingstag morgen stellen, Abend-Erinnerung in den Einstellungen auf in 2–3 Minuten setzen:
+  Benachrichtigung „Morgen um …“ kommt pünktlich; „Slot buchen“ öffnet die Buchungsseite im Browser.
+- [ ] „Vor dem Training“ mit Trainingstag heute in ~20 Minuten und Vorlauf 15 min: Benachrichtigung mit Spruch kommt.
+- [ ] Handy neu starten, dann eine dieser Erinnerungen abwarten: kommt trotzdem.
+- [ ] Satz speichern, App in den Hintergrund / Display sperren: Countdown „Pause“ auf dem Sperrbildschirm, Vibration am
+  Ende, Benachrichtigung verschwindet kurz danach.
+- [ ] Update-Hinweis (erst mit der nächsten Version prüfbar, weil 1.1.0 noch nicht nachsieht): Nach dem Release von
+  1.2.1/1.3.0 die Release-App 1.2.0 öffnen → Benachrichtigung „GymLog … ist da“, Tippen öffnet die Release-Seite.
 
 ### 1.1.0 Gewichtseinstellungen
 Nur, was sich am Handy bzw. im Studio prüfen lässt; Rechnung, Migration, Formular und Anzeige sind automatisch getestet.

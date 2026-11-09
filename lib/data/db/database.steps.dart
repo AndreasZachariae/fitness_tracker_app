@@ -1242,9 +1242,527 @@ i1.GeneratedColumn<String> _column_54(
       'NOT NULL DEFAULT \'lbs\' CHECK (default_step_unit IN (\'kg\', \'lbs\'))',
   defaultValue: const i1.CustomExpression('\'lbs\''),
 );
+
+final class Schema4 extends i0.VersionedSchema {
+  Schema4({required super.database}) : super(version: 4);
+  @override
+  late final List<i1.DatabaseSchemaEntity> entities = [
+    exercises,
+    plans,
+    planGroups,
+    planExercises,
+    planSchedules,
+    sessions,
+    sessionSupersets,
+    sessionExercises,
+    setEntries,
+    bodyWeightEntries,
+    appSettings,
+    exercisesNameUnique,
+    plansNameUnique,
+    planExercisesPlan,
+    planExercisesExercise,
+    planGroupsPlan,
+    planSchedulesDay,
+    sessionsStartedAt,
+    sessionsSingleActive,
+    sessionExercisesSession,
+    sessionExercisesExercise,
+    sessionSupersetsSession,
+    setEntriesSessionExercise,
+  ];
+  late final Shape10 exercises = Shape10(
+    source: i0.VersionedTable(
+      entityName: 'exercises',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_1,
+        _column_2,
+        _column_3,
+        _column_4,
+        _column_5,
+        _column_6,
+        _column_7,
+        _column_8,
+        _column_9,
+        _column_50,
+        _column_51,
+        _column_52,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape12 plans = Shape12(
+    source: i0.VersionedTable(
+      entityName: 'plans',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [_column_0, _column_1, _column_10, _column_9, _column_55],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape2 planGroups = Shape2(
+    source: i0.VersionedTable(
+      entityName: 'plan_groups',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_11,
+        _column_12,
+        _column_5,
+        _column_13,
+        _column_14,
+        _column_15,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape3 planExercises = Shape3(
+    source: i0.VersionedTable(
+      entityName: 'plan_exercises',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['UNIQUE(plan_id, exercise_id)'],
+      columns: [
+        _column_0,
+        _column_11,
+        _column_16,
+        _column_10,
+        _column_17,
+        _column_18,
+        _column_19,
+        _column_5,
+        _column_20,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape13 planSchedules = Shape13(
+    source: i0.VersionedTable(
+      entityName: 'plan_schedules',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [_column_0, _column_11, _column_56, _column_57],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape4 sessions = Shape4(
+    source: i0.VersionedTable(
+      entityName: 'sessions',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_21,
+        _column_22,
+        _column_23,
+        _column_24,
+        _column_7,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape5 sessionSupersets = Shape5(
+    source: i0.VersionedTable(
+      entityName: 'session_supersets',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [_column_0, _column_25, _column_5],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape6 sessionExercises = Shape6(
+    source: i0.VersionedTable(
+      entityName: 'session_exercises',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['UNIQUE(session_id, exercise_id)'],
+      columns: [
+        _column_0,
+        _column_25,
+        _column_16,
+        _column_10,
+        _column_26,
+        _column_18,
+        _column_19,
+        _column_5,
+        _column_27,
+        _column_28,
+        _column_29,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape7 setEntries = Shape7(
+    source: i0.VersionedTable(
+      entityName: 'set_entries',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_0,
+        _column_30,
+        _column_31,
+        _column_32,
+        _column_33,
+        _column_34,
+        _column_35,
+        _column_36,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape8 bodyWeightEntries = Shape8(
+    source: i0.VersionedTable(
+      entityName: 'body_weight_entries',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [_column_0, _column_37, _column_38, _column_9],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape14 appSettings = Shape14(
+    source: i0.VersionedTable(
+      entityName: 'app_settings',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_39,
+        _column_40,
+        _column_41,
+        _column_42,
+        _column_43,
+        _column_44,
+        _column_45,
+        _column_46,
+        _column_47,
+        _column_48,
+        _column_49,
+        _column_53,
+        _column_54,
+        _column_58,
+        _column_59,
+        _column_60,
+        _column_61,
+        _column_62,
+        _column_63,
+        _column_64,
+        _column_65,
+        _column_66,
+        _column_67,
+        _column_68,
+        _column_69,
+        _column_70,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  final i1.Index exercisesNameUnique = i1.Index(
+    'exercises_name_unique',
+    'CREATE UNIQUE INDEX exercises_name_unique ON exercises (name COLLATE NOCASE)',
+  );
+  final i1.Index plansNameUnique = i1.Index(
+    'plans_name_unique',
+    'CREATE UNIQUE INDEX plans_name_unique ON plans (name COLLATE NOCASE)',
+  );
+  final i1.Index planExercisesPlan = i1.Index(
+    'plan_exercises_plan',
+    'CREATE INDEX plan_exercises_plan ON plan_exercises (plan_id, position)',
+  );
+  final i1.Index planExercisesExercise = i1.Index(
+    'plan_exercises_exercise',
+    'CREATE INDEX plan_exercises_exercise ON plan_exercises (exercise_id)',
+  );
+  final i1.Index planGroupsPlan = i1.Index(
+    'plan_groups_plan',
+    'CREATE INDEX plan_groups_plan ON plan_groups (plan_id)',
+  );
+  final i1.Index planSchedulesDay = i1.Index(
+    'plan_schedules_day',
+    'CREATE UNIQUE INDEX plan_schedules_day ON plan_schedules (plan_id, weekday)',
+  );
+  final i1.Index sessionsStartedAt = i1.Index(
+    'sessions_started_at',
+    'CREATE INDEX sessions_started_at ON sessions (started_at)',
+  );
+  final i1.Index sessionsSingleActive = i1.Index(
+    'sessions_single_active',
+    'CREATE UNIQUE INDEX sessions_single_active ON sessions ((ended_at IS NULL)) WHERE ended_at IS NULL',
+  );
+  final i1.Index sessionExercisesSession = i1.Index(
+    'session_exercises_session',
+    'CREATE INDEX session_exercises_session ON session_exercises (session_id, position)',
+  );
+  final i1.Index sessionExercisesExercise = i1.Index(
+    'session_exercises_exercise',
+    'CREATE INDEX session_exercises_exercise ON session_exercises (exercise_id)',
+  );
+  final i1.Index sessionSupersetsSession = i1.Index(
+    'session_supersets_session',
+    'CREATE INDEX session_supersets_session ON session_supersets (session_id)',
+  );
+  final i1.Index setEntriesSessionExercise = i1.Index(
+    'set_entries_session_exercise',
+    'CREATE INDEX set_entries_session_exercise ON set_entries (session_exercise_id, set_index)',
+  );
+}
+
+class Shape12 extends i0.VersionedTable {
+  Shape12({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<int> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get name =>
+      columnsByName['name']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get position =>
+      columnsByName['position']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get createdAt =>
+      columnsByName['created_at']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get active =>
+      columnsByName['active']! as i1.GeneratedColumn<int>;
+}
+
+i1.GeneratedColumn<int> _column_55(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'active',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL DEFAULT 1 CHECK (active IN (0, 1))',
+      defaultValue: const i1.CustomExpression('1'),
+    );
+
+class Shape13 extends i0.VersionedTable {
+  Shape13({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<int> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get planId =>
+      columnsByName['plan_id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get weekday =>
+      columnsByName['weekday']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get minuteOfDay =>
+      columnsByName['minute_of_day']! as i1.GeneratedColumn<int>;
+}
+
+i1.GeneratedColumn<int> _column_56(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'weekday',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL CHECK (weekday BETWEEN 1 AND 7)',
+    );
+i1.GeneratedColumn<int> _column_57(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'minute_of_day',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL CHECK (minute_of_day BETWEEN 0 AND 1439)',
+    );
+
+class Shape14 extends i0.VersionedTable {
+  Shape14({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<int> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get defaultSets =>
+      columnsByName['default_sets']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get defaultRestSec =>
+      columnsByName['default_rest_sec']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get restTimerEnabled =>
+      columnsByName['rest_timer_enabled']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get vibrationEnabled =>
+      columnsByName['vibration_enabled']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get keepScreenOn =>
+      columnsByName['keep_screen_on']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get autoActivateNext =>
+      columnsByName['auto_activate_next']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get themeMode =>
+      columnsByName['theme_mode']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get lastSelectedPlanId =>
+      columnsByName['last_selected_plan_id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get lastBackupAt =>
+      columnsByName['last_backup_at']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get backupReminderDays =>
+      columnsByName['backup_reminder_days']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<double> get defaultStep =>
+      columnsByName['default_step']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<String> get defaultStepUnit =>
+      columnsByName['default_step_unit']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get notifyEvening =>
+      columnsByName['notify_evening']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get eveningMinute =>
+      columnsByName['evening_minute']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get notifyBefore =>
+      columnsByName['notify_before']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get beforeMinutes =>
+      columnsByName['before_minutes']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get notifyRest =>
+      columnsByName['notify_rest']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get notifyOpenSession =>
+      columnsByName['notify_open_session']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get notifyBackup =>
+      columnsByName['notify_backup']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get notifyStreak =>
+      columnsByName['notify_streak']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get checkUpdates =>
+      columnsByName['check_updates']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get bookingUrl =>
+      columnsByName['booking_url']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get lastUpdateCheckAt =>
+      columnsByName['last_update_check_at']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get latestVersion =>
+      columnsByName['latest_version']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get notificationsAsked =>
+      columnsByName['notifications_asked']! as i1.GeneratedColumn<int>;
+}
+
+i1.GeneratedColumn<int> _column_58(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'notify_evening',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL DEFAULT 1 CHECK (notify_evening IN (0, 1))',
+      defaultValue: const i1.CustomExpression('1'),
+    );
+i1.GeneratedColumn<int> _column_59(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'evening_minute',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints:
+          'NOT NULL DEFAULT 1200 CHECK (evening_minute BETWEEN 0 AND 1439)',
+      defaultValue: const i1.CustomExpression('1200'),
+    );
+i1.GeneratedColumn<int> _column_60(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'notify_before',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL DEFAULT 1 CHECK (notify_before IN (0, 1))',
+      defaultValue: const i1.CustomExpression('1'),
+    );
+i1.GeneratedColumn<int> _column_61(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'before_minutes',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints:
+          'NOT NULL DEFAULT 60 CHECK (before_minutes BETWEEN 5 AND 1440)',
+      defaultValue: const i1.CustomExpression('60'),
+    );
+i1.GeneratedColumn<int> _column_62(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'notify_rest',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL DEFAULT 1 CHECK (notify_rest IN (0, 1))',
+      defaultValue: const i1.CustomExpression('1'),
+    );
+i1.GeneratedColumn<int> _column_63(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'notify_open_session',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints:
+          'NOT NULL DEFAULT 1 CHECK (notify_open_session IN (0, 1))',
+      defaultValue: const i1.CustomExpression('1'),
+    );
+i1.GeneratedColumn<int> _column_64(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'notify_backup',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL DEFAULT 1 CHECK (notify_backup IN (0, 1))',
+      defaultValue: const i1.CustomExpression('1'),
+    );
+i1.GeneratedColumn<int> _column_65(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'notify_streak',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL DEFAULT 1 CHECK (notify_streak IN (0, 1))',
+      defaultValue: const i1.CustomExpression('1'),
+    );
+i1.GeneratedColumn<int> _column_66(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'check_updates',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL DEFAULT 1 CHECK (check_updates IN (0, 1))',
+      defaultValue: const i1.CustomExpression('1'),
+    );
+i1.GeneratedColumn<String> _column_67(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'booking_url',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL DEFAULT \'https://optioffice.eu/optioffice/login/homepagemodul.php?s=2070&c=303161843&action=termin&t=19192&i=0\'',
+      defaultValue: const i1.CustomExpression(
+        '\'https://optioffice.eu/optioffice/login/homepagemodul.php?s=2070&c=303161843&action=termin&t=19192&i=0\'',
+      ),
+    );
+i1.GeneratedColumn<String> _column_68(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'last_update_check_at',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NULL',
+    );
+i1.GeneratedColumn<String> _column_69(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'latest_version',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NULL',
+    );
+i1.GeneratedColumn<int> _column_70(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'notifications_asked',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints:
+          'NOT NULL DEFAULT 0 CHECK (notifications_asked IN (0, 1))',
+      defaultValue: const i1.CustomExpression('0'),
+    );
 i0.MigrationStepWithVersion migrationSteps({
   required Future<void> Function(i1.Migrator m, Schema2 schema) from1To2,
   required Future<void> Function(i1.Migrator m, Schema3 schema) from2To3,
+  required Future<void> Function(i1.Migrator m, Schema4 schema) from3To4,
 }) {
   return (currentVersion, database) async {
     switch (currentVersion) {
@@ -1258,6 +1776,11 @@ i0.MigrationStepWithVersion migrationSteps({
         final migrator = i1.Migrator(database, schema);
         await from2To3(migrator, schema);
         return 3;
+      case 3:
+        final schema = Schema4(database: database);
+        final migrator = i1.Migrator(database, schema);
+        await from3To4(migrator, schema);
+        return 4;
       default:
         throw ArgumentError.value('Unknown migration from $currentVersion');
     }
@@ -1267,6 +1790,11 @@ i0.MigrationStepWithVersion migrationSteps({
 i1.OnUpgrade stepByStep({
   required Future<void> Function(i1.Migrator m, Schema2 schema) from1To2,
   required Future<void> Function(i1.Migrator m, Schema3 schema) from2To3,
+  required Future<void> Function(i1.Migrator m, Schema4 schema) from3To4,
 }) => i0.VersionedSchema.stepByStepHelper(
-  step: migrationSteps(from1To2: from1To2, from2To3: from2To3),
+  step: migrationSteps(
+    from1To2: from1To2,
+    from2To3: from2To3,
+    from3To4: from3To4,
+  ),
 );

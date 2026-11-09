@@ -86,6 +86,7 @@ void main() {
     await tester.enterText(find.byType(TextField), '  Push  ');
     await tester.tap(find.text(S.create));
     await settle(tester);
+    await closeSheet(tester);
     expect(isSelected(tester, 'Push'), isTrue);
     expect(find.text(S.planEmpty), findsOneWidget);
     final plans = await dbWork(tester, r.plans.getPlans);

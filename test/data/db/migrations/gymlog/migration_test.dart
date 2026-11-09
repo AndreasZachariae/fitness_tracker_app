@@ -8,6 +8,7 @@ import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
+import 'generated/schema_v4.dart' as v4;
 
 /// Migrations must keep every user data row (CLAUDE.md, rule 4).
 void main() {
@@ -421,6 +422,76 @@ void main() {
         expect(settings.defaultStepUnit, 'lbs');
         expect(settings.backupReminderDays, 30);
         expect(await newDb.select(newDb.sessions).get(), hasLength(1));
+      },
+    );
+  });
+
+  test('migration from v3 to v4: plans active, no training days, '
+      'notification settings with defaults (1.2.0)', () async {
+    const t = '2026-11-09T17:00:00.000Z';
+    const oldPlans = [
+      v3.PlansData(id: 1, name: 'Oberkörper', position: 0, createdAt: t),
+      v3.PlansData(id: 2, name: 'Cardio', position: 1, createdAt: t),
+    ];
+    const oldSettings = v3.AppSettingsData(
+      id: 1,
+      defaultSets: 4,
+      defaultRestSec: 120,
+      restTimerEnabled: 1,
+      vibrationEnabled: 0,
+      keepScreenOn: 1,
+      autoActivateNext: 0,
+      themeMode: 'dark',
+      lastSelectedPlanId: 2,
+      lastBackupAt: '2026-11-01T08:00:00.000Z',
+      backupReminderDays: 30,
+      defaultStep: 15,
+      defaultStepUnit: 'lbs',
+    );
+    await verifier.testWithDataIntegrity(
+      oldVersion: 3,
+      newVersion: 4,
+      createOld: v3.DatabaseAtV3.new,
+      createNew: v4.DatabaseAtV4.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insertAll(oldDb.plans, oldPlans);
+        batch.insert(oldDb.appSettings, oldSettings);
+      },
+      validateItems: (newDb) async {
+        expect(await newDb.select(newDb.plans).get(), [
+          for (final p in oldPlans)
+            v4.PlansData(
+              id: p.id,
+              name: p.name,
+              position: p.position,
+              createdAt: p.createdAt,
+              active: 1,
+            ),
+        ]);
+        expect(await newDb.select(newDb.planSchedules).get(), isEmpty);
+        final s = (await newDb.select(newDb.appSettings).get()).single;
+        expect(
+          (s.defaultSets, s.defaultRestSec, s.vibrationEnabled, s.themeMode),
+          (4, 120, 0, 'dark'),
+        );
+        expect(
+          (s.lastSelectedPlanId, s.lastBackupAt),
+          (2, oldSettings.lastBackupAt),
+        );
+        expect((s.defaultStep, s.defaultStepUnit), (15.0, 'lbs'));
+        expect(
+          (s.notifyEvening, s.eveningMinute, s.notifyBefore, s.beforeMinutes),
+          (1, 1200, 1, 60),
+        );
+        expect(
+          (s.notifyRest, s.notifyOpenSession, s.notifyBackup, s.notifyStreak),
+          (1, 1, 1, 1),
+        );
+        expect(s.checkUpdates, 1);
+        expect(s.bookingUrl, contains('optioffice.eu'));
+        expect((s.lastUpdateCheckAt, s.latestVersion), (null, null));
+        expect(s.notificationsAsked, 0);
       },
     );
   });

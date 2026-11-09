@@ -76,6 +76,23 @@ class Plans extends Table {
       text().check(name.trim().length.isBiggerThanValue(0))();
   IntColumn get position => integer()();
   DateTimeColumn get createdAt => dateTime()();
+  // Schema 4 (1.2.0): only active plans remind.
+  BoolColumn get active => boolean().withDefault(const Constant(true))();
+}
+
+/// Training days of a plan with their local time (schema 4, 1.2.0).
+@UseRowClass(PlanScheduleEntry, generateInsertable: true)
+@TableIndex.sql(
+  'CREATE UNIQUE INDEX plan_schedules_day ON plan_schedules '
+  '(plan_id, weekday)',
+)
+class PlanSchedules extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get planId =>
+      integer().references(Plans, #id, onDelete: KeyAction.cascade)();
+  IntColumn get weekday => integer().check(weekday.isBetweenValues(1, 7))();
+  IntColumn get minuteOfDay =>
+      integer().check(minuteOfDay.isBetweenValues(0, 24 * 60 - 1))();
 }
 
 @UseRowClass(PlanExercise, generateInsertable: true)
@@ -274,6 +291,27 @@ class AppSettingsTable extends Table {
       .withDefault(const Constant('lbs'))
       .check(defaultStepUnit.isIn(const ['kg', 'lbs']))
       .map(const WeightUnitConverter())();
+  // Schema 4 (1.2.0): notifications and the update check.
+  BoolColumn get notifyEvening => boolean().withDefault(const Constant(true))();
+  IntColumn get eveningMinute => integer()
+      .withDefault(const Constant(20 * 60))
+      .check(eveningMinute.isBetweenValues(0, 24 * 60 - 1))();
+  BoolColumn get notifyBefore => boolean().withDefault(const Constant(true))();
+  IntColumn get beforeMinutes => integer()
+      .withDefault(const Constant(60))
+      .check(beforeMinutes.isBetweenValues(5, 24 * 60))();
+  BoolColumn get notifyRest => boolean().withDefault(const Constant(true))();
+  BoolColumn get notifyOpenSession =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get notifyBackup => boolean().withDefault(const Constant(true))();
+  BoolColumn get notifyStreak => boolean().withDefault(const Constant(true))();
+  BoolColumn get checkUpdates => boolean().withDefault(const Constant(true))();
+  TextColumn get bookingUrl =>
+      text().withDefault(const Constant(AppSettings.defaultBookingUrl))();
+  DateTimeColumn get lastUpdateCheckAt => dateTime().nullable()();
+  TextColumn get latestVersion => text().nullable()();
+  BoolColumn get notificationsAsked =>
+      boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};

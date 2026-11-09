@@ -10,7 +10,7 @@ const backupFormat = 'gymlog-backup';
 
 /// 2 (M9): `planGroups`, `sessionSupersets`, `planExercises[].groupId` and
 /// `sessionExercises[].supersetId`. Version 1 files are still read.
-const backupFormatVersion = 3;
+const backupFormatVersion = 4;
 
 final class BackupData {
   const BackupData({
@@ -130,6 +130,16 @@ String encodeBackup(BackupData b) {
             'name': p.name,
             'position': p.position,
             'createdAt': _t(p.createdAt),
+            'active': p.active,
+          },
+      ],
+      'planSchedules': [
+        for (final s in d.planSchedules)
+          {
+            'id': s.id,
+            'planId': s.planId,
+            'weekday': s.weekday,
+            'minuteOfDay': s.minuteOfDay,
           },
       ],
       'planExercises': [
@@ -224,6 +234,18 @@ String encodeBackup(BackupData b) {
         'backupReminderDays': s.backupReminderDays,
         'defaultStep': s.defaultStep,
         'defaultStepUnit': s.defaultStepUnit.code,
+        // Format 4 (1.2.0). Device state (permission asked, update check) is
+        // not part of a backup.
+        'notifyEvening': s.notifyEvening,
+        'eveningMinute': s.eveningMinute,
+        'notifyBefore': s.notifyBefore,
+        'beforeMinutes': s.beforeMinutes,
+        'notifyRest': s.notifyRest,
+        'notifyOpenSession': s.notifyOpenSession,
+        'notifyBackup': s.notifyBackup,
+        'notifyStreak': s.notifyStreak,
+        'checkUpdates': s.checkUpdates,
+        'bookingUrl': s.bookingUrl,
       },
     },
   });
@@ -362,6 +384,7 @@ BackupData decodeBackup(String text) {
 
   final v2 = version >= 2;
   final v3 = version >= 3;
+  final v4 = version >= 4;
   final dataset = Dataset(
     exercises: _list(
       data,
@@ -406,8 +429,21 @@ BackupData decodeBackup(String text) {
         name: r.string('name'),
         position: r.integer('position'),
         createdAt: r.time('createdAt'),
+        active: !v4 || r.boolean('active'),
       ),
     ),
+    planSchedules: !v4
+        ? const []
+        : _list(
+            data,
+            'planSchedules',
+            (r) => PlanScheduleEntry(
+              id: r.integer('id'),
+              planId: r.integer('planId'),
+              weekday: r.integer('weekday'),
+              minuteOfDay: r.integer('minuteOfDay'),
+            ),
+          ),
     planExercises: _list(
       data,
       'planExercises',
@@ -507,7 +543,7 @@ BackupData decodeBackup(String text) {
   final rawSettings = data['settings'];
   if (rawSettings is! Map<String, Object?>) _invalid('data.settings');
   final r = _Reader(rawSettings, 'settings');
-  final settings = AppSettings(
+  final base = AppSettings(
     defaultSets: r.integer('defaultSets'),
     defaultRestSec: r.integer('defaultRestSec'),
     restTimerEnabled: r.boolean('restTimerEnabled'),
@@ -525,6 +561,21 @@ BackupData decodeBackup(String text) {
         ? r.coded('defaultStepUnit', WeightUnit.values)
         : AppSettings.defaults.defaultStepUnit,
   );
+  final notifications = v4
+      ? base.copyWith(
+          notifyEvening: r.boolean('notifyEvening'),
+          eveningMinute: r.integer('eveningMinute'),
+          notifyBefore: r.boolean('notifyBefore'),
+          beforeMinutes: r.integer('beforeMinutes'),
+          notifyRest: r.boolean('notifyRest'),
+          notifyOpenSession: r.boolean('notifyOpenSession'),
+          notifyBackup: r.boolean('notifyBackup'),
+          notifyStreak: r.boolean('notifyStreak'),
+          checkUpdates: r.boolean('checkUpdates'),
+          bookingUrl: r.string('bookingUrl'),
+        )
+      : base;
+  final settings = notifications;
 
   validateDataset(dataset, settings);
   return BackupData(
@@ -583,6 +634,23 @@ void validateDataset(Dataset d, AppSettings settings) {
   for (final g in d.planGroups) {
     ref(plans, g.planId, 'planGroup.planId');
   }
+  ids(d.planSchedules, (s) => s.id, 'planSchedule');
+  for (final s in d.planSchedules) {
+    ref(plans, s.planId, 'planSchedule.planId');
+    if (s.weekday < 1 ||
+        s.weekday > 7 ||
+        s.minuteOfDay < 0 ||
+        s.minuteOfDay >= 24 * 60) {
+      throw BackupFormatException(
+        BackupError.invalidField,
+        'planSchedule ${s.id}',
+      );
+    }
+  }
+  unique(
+    d.planSchedules.map((s) => (s.planId, s.weekday)),
+    'plan training day',
+  );
   for (final p in d.planExercises) {
     ref(plans, p.planId, 'planExercise.planId');
     ref(exercises, p.exerciseId, 'planExercise.exerciseId');

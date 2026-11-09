@@ -7,10 +7,12 @@ import '../../../core/clock.dart';
 import '../../../core/device.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/l10n/strings_de.dart';
+import '../../../core/notifications.dart';
 import '../../../core/theme/gym_colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../data/providers.dart';
 import '../../../domain/models/models.dart';
+import '../../../domain/reminders.dart';
 import '../../../domain/rest_timer.dart';
 import '../../../widgets/ticker.dart';
 
@@ -118,11 +120,27 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
         }
         _alarm = running;
         unawaited(ref.read(restAlarmProvider).schedule(running.end));
+        // Countdown on the lock screen (1.2.0).
+        if (settings.notifyRest) {
+          unawaited(
+            ref
+                .read(notificationGatewayProvider)
+                .showCountdown(
+                  id: ReminderIds.rest,
+                  end: running.end,
+                  title: S.notifyRestTitle,
+                  body: S.notifyRestBody,
+                ),
+          );
+        }
       case AppLifecycleState.resumed:
         final alarm = _alarm;
         if (alarm == null) return;
         _alarm = null;
         unawaited(ref.read(restAlarmProvider).cancel());
+        unawaited(
+          ref.read(notificationGatewayProvider).cancel(ReminderIds.rest),
+        );
         // The alarm has vibrated already; do not vibrate a second time.
         if (!ref.read(clockProvider).now().isBefore(alarm.end)) {
           ref.read(restTimerProvider.notifier).markSignalled(alarm.setId);

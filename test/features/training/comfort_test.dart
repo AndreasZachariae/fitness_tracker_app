@@ -12,6 +12,7 @@ import 'package:gymlog/data/repositories/session_repository.dart';
 import 'package:gymlog/data/repositories/settings_repository.dart';
 import 'package:gymlog/domain/models/models.dart';
 import 'package:gymlog/domain/records.dart';
+import 'package:gymlog/domain/reminders.dart';
 import 'package:gymlog/features/training/session/rest_timer_bar.dart';
 import 'package:gymlog/features/training/session/session_tiles.dart';
 
@@ -28,9 +29,11 @@ void main() {
   late FakeFeedback feedback;
   late FakeScreenAwake screen;
   late FakeRestAlarm alarm;
+  late FakeNotifications notifications;
 
   setUp(() {
     alarm = FakeRestAlarm();
+    notifications = FakeNotifications();
     db = newTestDatabase();
     r = Repos(db);
     clock = newTestClock();
@@ -49,6 +52,7 @@ void main() {
       feedback: feedback,
       screen: screen,
       alarm: alarm,
+      notifications: notifications,
     );
     await settle(tester);
   }
@@ -181,12 +185,18 @@ void main() {
       await lifecycle(tester, toBackground);
       expect(alarm.calls, ['schedule']);
       expect(alarm.scheduledAt, testNow.add(const Duration(seconds: 90)));
+      // Countdown on the lock screen (1.2.0).
+      final countdown = notifications.shown.single;
+      expect(countdown.id, ReminderIds.rest);
+      expect(countdown.at, testNow.add(const Duration(seconds: 90)));
+      expect(countdown.title, S.notifyRestTitle);
 
       clock.advance(const Duration(seconds: 62));
       await lifecycle(tester, toForeground);
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
       expect(alarm.calls, ['schedule', 'cancel']);
+      expect(notifications.cancelled, contains(ReminderIds.rest));
       expect(find.text(S.restOver), findsOneWidget);
       expect(restOvers(), 0, reason: 'the alarm vibrated already');
       await disposeApp(tester, db);

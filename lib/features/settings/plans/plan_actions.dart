@@ -8,6 +8,7 @@ import '../../../domain/models/models.dart';
 import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/name_dialog.dart';
 import '../../../widgets/snackbars.dart';
+import 'plan_schedule_sheet.dart';
 
 Future<String?> _saveName(Future<void> Function() action) async {
   try {
@@ -23,6 +24,8 @@ Future<String?> _saveName(Future<void> Function() action) async {
 }
 
 /// Asks for a name and creates a plan; returns its id.
+/// Asks for a name, creates the plan and offers its training days (1.2.0);
+/// returns its id.
 Future<int?> createPlanWithDialog(BuildContext context, WidgetRef ref) async {
   int? id;
   await showNameDialog(
@@ -33,6 +36,12 @@ Future<int?> createPlanWithDialog(BuildContext context, WidgetRef ref) async {
       () async => id = await ref.read(planRepositoryProvider).create(name),
     ),
   );
+  final created = id == null
+      ? null
+      : await ref.read(planRepositoryProvider).findById(id!);
+  if (created != null && context.mounted) {
+    await showPlanScheduleSheet(context, created);
+  }
   return id;
 }
 

@@ -47,7 +47,16 @@ Version 1.0 der Spezifikation. Verbindlich für die Umsetzung. Abschnittsnummern
   („Signaturschlüssel fehlt – siehe README, Schritt 4“). Kein Fallback auf Debug-Signatur für Release.
 - Debug-Signatur: Standard-Debug-Keystore unter `~/.android` (liegt im Docker-Volume).
 - Manifest: Permission `VIBRATE`; ab 1.0.1 zusätzlich `USE_EXACT_ALARM` und `SCHEDULE_EXACT_ALARM` (nur Android 12) für die
-  Pausen-Vibration im Hintergrund (§6.2.1). `android:allowBackup` bleibt auf dem Standard (aktiv) als zusätzliches Sicherheitsnetz.
+  Pausen-Vibration im Hintergrund (§6.2.1); ab 1.2.0 `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED` (Erinnerungen, nach
+  Neustart neu geplant) und `INTERNET` nur für die tägliche Abfrage der neuesten GitHub-Release (abschaltbar).
+- Benachrichtigungen (ab 1.2.0, alle einzeln abschaltbar unter Einstellungen → Benachrichtigungen): Abend vorher (Standard
+  20:00) mit Knopf „Slot buchen“ (öffnet die Buchungsseite im Browser), vor dem Training (Standard 60 min) mit
+  Motivationsspruch, Pause als Countdown auf dem Sperrbildschirm, „Training noch offen“ 3 h nach dem letzten Satz,
+  Backup fällig (19 Uhr am Fälligkeitstag, danach sonntags), „Serie in Gefahr“ (Samstag 18 Uhr ohne Training in der
+  Woche), neue Version auf GitHub (einmal je Version; Tippen öffnet die Release-Seite im Browser).
+- Pläne (ab 1.2.0): `active` (Standard an) und Trainingstage `plan_schedules` (Wochentag 1–7, Uhrzeit); nur aktive Pläne
+  erinnern, inaktive sind in der Chip-Leiste ausgegraut. Nach dem Anlegen eines Plans öffnet sich „Trainingstage und
+  Uhrzeit“. `android:allowBackup` bleibt auf dem Standard (aktiv) als zusätzliches Sicherheitsnetz.
   Activity auf Hochformat fixiert.
 - Version in `pubspec.yaml` als `x.y.z+build`; Build-Nummer bei jedem Meilenstein erhöhen.
 - `.gitignore` enthält zusätzlich zu den Flutter-Einträgen: `.secrets/`, `.env`, `build/`.

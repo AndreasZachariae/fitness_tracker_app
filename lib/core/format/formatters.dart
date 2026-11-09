@@ -108,3 +108,7 @@ String formatDateLong(DateTime time) =>
 /// Date and time: `3.11.2026, 18:20`
 String formatDateTime(DateTime time) =>
     '${formatDateLong(time)}, ${formatClockTime(time)}';
+
+/// Minutes after midnight as `18:00` (1.2.0).
+String formatMinuteOfDay(int minute) =>
+    '${_two(minute ~/ 60)}:${_two(minute % 60)}';

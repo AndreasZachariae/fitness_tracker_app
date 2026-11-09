@@ -9,6 +9,7 @@ import '../../widgets/settings_action.dart';
 import '../../widgets/snackbars.dart';
 import '../settings/exercises/exercise_form_page.dart';
 import '../settings/plans/plan_actions.dart';
+import '../settings/plans/plan_schedule_sheet.dart';
 import 'exercise_picker_sheet.dart';
 import 'free_training.dart';
 import 'plan_chip_bar.dart';
@@ -35,7 +36,7 @@ class TrainingPage extends ConsumerWidget {
   }
 }
 
-enum _PlanMenuAction { rename, duplicate, delete }
+enum _PlanMenuAction { schedule, rename, duplicate, delete }
 
 /// SPEC §6.1: choose a plan (or "Frei"), arrange exercises, start.
 class _PlanningView extends ConsumerStatefulWidget {
@@ -145,6 +146,11 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
+              leading: const Icon(Icons.event_outlined),
+              title: const Text(S.planSchedule),
+              onTap: () => Navigator.pop(context, _PlanMenuAction.schedule),
+            ),
+            ListTile(
               leading: const Icon(Icons.edit_outlined),
               title: const Text(S.rename),
               onTap: () => Navigator.pop(context, _PlanMenuAction.rename),
@@ -171,6 +177,8 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
     );
     if (action == null || !mounted) return;
     switch (action) {
+      case _PlanMenuAction.schedule:
+        await showPlanScheduleSheet(context, plan);
       case _PlanMenuAction.rename:
         await renamePlanWithDialog(context, ref, plan);
       case _PlanMenuAction.duplicate:

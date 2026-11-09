@@ -4,6 +4,22 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
+## [1.2.0] – unveröffentlicht
+
+### Neu
+- **Trainingstage:** Für jeden Plan Wochentage mit Uhrzeit festlegen – direkt nach dem Anlegen oder über das Plan-Menü „Trainingstage“.
+- **Aktive Pläne:** Pläne lassen sich auf inaktiv stellen; sie bleiben sichtbar, sind aber ausgegraut und erinnern nicht.
+- **Erinnerung am Abend vorher** (Standard 20 Uhr) mit Knopf „Slot buchen“, der die Buchungsseite des Studios öffnet. Die Adresse steht in den Einstellungen.
+- **Erinnerung vor dem Training** (Standard 1 Stunde) mit einem von über 30 Motivationssprüchen – mal frech, mal nerdig.
+- **Pause auf dem Sperrbildschirm:** Countdown als Benachrichtigung, wenn GymLog im Hintergrund ist.
+- **Training noch offen:** Hinweis, wenn 3 Stunden nach dem letzten Satz noch ein Training läuft.
+- **Backup-Erinnerung** und **„Serie in Gefahr“** (Samstag 18 Uhr, wenn diese Woche noch kein Training war) als Benachrichtigung.
+- **Update-Hinweis:** Einmal am Tag schaut GymLog nach, ob es auf GitHub eine neue Version gibt, und meldet sie; der Link öffnet die Download-Seite. Das ist der einzige Internetzugriff der App und lässt sich abschalten.
+- Neuer Bereich **Einstellungen → Benachrichtigungen**: alles einzeln ein- und ausschaltbar, Uhrzeit und Vorlauf einstellbar.
+
+### Hinweis
+- Beim ersten Start fragt Android einmal, ob GymLog Benachrichtigungen senden darf.
+
 ## [1.1.0] – 2026-11-07
 
 ### Neu

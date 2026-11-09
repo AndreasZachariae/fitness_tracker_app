@@ -226,6 +226,7 @@ final class _DemoGenerator {
   final _plansOut = <Plan>[];
   final _planExercises = <PlanExercise>[];
   final _planGroups = <PlanGroup>[];
+  final _planSchedules = <PlanScheduleEntry>[];
   final _sessions = <Session>[];
   final _sessionExercises = <SessionExercise>[];
   final _sessionSupersets = <SessionSuperset>[];
@@ -269,6 +270,23 @@ final class _DemoGenerator {
         createdAt: created,
       );
       _plansOut.add(plan);
+      // Training days (1.2.0): the first plan Mon/Thu 18:00, the second
+      // Tue/Fri 18:30; further plans none.
+      final days = switch (plan.id) {
+        1 => {DateTime.monday: 18 * 60, DateTime.thursday: 18 * 60},
+        2 => {DateTime.tuesday: 18 * 60 + 30, DateTime.friday: 18 * 60 + 30},
+        _ => const <int, int>{},
+      };
+      for (final MapEntry(key: weekday, value: minute) in days.entries) {
+        _planSchedules.add(
+          PlanScheduleEntry(
+            id: _planSchedules.length + 1,
+            planId: plan.id,
+            weekday: weekday,
+            minuteOfDay: minute,
+          ),
+        );
+      }
       final groupIds = <int, int>{};
       for (final (i, (exerciseName, sets, reps, duration, key))
           in entries.indexed) {
@@ -310,6 +328,7 @@ final class _DemoGenerator {
       plans: _plansOut,
       planExercises: _planExercises,
       planGroups: _planGroups,
+      planSchedules: _planSchedules,
       sessions: _sessions,
       sessionExercises: _sessionExercises,
       sessionSupersets: _sessionSupersets,

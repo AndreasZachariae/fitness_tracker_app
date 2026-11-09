@@ -41,6 +41,7 @@ class PlanChipBar extends StatelessWidget {
               child: _SelectChip(
                 label: plan.name,
                 selected: plan.id == selectedPlanId,
+                inactive: !plan.active,
                 onSelected: () => onSelect(plan.id),
               ),
             ),
@@ -66,10 +67,15 @@ class _SelectChip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onSelected,
+    this.inactive = false,
   });
 
   final String label;
   final bool selected;
+
+  /// Plans not trained at the moment are greyed out (1.2.0), but stay
+  /// selectable.
+  final bool inactive;
   final VoidCallback onSelected;
 
   @override
@@ -85,8 +91,15 @@ class _SelectChip extends StatelessWidget {
       side: BorderSide(
         color: selected ? gym.action : theme.colorScheme.outlineVariant,
       ),
+      backgroundColor: inactive && !selected
+          ? theme.colorScheme.surfaceContainerHighest
+          : null,
       labelStyle: base?.copyWith(
-        color: selected ? gym.onAction : theme.colorScheme.onSurface,
+        color: selected
+            ? gym.onAction
+            : inactive
+            ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7)
+            : theme.colorScheme.onSurface,
       ),
       onSelected: (_) {
         if (!selected) onSelected();

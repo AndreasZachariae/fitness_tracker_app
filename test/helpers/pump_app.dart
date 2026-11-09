@@ -4,8 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/app.dart';
 import 'package:gymlog/core/clock.dart';
 import 'package:gymlog/core/device.dart';
+import 'package:gymlog/core/notifications.dart';
 import 'package:gymlog/data/db/database.dart';
 import 'package:gymlog/data/providers.dart';
+import 'package:gymlog/features/notifications/reminder_sync.dart';
 
 import 'fake_device.dart';
 import 'fake_files.dart';
@@ -20,6 +22,9 @@ Future<AppDatabase> pumpApp(
   FakeScreenAwake? screen,
   FakeRestAlarm? alarm,
   FakeFileGateway? files,
+  FakeNotifications? notifications,
+  FakeReleases? releases,
+  bool reminderSync = false,
 }) async {
   final database = db ?? newTestDatabase();
   await tester.pumpWidget(
@@ -30,6 +35,11 @@ Future<AppDatabase> pumpApp(
         deviceFeedbackProvider.overrideWithValue(feedback ?? FakeFeedback()),
         screenAwakeProvider.overrideWithValue(screen ?? FakeScreenAwake()),
         restAlarmProvider.overrideWithValue(alarm ?? FakeRestAlarm()),
+        notificationGatewayProvider.overrideWithValue(
+          notifications ?? FakeNotifications(),
+        ),
+        releaseSourceProvider.overrideWithValue(releases ?? FakeReleases()),
+        reminderSyncEnabledProvider.overrideWithValue(reminderSync),
         appInfoProvider.overrideWith(
           (ref) async => (version: '0.9.0', buildNumber: '9'),
         ),

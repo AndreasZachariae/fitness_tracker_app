@@ -17,7 +17,25 @@ final class AppSettings {
     this.backupReminderDays = 30,
     this.defaultStep = 15,
     this.defaultStepUnit = WeightUnit.lbs,
+    this.notifyEvening = true,
+    this.eveningMinute = 20 * 60,
+    this.notifyBefore = true,
+    this.beforeMinutes = 60,
+    this.notifyRest = true,
+    this.notifyOpenSession = true,
+    this.notifyBackup = true,
+    this.notifyStreak = true,
+    this.checkUpdates = true,
+    this.bookingUrl = defaultBookingUrl,
+    this.lastUpdateCheckAt,
+    this.latestVersion,
+    this.notificationsAsked = false,
   });
+
+  /// Booking page of the user's gym (1.2.0); changeable in the settings.
+  static const defaultBookingUrl =
+      'https://optioffice.eu/optioffice/login/homepagemodul.php'
+      '?s=2070&c=303161843&action=termin&t=19192&i=0';
 
   static const singletonId = 1;
 
@@ -48,6 +66,47 @@ final class AppSettings {
   final double defaultStep;
   final WeightUnit defaultStepUnit;
 
+  // 1.2.0: notifications.
+
+  /// Evening before a training day: reminder with booking button.
+  final bool notifyEvening;
+
+  /// Time of the evening reminder, minutes after midnight.
+  final int eveningMinute;
+
+  /// Reminder with a motivational line before a training.
+  final bool notifyBefore;
+
+  /// How long before the training.
+  final int beforeMinutes;
+
+  /// Rest countdown on the lock screen.
+  final bool notifyRest;
+
+  /// A training still open 3 hours after the last set.
+  final bool notifyOpenSession;
+
+  /// Backup reminder as a notification.
+  final bool notifyBackup;
+
+  /// Saturday 18:00 when the streak would end this week.
+  final bool notifyStreak;
+
+  /// Once a day: is there a newer release on GitHub?
+  final bool checkUpdates;
+
+  /// Booking page of the gym, opened by „Slot buchen“.
+  final String bookingUrl;
+
+  /// UTC, last successful look for updates.
+  final DateTime? lastUpdateCheckAt;
+
+  /// Newest version seen on GitHub (e.g. `1.3.0`); notified once.
+  final String? latestVersion;
+
+  /// The Android notification permission was asked for once.
+  final bool notificationsAsked;
+
   AppSettings copyWith({
     int? defaultSets,
     int? defaultRestSec,
@@ -61,6 +120,19 @@ final class AppSettings {
     int? backupReminderDays,
     double? defaultStep,
     WeightUnit? defaultStepUnit,
+    bool? notifyEvening,
+    int? eveningMinute,
+    bool? notifyBefore,
+    int? beforeMinutes,
+    bool? notifyRest,
+    bool? notifyOpenSession,
+    bool? notifyBackup,
+    bool? notifyStreak,
+    bool? checkUpdates,
+    String? bookingUrl,
+    Object? lastUpdateCheckAt = unset,
+    Object? latestVersion = unset,
+    bool? notificationsAsked,
   }) {
     return AppSettings(
       id: id,
@@ -79,6 +151,22 @@ final class AppSettings {
       backupReminderDays: backupReminderDays ?? this.backupReminderDays,
       defaultStep: defaultStep ?? this.defaultStep,
       defaultStepUnit: defaultStepUnit ?? this.defaultStepUnit,
+      notifyEvening: notifyEvening ?? this.notifyEvening,
+      eveningMinute: eveningMinute ?? this.eveningMinute,
+      notifyBefore: notifyBefore ?? this.notifyBefore,
+      beforeMinutes: beforeMinutes ?? this.beforeMinutes,
+      notifyRest: notifyRest ?? this.notifyRest,
+      notifyOpenSession: notifyOpenSession ?? this.notifyOpenSession,
+      notifyBackup: notifyBackup ?? this.notifyBackup,
+      notifyStreak: notifyStreak ?? this.notifyStreak,
+      checkUpdates: checkUpdates ?? this.checkUpdates,
+      bookingUrl: bookingUrl ?? this.bookingUrl,
+      lastUpdateCheckAt: pick<DateTime?>(
+        lastUpdateCheckAt,
+        this.lastUpdateCheckAt,
+      ),
+      latestVersion: pick<String?>(latestVersion, this.latestVersion),
+      notificationsAsked: notificationsAsked ?? this.notificationsAsked,
     );
   }
 
@@ -97,10 +185,23 @@ final class AppSettings {
       other.lastBackupAt == lastBackupAt &&
       other.backupReminderDays == backupReminderDays &&
       other.defaultStep == defaultStep &&
-      other.defaultStepUnit == defaultStepUnit;
+      other.defaultStepUnit == defaultStepUnit &&
+      other.notifyEvening == notifyEvening &&
+      other.eveningMinute == eveningMinute &&
+      other.notifyBefore == notifyBefore &&
+      other.beforeMinutes == beforeMinutes &&
+      other.notifyRest == notifyRest &&
+      other.notifyOpenSession == notifyOpenSession &&
+      other.notifyBackup == notifyBackup &&
+      other.notifyStreak == notifyStreak &&
+      other.checkUpdates == checkUpdates &&
+      other.bookingUrl == bookingUrl &&
+      other.lastUpdateCheckAt == lastUpdateCheckAt &&
+      other.latestVersion == latestVersion &&
+      other.notificationsAsked == notificationsAsked;
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     defaultSets,
     defaultRestSec,
@@ -114,5 +215,18 @@ final class AppSettings {
     backupReminderDays,
     defaultStep,
     defaultStepUnit,
-  );
+    notifyEvening,
+    eveningMinute,
+    notifyBefore,
+    beforeMinutes,
+    notifyRest,
+    notifyOpenSession,
+    notifyBackup,
+    notifyStreak,
+    checkUpdates,
+    bookingUrl,
+    lastUpdateCheckAt,
+    latestVersion,
+    notificationsAsked,
+  ]);
 }

@@ -12,6 +12,7 @@ final class Dataset {
     this.plans = const [],
     this.planExercises = const [],
     this.planGroups = const [],
+    this.planSchedules = const [],
     this.sessions = const [],
     this.sessionExercises = const [],
     this.sessionSupersets = const [],
@@ -23,6 +24,7 @@ final class Dataset {
   final List<Plan> plans;
   final List<PlanExercise> planExercises;
   final List<PlanGroup> planGroups;
+  final List<PlanScheduleEntry> planSchedules;
   final List<Session> sessions;
   final List<SessionExercise> sessionExercises;
   final List<SessionSuperset> sessionSupersets;
