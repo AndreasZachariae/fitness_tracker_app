@@ -54,7 +54,7 @@ class _ReminderSyncState extends ConsumerState<ReminderSync>
     await ref.read(notificationGatewayProvider).init(_onTap);
     await _askPermissionOnce();
     await _sync();
-    await _checkUpdates();
+    await _checkUpdates(appStarted: true);
   }
 
   @override
@@ -112,10 +112,12 @@ class _ReminderSyncState extends ConsumerState<ReminderSync>
     }
   }
 
-  Future<void> _checkUpdates() async {
+  Future<void> _checkUpdates({bool appStarted = false}) async {
     if (!mounted) return;
     try {
-      final release = await ref.read(updateCheckerProvider).checkIfDue();
+      final release = await ref
+          .read(updateCheckerProvider)
+          .checkIfDue(force: appStarted);
       // A new version shows its page once (1.2.2) – but never in the middle
       // of a training; the notification and Settings still point to it.
       if (release != null && mounted) {

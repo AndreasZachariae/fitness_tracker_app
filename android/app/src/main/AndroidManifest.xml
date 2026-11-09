@@ -10,9 +10,6 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- 1.2.2 (approved by the human): "Herunterladen und installieren" of an update; Android asks the user once
-         and shows its own confirmation for every install. -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
     <application
         android:label="@string/app_name"
@@ -42,16 +39,6 @@
             </intent-filter>
         </activity>
         <receiver android:name=".RestAlarmReceiver" android:exported="false"/>
-        <!-- Shares only the downloaded update APK with the Android installer (1.2.2). -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.updates"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/update_paths"/>
-        </provider>
         <!-- flutter_local_notifications: scheduled reminders, rescheduling after reboot/update, buttons. -->
         <receiver android:exported="false"
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>

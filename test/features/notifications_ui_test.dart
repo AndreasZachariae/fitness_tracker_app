@@ -154,6 +154,13 @@ void main() {
       final id = await r.plans.create('Beine');
       await r.plans.setSchedule(id, {DateTime.friday: 17 * 60});
     });
+    // Looked just now: a fresh start of the app still looks (1.2.2).
+    await dbWork(
+      tester,
+      () =>
+          SettingsRepository(db)
+              .update((s) => s.copyWith(lastUpdateCheckAt: testNow)),
+    );
     final notifications = FakeNotifications();
     final releases = FakeReleases('1.0.0');
     await pumpApp(
@@ -245,13 +252,14 @@ void main() {
     await disposeApp(tester, db);
   });
 
-  testWidgets('update page: permission, download, install, GitHub (1.2.2)', (
-    tester,
-  ) async {
+  testWidgets('update page: APK in the browser, GitHub, no installing; '
+      'blue dots (1.2.2)', (tester) async {
     phone(tester);
     final releases = FakeReleases('1.3.0');
-    final installer = FakeUpdateInstaller()..allowed = false;
-    await pumpApp(tester, db: db, releases: releases, installer: installer);
+    await pumpApp(tester, db: db, releases: releases);
+    final dot = find.byKey(const ValueKey('settings-update-dot'));
+    expect(tester.widget<Badge>(dot.first).isLabelVisible, isFalse);
+
     await tester.tap(find.byTooltip(S.openSettings));
     await settle(tester);
     await tester.dragUntilVisible(
@@ -268,41 +276,12 @@ void main() {
 
     expect(find.text(S.updateHeadline('DEV 1.3.0')), findsOneWidget);
     expect(find.text(S.updateInstalled('0.9.0')), findsOneWidget);
+    expect(find.text(S.updateDownload), findsOneWidget);
     expect(find.text(S.updateOnGitHub), findsOneWidget);
+    expect(find.text(S.updateDownloadHint), findsOneWidget);
     expect(find.text(S.releaseNotesDev), findsOneWidget);
     expect(find.text('Etwas Neues'), findsOneWidget, reason: 'open at once');
     expect(releases.calls, 1, reason: 'the page uses the known result');
-
-    // Not allowed yet: explained, then the Android page.
-    await tester.tap(find.text(S.updateInstall));
-    await settle(tester);
-    expect(find.text(S.updatePermissionBody), findsOneWidget);
-    await tester.tap(find.text(S.updatePermissionOpen));
-    await settle(tester);
-    expect(installer.calls, ['canInstall', 'openInstallSettings']);
-
-    // Download fails: message, nothing installed.
-    installer
-      ..allowed = true
-      ..failDownload = true
-      ..calls.clear();
-    await tester.tap(find.text(S.updateInstall));
-    await settle(tester);
-    expect(find.text(S.updateDownloadFailed), findsOneWidget);
-    expect(installer.calls, ['canInstall', 'download 1.3.0']);
-
-    // Works: downloaded and handed to the Android installer.
-    installer
-      ..failDownload = false
-      ..calls.clear();
-    await tester.tap(find.text(S.updateInstall));
-    await settle(tester);
-    expect(find.text(S.updateDownloadFailed), findsNothing);
-    expect(installer.calls, [
-      'canInstall',
-      'download 1.3.0',
-      'install /cache/updates/gymlog-update.apk',
-    ]);
 
     // A release without APK only offers GitHub.
     releases.apkUrl = null;
@@ -312,8 +291,24 @@ void main() {
     await tester.tap(find.text(S.updateOpen));
     await settle(tester);
     expect(find.text(S.updateNoApk), findsOneWidget);
-    expect(find.text(S.updateInstall), findsNothing);
+    expect(find.text(S.updateDownload), findsNothing);
     expect(find.text(S.updateOnGitHub), findsOneWidget);
+
+    // The known update shows as a blue dot on "Über" and on the gear.
+    await leavePage(tester);
+    await leavePage(tester);
+    await tester.dragUntilVisible(
+      find.text(S.updateAvailable('1.3.0')),
+      find.byType(ListView),
+      const Offset(0, -300),
+    );
+    final aboutDot = find.ancestor(
+      of: find.byIcon(Icons.info_outline),
+      matching: find.byType(Badge),
+    );
+    expect(tester.widget<Badge>(aboutDot).isLabelVisible, isTrue);
+    await leavePage(tester);
+    expect(tester.widget<Badge>(dot.first).isLabelVisible, isTrue);
     await disposeApp(tester, db);
   });
 

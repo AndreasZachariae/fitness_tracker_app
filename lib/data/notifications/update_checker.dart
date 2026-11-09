@@ -48,10 +48,19 @@ abstract interface class ReleaseSource {
 
 /// One GET to the public GitHub API, without account or token. The release
 /// app reads the newest release, the DEV app the pre-release "dev" (1.2.2).
+///
+/// Asks with the ETag of the last answer: "unchanged" (304) does not count
+/// against GitHub's limit of 60 requests per hour, so GymLog can look on
+/// every opening.
 final class GitHubReleases implements ReleaseSource {
-  const GitHubReleases({required this.dev});
+  GitHubReleases({required this.dev, this.endpoint});
 
   final bool dev;
+
+  /// Only for tests (a local server); otherwise GitHub.
+  final Uri? endpoint;
+  String? _etag;
+  ReleaseInfo? _cached;
 
   static final _latest = Uri.parse(
     'https://api.github.com/repos/$_repo/releases/latest',
@@ -66,17 +75,33 @@ final class GitHubReleases implements ReleaseSource {
       ..connectionTimeout = const Duration(seconds: 10)
       ..userAgent = 'GymLog';
     try {
-      final request = await client.getUrl(dev ? _dev : _latest);
+      final request = await client.getUrl(endpoint ?? (dev ? _dev : _latest));
       request.headers.set(
         HttpHeaders.acceptHeader,
         'application/vnd.github+json',
       );
+      final etag = _etag;
+      if (etag != null && _cached != null) {
+        request.headers.set(HttpHeaders.ifNoneMatchHeader, etag);
+      }
       final response = await request.close().timeout(
         const Duration(seconds: 15),
       );
-      if (response.statusCode != 200) return null;
+      if (response.statusCode == 304) {
+        await response.drain<void>();
+        return _cached;
+      }
+      if (response.statusCode != 200) {
+        await response.drain<void>();
+        return null;
+      }
       final body = await response.transform(utf8.decoder).join();
-      return parse(jsonDecode(body), dev: dev);
+      final release = parse(jsonDecode(body), dev: dev);
+      _cached = release;
+      _etag = release == null
+          ? null
+          : response.headers.value(HttpHeaders.etagHeader);
+      return release;
     } on Object {
       return null;
     } finally {
@@ -120,9 +145,9 @@ final class GitHubReleases implements ReleaseSource {
   }
 }
 
-/// Looks for a newer release whenever the app is opened (at most every
-/// 15 minutes, 1.2.2). A newer version is notified once and stays visible in
-/// the settings.
+/// Looks for a newer release whenever the app is opened (1.2.2): on every
+/// start, on returning at most once a minute. A newer version is notified
+/// once and stays visible in the settings (dot on the gear and on "Über").
 class UpdateChecker {
   UpdateChecker({
     required this.source,
@@ -138,19 +163,25 @@ class UpdateChecker {
   final Clock clock;
   final Future<String> Function() installedVersion;
 
-  static const interval = Duration(minutes: 15);
+  /// Shortest time between two automatic looks when returning to the app.
+  static const interval = Duration(minutes: 1);
 
   /// The newest release of the last successful look (in memory only).
   ReleaseInfo? get latest => _latest;
   ReleaseInfo? _latest;
 
-  /// The automatic check on opening the app. Returns the release when it is
-  /// new to the app (notified now, shown once); otherwise null.
-  Future<ReleaseInfo?> checkIfDue() async {
+  /// The automatic check on opening the app ([force] on a fresh start,
+  /// otherwise at most every [interval]). Returns the release when it is new
+  /// to the app (notified now, shown once); otherwise null.
+  Future<ReleaseInfo?> checkIfDue({bool force = false}) async {
     final s = await settings.get();
     if (!s.checkUpdates) return null;
     final last = s.lastUpdateCheckAt;
-    if (last != null && clock.now().difference(last) < interval) return null;
+    if (!force &&
+        last != null &&
+        clock.now().difference(last).abs() < interval) {
+      return null;
+    }
     final result = await checkNow();
     if (result case UpdateAvailable(:final release)
         when release.version != s.latestVersion) {

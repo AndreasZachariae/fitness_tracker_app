@@ -43,8 +43,9 @@ void main() {
         .toList();
     // Exact alarm for the rest-over vibration in the background (1.0.1).
     // 1.2.0 (approved): notifications, rescheduling after a reboot and the
-    // update check on GitHub – the only network access. 1.2.2 (approved):
-    // download and install an update from GitHub.
+    // update check on GitHub – the only network access. No
+    // REQUEST_INSTALL_PACKAGES: an app that installs downloaded APKs itself
+    // is blocked by Play Protect as harmful (1.2.2); the browser does it.
     expect(permissions, [
       'android.permission.VIBRATE',
       'android.permission.USE_EXACT_ALARM',
@@ -52,7 +53,6 @@ void main() {
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.RECEIVE_BOOT_COMPLETED',
       'android.permission.INTERNET',
-      'android.permission.REQUEST_INSTALL_PACKAGES',
     ]);
     expect(
       manifest,
@@ -63,11 +63,8 @@ void main() {
     );
   });
 
-  test('network only for updates from GitHub (1.2.0, 1.2.2)', () {
-    const allowed = {
-      'lib/data/notifications/update_checker.dart',
-      'lib/data/notifications/update_installer.dart',
-    };
+  test('network only for the update check on GitHub (1.2.0)', () {
+    const allowed = {'lib/data/notifications/update_checker.dart'};
     final users = [
       for (final file in Directory('lib').listSync(recursive: true))
         if (file is File &&

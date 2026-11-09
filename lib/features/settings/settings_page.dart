@@ -6,7 +6,6 @@ import '../../core/build_info.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../core/router.dart';
 import '../../data/providers.dart';
-import '../../domain/updates.dart';
 import 'data/backup_hint.dart';
 import 'dev_tools_section.dart';
 
@@ -20,11 +19,7 @@ class SettingsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsProvider).value;
-    final info = ref.watch(appInfoProvider).value;
-    final update = settings?.latestVersion;
-    final updateAvailable =
-        update != null && info != null && isNewerVersion(update, info.version);
+    final update = ref.watch(knownUpdateProvider);
 
     Widget entry(
       IconData icon,
@@ -92,11 +87,11 @@ class SettingsPage extends ConsumerWidget {
           entry(
             Icons.info_outline,
             S.sectionAbout,
-            updateAvailable
+            update != null
                 ? S.updateAvailable(update)
                 : S.settingsAboutSubtitle,
             AppRoutes.about,
-            highlight: updateAvailable,
+            highlight: update != null,
           ),
           if (showDevTools) const DevToolsSection(),
         ],
@@ -127,10 +122,16 @@ class _SettingsEntry extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: CircleAvatar(
-        backgroundColor: scheme.secondaryContainer,
-        foregroundColor: scheme.onSecondaryContainer,
-        child: Icon(icon),
+      leading: Badge(
+        // Blue dot: something new here (an update, 1.2.2).
+        isLabelVisible: highlight,
+        smallSize: 10,
+        backgroundColor: scheme.primary,
+        child: CircleAvatar(
+          backgroundColor: scheme.secondaryContainer,
+          foregroundColor: scheme.onSecondaryContainer,
+          child: Icon(icon),
+        ),
       ),
       title: Text(title, style: Theme.of(context).textTheme.titleMedium),
       subtitle: Text(

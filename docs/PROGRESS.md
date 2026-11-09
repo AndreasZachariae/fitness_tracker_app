@@ -170,12 +170,15 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         (N = Anzahl Commits), auch für `install-dev.sh`
   - [x] Skripte: `dev-version.sh`, `build-dev-apk.sh` (Container), `release-dev.sh` (PC: Token, Push per SSH, eine
         Vorab-Release „dev“ ersetzen, APK hochladen), `release-notes.sh dev` (Testliste + Änderungen + Commits)
-  - [x] App: Suche bei jedem Öffnen (höchstens alle 15 min), echte App → neueste Release, DEV → Vorab-Release „dev“
-  - [x] Update-Seite: Neuerungen/Testliste, „Herunterladen und installieren“ (Download mit Fortschritt, Android-Installer
-        über FileProvider, Freigabe-Dialog), „Auf GitHub ansehen“; öffnet sich einmal pro Version (nicht im Training),
-        auch aus der Benachrichtigung und aus Über
+  - [x] App: Suche bei jedem Start und Zurückkehren, echte App → neueste Release, DEV → Vorab-Release „dev“
+  - [x] Update-Seite: Neuerungen/Testliste, „APK herunterladen“ (Browser), „Auf GitHub ansehen“; öffnet sich einmal pro
+        Version (nicht im Training), auch aus der Benachrichtigung und aus Über
   - [x] Über: „Neuerungen der neuesten Version“ bzw. „Testliste und Änderungen (DEV)“ zum Aufklappen
-  - [x] Permission `REQUEST_INSTALL_PACKAGES` (vom Menschen freigegeben), CLAUDE.md-Regeln, Deny-Liste, README, Tests
+  - [x] CLAUDE.md-Regeln, Deny-Liste, README, Tests
+  - [x] Nach dem ersten Handy-Test: Play Protect blockierte die DEV-App als schädlich → Selbst-Installieren samt
+        `REQUEST_INSTALL_PACKAGES`, Download und FileProvider ausgebaut, der Browser lädt die APK
+  - [x] Nach dem ersten Handy-Test: Update beim Öffnen nicht gefunden (15-Minuten-Sperre) → bei jedem Start sofort, beim
+        Zurückkehren höchstens jede Minute, Anfragen mit ETag; blauer Punkt an Zahnrad und „Über“
   - [x] Auf Wunsch: `release.sh` legt die Release mit Text und APK selbst an (gleicher Token, gemeinsamer Teil
         `scripts/lib/github.sh`); der Browser nur noch als Notweg
 
@@ -197,16 +200,19 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   öffnet wie früher die vorausgefüllte Seite im Browser.
 - **1.2.2 Testliste in der DEV-Release:** Der erste `###`-Abschnitt unter „Manuelle Tests am Handy“ in dieser Datei, also
   die neueste Testliste; dazu der oberste Changelog-Abschnitt, solange er „unveröffentlicht“ ist.
-- **1.2.2 Update-Suche:** Bei jedem Öffnen und Zurückkehren, höchstens alle 15 Minuten (GitHub erlaubt ohne Konto
-  60 Anfragen pro Stunde), abschaltbar wie bisher. Die DEV-App vergleicht nur den Zähler N; Versionen ohne Zähler (z. B.
+- **1.2.2 Update-Suche:** Bei jedem Start der App immer, beim Zurückkehren höchstens einmal pro Minute (die erste
+  Fassung mit 15 Minuten fand ein frisch veröffentlichtes DEV-Update beim Öffnen nicht). GitHub erlaubt ohne Konto
+  60 Anfragen pro Stunde; deshalb fragt GymLog mit dem ETag der letzten Antwort, und „unverändert“ (304) zählt nicht.
+  Abschaltbar wie bisher. Ein bekanntes Update zeigt sich als blauer Punkt am Zahnrad (jeder Tab) und bei „Über“. Die DEV-App vergleicht nur den Zähler N; Versionen ohne Zähler (z. B.
   `flutter run`) bekommen kein Update angeboten. Neu gefundene Version: einmal Benachrichtigung und einmal die
   Update-Seite – aber nicht während eines laufenden Trainings (dann nur Benachrichtigung und Hinweis in den
   Einstellungen). Release-Text und APK-Adresse bleiben nur im Speicher (keine Schemaänderung).
-- **1.2.2 Herunterladen und installieren:** Download mit `HttpClient` in `cache/updates/` (vorher geleert), Größe muss zur
-  Angabe von GitHub passen; Übergabe an den Android-Installer per FileProvider (nur dieser Ordner freigegeben). Android
-  fragt beim ersten Mal nach „Apps aus dieser Quelle zulassen“ (ein Dialog erklärt das vorher) und vor jeder Installation;
-  es akzeptiert nur ein APK mit demselben Schlüssel, ein falsches APK kann die App also weder ersetzen noch Daten
-  löschen. Fehlt in der Release die APK, gibt es nur „Auf GitHub ansehen“.
+- **1.2.2 Kein Selbst-Installieren:** Die erste Fassung lud das Update selbst und installierte es
+  (`REQUEST_INSTALL_PACKAGES`, FileProvider). Play Protect blockierte diese DEV-App beim Installieren aus dem Browser als
+  schädlich – das Muster „lädt APKs aus dem Internet und installiert sie“ ist typisch für Dropper, zumal ohne Play Store
+  und mit unbekanntem Schlüssel. Daher ausgebaut: „APK herunterladen“ öffnet die APK-Adresse im Browser, der Browser lädt
+  sie, der Nutzer tippt die Datei an. Die App hat wieder genau die Rechte von 1.2.1 und nutzt das Internet nur für die
+  Abfrage. Fehlt in der Release die APK, gibt es nur „Auf GitHub ansehen“.
 - **1.2.2 Release-Text in der App:** Eigener kleiner Markdown-Leser (Domain, getestet) statt eines Pakets: Überschriften,
   Listen, Testlisten-Kästchen, fett, Code, Links als Text. Weggelassen werden die Commit-Liste (`<details>`) und alles
   nach `---` (Installationsanleitung der Release-Seite).
@@ -691,14 +697,15 @@ Nur, was live ausprobiert werden muss. Einmalig vorher: Token anlegen (README, �
   bleibt 1.2.1.
 - [ ] Handy: `gymlog-dev.apk` aus dieser Release im Browser laden und über die bisherige DEV-App installieren (klappt ohne
   Deinstallieren); Über zeigt die Version `1.2.2-dev.…` und unter „Testliste und Änderungen (DEV)“ diese Liste.
+- [ ] Play Protect blockiert diese DEV-App nicht mehr als schädlich (höchstens der Hinweis „unbekannter Entwickler“).
 - [ ] Update testen: auf dem PC `git commit --allow-empty -m "chore: test dev update"` und
-  `./scripts/release-dev.sh --quick`. DEV-App öffnen: Benachrichtigung und Update-Seite erscheinen.
-- [ ] „Herunterladen und installieren“: erst der Erklär-Dialog, Android-Freigabe erteilen, zurück, erneut tippen →
-  Fortschritt, Android fragt, DEV-App startet mit neuer Version; Daten sind noch da.
+  `./scripts/release-dev.sh --quick`. DEV-App öffnen (auch aus dem Hintergrund): Benachrichtigung und Update-Seite
+  erscheinen; danach blauer Punkt am Zahnrad und bei „Über“.
+- [ ] „APK herunterladen“: Browser lädt die APK, Datei antippen, Android installiert; DEV-App startet mit neuer Version,
+  Daten sind noch da, der blaue Punkt ist weg.
 - [ ] „Auf GitHub ansehen“ öffnet die Release im Browser; die Seite wirkt auch im Dunkelmodus gut lesbar.
 - [ ] Release 1.2.2 mit `./scripts/release.sh`: Release erscheint ohne Browser mit Text und APK als „Latest“.
-- [ ] Echte App: 1.2.2 noch wie gewohnt installieren; das direkte Update lässt sich erst mit der nächsten Version
-  ausprobieren.
+- [ ] Echte App: 1.2.2 wie gewohnt installieren; Play Protect blockiert nicht.
 
 ### 1.2.1 Verbesserungen
 Nur, was am Handy angesehen werden muss; Abläufe sind automatisch getestet.

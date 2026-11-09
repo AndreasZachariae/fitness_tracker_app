@@ -48,8 +48,8 @@ Version 1.0 der Spezifikation. Verbindlich für die Umsetzung. Abschnittsnummern
 - Debug-Signatur: Standard-Debug-Keystore unter `~/.android` (liegt im Docker-Volume).
 - Manifest: Permission `VIBRATE`; ab 1.0.1 zusätzlich `USE_EXACT_ALARM` und `SCHEDULE_EXACT_ALARM` (nur Android 12) für die
   Pausen-Vibration im Hintergrund (§6.2.1); ab 1.2.0 `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED` (Erinnerungen, nach
-  Neustart neu geplant) und `INTERNET` nur für die Abfrage der neuesten GitHub-Release (abschaltbar) und – ab 1.2.2 –
-  das Herunterladen des Updates von GitHub; `REQUEST_INSTALL_PACKAGES` (1.2.2) für „Herunterladen und installieren“.
+  Neustart neu geplant) und `INTERNET` nur für die Abfrage der neuesten GitHub-Release (abschaltbar). Kein
+  `REQUEST_INSTALL_PACKAGES`: Eine App, die selbst APKs lädt und installiert, blockiert Play Protect als schädlich.
 - Benachrichtigungen (ab 1.2.0, alle einzeln abschaltbar unter Einstellungen → Benachrichtigungen): Abend vorher (Standard
   20:00) mit Knopf „Slot buchen“ (öffnet die Buchungsseite im Browser), vor dem Training (Standard 60 min) mit
   Motivationsspruch, Pause als Countdown auf dem Sperrbildschirm, „Training noch offen“ 3 h nach dem letzten Satz,
@@ -300,12 +300,12 @@ der Startseite (nur wenn es Trainings gibt).
 - **Über:** „Nach Updates suchen“ (ab 1.2.1, Antippen sucht sofort; neue Version → Hinweis und „Update ansehen“),
   „Neuerungen der neuesten Version“ zum Aufklappen (1.2.2; in der DEV-App „Testliste und Änderungen“), App-Version,
   Build-Nummer, Datenbank-Schemaversion, Lizenzen.
-- **Update-Seite (1.2.2):** GymLog sucht bei jedem Öffnen (höchstens alle 15 Minuten) nach einer neuen Version: die echte
-  App nach der neuesten Release, die DEV-App nach der Vorab-Release `dev` (verglichen über den Zähler in
-  `X.Y.Z-dev.N`). Eine neue Version wird einmal gemeldet und ihre Seite einmal geöffnet (nicht während eines Trainings):
-  Version, Neuerungen (aufgeklappt), „Herunterladen und installieren“ (lädt die APK in den Cache, prüft die Größe und
-  übergibt sie dem Android-Installer; beim ersten Mal erklärt ein Dialog die Freigabe „Apps aus dieser Quelle zulassen“)
-  und „Auf GitHub ansehen“. Android installiert nur ein APK mit demselben Schlüssel; die Daten bleiben erhalten.
+- **Update-Seite (1.2.2):** GymLog sucht bei jedem Start und beim Zurückkehren (höchstens einmal pro Minute, mit ETag)
+  nach einer neuen Version: die echte App nach der neuesten Release, die DEV-App nach der Vorab-Release `dev`
+  (verglichen über den Zähler in `X.Y.Z-dev.N`). Eine neue Version wird einmal gemeldet und ihre Seite einmal geöffnet
+  (nicht während eines Trainings); solange sie bereitsteht, zeigen Zahnrad und „Über“ einen blauen Punkt. Die Seite
+  zeigt Version, Neuerungen (aufgeklappt), „APK herunterladen“ (öffnet die APK im Browser; installiert wird durch
+  Antippen der Datei) und „Auf GitHub ansehen“.
 - **Nur im Dev-Build** (`de.gymlog.app.dev`): „Demo-Daten erzeugen“ und „Alle Daten löschen“ (mit Bestätigung).
 
 ## 7. Logik und Formeln (Domain, reines Dart, mit Tabellentests)

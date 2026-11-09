@@ -9,7 +9,6 @@ import '../../core/router.dart';
 import '../../data/db/database.dart';
 import '../../data/notifications/update_checker.dart';
 import '../../data/providers.dart';
-import '../../domain/updates.dart';
 import 'release_notes_view.dart';
 
 /// Settings → Über (1.2.1): look for updates on demand, versions, licenses.
@@ -83,17 +82,11 @@ class _UpdateCheckTileState extends ConsumerState<UpdateCheckTile> {
 
   @override
   Widget build(BuildContext context) {
-    final info = ref.watch(appInfoProvider).value;
-    final known = ref.watch(settingsProvider).value?.latestVersion;
-    // A newer version found earlier (also by the daily check) shows at once.
+    // A newer version found earlier (also by the automatic check) shows at
+    // once.
     final available = switch (_result) {
       UpdateAvailable(:final version) => version,
-      _
-          when known != null &&
-              info != null &&
-              isNewerVersion(known, info.version) =>
-        known,
-      _ => null,
+      _ => ref.watch(knownUpdateProvider),
     };
     final subtitle = _checking
         ? S.checkingUpdates

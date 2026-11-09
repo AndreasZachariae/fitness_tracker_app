@@ -18,7 +18,7 @@ claude --resume
 # Testliste fürs Handy in docs/PROGRESS.md durchgehen
 
 # Außerhalb des containers, auf dem PC:
-./scripts/release-dev.sh           # DEV-App über GitHub ans Handy (Update erscheint in der DEV-App)
+./scripts/release-dev.sh --quick   # DEV-App über GitHub ans Handy (quick ohne Testdurchläufe)
 ./scripts/release.sh               # echte Version veröffentlichen
 
 ./scripts/install-release.sh
@@ -126,8 +126,10 @@ In der DEV-App gibt es unter Einstellungen → „Entwicklung (nur GymLog DEV)�
 
 Ab 1.2.2 kommt die DEV-App auch über GitHub aufs Handy: als **eine einzige Vorab-Release „dev“**, die bei jedem Lauf
 ersetzt wird (der Releases-Tab bleibt übersichtlich, „Latest“ bleibt die echte Version). Ihr Text enthält die
-**Testliste fürs Handy** und die Änderungen. GymLog DEV findet sie beim nächsten Öffnen, meldet sie und bietet
-„Herunterladen und installieren“ an; die Testliste steht dort und unter Einstellungen → Über zum Aufklappen.
+**Testliste fürs Handy** und die Änderungen. GymLog DEV findet sie beim nächsten Öffnen, meldet sie (blauer Punkt am
+Zahnrad) und bietet „APK herunterladen“ an: Der Browser lädt die APK, du tippst sie an und installierst. Die Testliste
+steht dort und unter Einstellungen → Über zum Aufklappen. Die App installiert absichtlich nichts selbst – das stuft
+Play Protect als schädlich ein.
 
 Voraussetzung: der [GitHub-Token](#einmalig-github-token) auf dem PC. **Jedes Mal, auf dem PC im Projektordner**
 (alles committet, Container läuft):
@@ -256,8 +258,8 @@ Gut zu wissen:
 - Die APK enthält nur 64-Bit-ARM (~23 MB) und läuft auf praktisch jedem Handy ab Android 7.
 - Freunde installieren wie in der Release beschrieben; mit [Obtainium](https://github.com/ImranR98/Obtainium) und der
   Repo-Adresse sehen sie neue Versionen automatisch.
-- Danach die eigene GymLog-App aktualisieren: ab 1.2.2 direkt in der App („Herunterladen und installieren“), sonst
-  `./scripts/install-release.sh` (im Container) oder die APK aus der Release auf dem Handy – die Daten bleiben.
+- Danach die eigene GymLog-App aktualisieren: ab 1.2.2 meldet die App das Update, „APK herunterladen“ und die Datei
+  antippen; sonst `./scripts/install-release.sh` (im Container) oder die APK aus der Release – die Daten bleiben.
 - Das Repository ist öffentlich: Code, Doku und Commit-Verlauf sind sichtbar, `.secrets/` nicht.
 
 ---
@@ -299,6 +301,7 @@ Gut zu wissen:
 | `release.sh`: „ANDEREN Schlüssel“ | `.secrets/` aus der Sicherung zurückholen; niemals mit einem neuen Schlüssel veröffentlichen. |
 | `release.sh`: Push fehlgeschlagen | Das Skript nennt den Befehl zum Zurücksetzen. |
 | „Kein GitHub-Token“ / „Token wird nicht akzeptiert“ | Token fehlt, ist abgelaufen oder hat nicht „Contents: Read and write“ für dieses Repository: neu anlegen ([Einmalig: GitHub-Token](#einmalig-github-token)). |
+| Play Protect: „Schädliche App blockiert“ | Nicht deinstallieren lassen, wenn es die echte App ist (Daten!). Ursache war in 1.2.2 das Selbst-Installieren, das ist ausgebaut. Bei einer Warnung „unbekannter Entwickler“ über „Weitere Details“ → „Trotzdem installieren“. |
 | DEV-Update: „App nicht installiert“ | Die DEV-App auf dem Handy hat einen anderen Debug-Schlüssel (Volume gelöscht): DEV-App deinstallieren, APK erneut installieren. Nur Testdaten. |
 | `release.sh`: Release nur im Browser (Notweg) | GitHubs Schnittstelle hat nicht geantwortet; Commit und Tag sind schon auf GitHub. Release im geöffneten Fenster fertigstellen oder den Link aus der Ausgabe kopieren. |
 | Skripte melden `\r`-Fehler (Windows) | Projekt im WSL-Dateisystem ablegen; `.gitattributes` erzwingt LF. |

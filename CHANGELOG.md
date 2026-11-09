@@ -7,13 +7,10 @@ Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code h
 ## [1.2.2] – unveröffentlicht
 
 ### Neu
-- **Updates direkt in der App:** Gibt es eine neue Version, zeigt GymLog beim Öffnen ihre Neuerungen. „Herunterladen und installieren“ lädt das Update und startet die Installation von Android; alle Trainings bleiben erhalten. „Auf GitHub ansehen“ öffnet stattdessen die Release-Seite.
-- GymLog sucht jetzt bei jedem Öffnen nach Updates statt einmal am Tag und meldet eine neue Version einmal per Benachrichtigung. Während eines Trainings öffnet sich nichts von selbst.
+- **Update-Hinweis beim Öffnen:** GymLog sucht jetzt bei jedem Öffnen nach einer neuen Version statt einmal am Tag. Ist eine da, zeigt es sie einmal mit ihren Neuerungen an und meldet sie per Benachrichtigung; während eines Trainings öffnet sich nichts von selbst.
+- **Blauer Punkt** am Zahnrad und bei „Über“, solange ein Update bereitsteht.
+- **Update-Seite:** „APK herunterladen“ lädt die neue Version im Browser – danach die Datei antippen und installieren, alle Trainings bleiben erhalten. „Auf GitHub ansehen“ öffnet die Release-Seite.
 - **Neuerungen zum Aufklappen** unter Einstellungen → Über.
-
-### Hinweis
-- Für das direkte Installieren braucht GymLog ein neues Recht. Beim ersten Mal fragt Android, ob GymLog Apps installieren darf („Apps aus dieser Quelle zulassen“).
-- Diese Version selbst noch wie gewohnt von GitHub installieren; ab der nächsten geht es direkt in der App.
 
 ## [1.2.1] – 2026-11-09
 

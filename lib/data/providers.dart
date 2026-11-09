@@ -8,13 +8,13 @@ import '../domain/history.dart';
 import '../domain/models/models.dart';
 import '../domain/records.dart';
 import '../domain/statistics.dart';
+import '../domain/updates.dart';
 import 'db/database.dart';
 import 'demo/dev_tools.dart';
 import 'io/data_transfer_service.dart';
 import 'io/file_gateway.dart';
 import 'notifications/reminder_service.dart';
 import 'notifications/update_checker.dart';
-import 'notifications/update_installer.dart';
 import 'repositories/body_weight_repository.dart';
 import 'repositories/exercise_repository.dart';
 import 'repositories/maintenance_repository.dart';
@@ -201,13 +201,18 @@ final reminderServiceProvider = Provider<ReminderService>(
   ),
 );
 
+/// A newer version found by the update check, or null (1.2.0). Shown as a
+/// dot on the gear and on "Über" (1.2.2).
+final knownUpdateProvider = Provider<String?>((ref) {
+  final known = ref.watch(settingsProvider).value?.latestVersion;
+  final info = ref.watch(appInfoProvider).value;
+  if (known == null || info == null) return null;
+  return isNewerVersion(known, info.version) ? known : null;
+});
+
 /// The release app looks for releases, the DEV app for the pre-release "dev".
 final releaseSourceProvider = Provider<ReleaseSource>(
-  (ref) => const GitHubReleases(dev: isDevBuild),
-);
-
-final updateInstallerProvider = Provider<UpdateInstaller>(
-  (ref) => const PlatformUpdateInstaller(),
+  (ref) => GitHubReleases(dev: isDevBuild),
 );
 
 final updateCheckerProvider = Provider<UpdateChecker>(

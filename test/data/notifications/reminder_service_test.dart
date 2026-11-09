@@ -138,20 +138,23 @@ void main() {
       expect((s.latestVersion, s.lastUpdateCheckAt), ('1.3.0', testNow));
       expect(checker.latest?.notes, contains('Etwas Neues'));
 
-      // Opened again within 15 minutes: no request at all.
-      clock.advance(const Duration(minutes: 14));
+      // Back in the app within a minute: no request.
+      clock.advance(const Duration(seconds: 30));
       expect(await checker.checkIfDue(), isNull);
       expect(releases.calls, 1);
+      // A fresh start of the app always looks.
+      expect(await checker.checkIfDue(force: true), isNull);
+      expect(releases.calls, 2);
 
       // Later: same version, no second notification, page not again.
       clock.advance(const Duration(minutes: 2));
       expect(await checker.checkIfDue(), isNull);
-      expect(releases.calls, 2);
+      expect(releases.calls, 3);
       expect(notifications.shown, hasLength(1));
 
       // The known result without going online.
       expect(await checker.lastResult(), isA<UpdateAvailable>());
-      expect(releases.calls, 2);
+      expect(releases.calls, 3);
     });
 
     test('DEV app: the counter of the pre-release decides (1.2.2)', () async {

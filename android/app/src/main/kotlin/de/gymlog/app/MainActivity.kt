@@ -27,25 +27,5 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
-        // In-app update (1.2.2).
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, UpdateInstaller.CHANNEL)
-            .setMethodCallHandler { call, result ->
-                try {
-                    when (call.method) {
-                        "canInstall" -> result.success(UpdateInstaller.canInstall(this))
-                        "openInstallSettings" -> {
-                            UpdateInstaller.openInstallSettings(this)
-                            result.success(null)
-                        }
-                        "install" -> {
-                            UpdateInstaller.install(this, call.argument<String>("path")!!)
-                            result.success(null)
-                        }
-                        else -> result.notImplemented()
-                    }
-                } catch (e: Exception) {
-                    result.error("update", e.message, null)
-                }
-            }
     }
 }

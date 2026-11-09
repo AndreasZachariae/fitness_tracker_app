@@ -733,28 +733,15 @@ abstract final class S {
   static const updateTitle = 'Update';
   static String updateHeadline(String version) => 'GymLog $version ist da';
   static String updateInstalled(String version) => 'Installiert: $version';
-  static const updateInstall = 'Herunterladen und installieren';
-  static String updateDownloading(double? progress) => progress == null
-      ? 'Lädt herunter …'
-      : 'Lädt herunter … ${(progress * 100).clamp(0, 100).round()} %';
+  static const updateDownload = 'APK herunterladen';
   static const updateOnGitHub = 'Auf GitHub ansehen';
-  static const updateInstallHint =
-      'Android fragt vor der Installation nach. Alle Trainings bleiben '
-      'erhalten.';
+  static const updateDownloadHint =
+      'Der Browser lädt die APK. Danach die Datei antippen (Download-'
+      'Benachrichtigung oder Dateien-App) und installieren – alle Trainings '
+      'bleiben erhalten.';
   static const updateNoApk =
       'Die Release hat noch keine APK. Schau auf GitHub nach oder versuch es '
       'später noch einmal.';
-  static const updateDownloadFailed =
-      'Download fehlgeschlagen. Prüfe die Verbindung und versuch es noch '
-      'einmal.';
-  static const updateInstallFailed =
-      'Die Installation ließ sich nicht starten. Lade die APK über GitHub.';
-  static const updatePermissionTitle = 'Installieren erlauben';
-  static const updatePermissionBody =
-      'Damit GymLog Updates selbst installieren kann, erlaube es einmalig in '
-      'Android („Apps aus dieser Quelle zulassen“). Danach zurück zu GymLog '
-      'und noch einmal auf „Herunterladen und installieren“ tippen.';
-  static const updatePermissionOpen = 'Zu den Einstellungen';
   static const updateRetry = 'Erneut versuchen';
   static const releaseNotes = 'Neuerungen';
   static const releaseNotesDev = 'Testliste und Änderungen';

@@ -73,9 +73,9 @@ Auf dem Handy liegen echte Trainingsdaten in der Release-App `de.gymlog.app`. De
 6. Keine Analytics, keine Crash-Reporter, keine Laufzeit-Downloads (Schriften als Assets bündeln). Erlaubte Permissions
    (jeweils vom Menschen freigegeben): `VIBRATE`; `USE_EXACT_ALARM` und `SCHEDULE_EXACT_ALARM` mit `maxSdkVersion="32"`
    (Pausen-Vibration, 1.0.1); `POST_NOTIFICATIONS` und `RECEIVE_BOOT_COMPLETED` (Erinnerungen, 1.2.0); `INTERNET`
-   **ausschließlich** für die Update-Abfrage der GitHub-Releases (1.2.0, abschaltbar) und das Herunterladen des Updates
-   von GitHub (1.2.2); `REQUEST_INSTALL_PACKAGES` für „Herunterladen und installieren“ (1.2.2). Kein anderer Netzzugriff,
-   keine weiteren Permissions.
+   **ausschließlich** für die Update-Abfrage der GitHub-Releases (1.2.0, abschaltbar). Kein anderer Netzzugriff,
+   keine weiteren Permissions. Insbesondere **kein** `REQUEST_INSTALL_PACKAGES` und kein Herunterladen/Installieren von
+   APKs durch die App: Play Protect hat die DEV-App damit als schädlich blockiert (1.2.2). Updates lädt der Browser.
 
 ## Konventionen
 
