@@ -4,7 +4,7 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.2.1] – unveröffentlicht
+## [1.2.1] – 2026-11-09
 
 ### Neu
 - **Trainingstage:** Für jeden Plan Wochentage mit Uhrzeit festlegen – direkt nach dem Anlegen oder später auf der Plan-Seite.
@@ -26,6 +26,15 @@ Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code h
 - **„Frei“ entfällt:** Jedes Training startet aus einem Plan. Frühere freie Trainings bleiben im Verlauf.
 - **„Nach Updates suchen“** unter Einstellungen → Über: sucht auf Antippen sofort und führt zur Release-Seite mit den Neuerungen.
 - Die Buchungsseite steht jetzt unter „Automatische Buchung“.
+
+<details>
+<summary>Commits seit v1.1.0 (für Entwickler)</summary>
+
+#### Features
+- training days and notifications (1.2.0) (`e353422`)
+- settings pages, plan page and no "Frei" (1.2.1) (`3306d13`)
+
+</details>
 
 ## [1.1.0] – 2026-11-07
 
