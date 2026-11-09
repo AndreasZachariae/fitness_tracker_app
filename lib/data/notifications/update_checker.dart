@@ -72,30 +72,58 @@ class UpdateChecker {
 
   static const interval = Duration(hours: 24);
 
+  /// The automatic check: at most once a day, notifies a new version once.
   Future<void> checkIfDue() async {
     final s = await settings.get();
     if (!s.checkUpdates) return;
-    final now = clock.now();
     final last = s.lastUpdateCheckAt;
-    if (last != null && now.difference(last) < interval) return;
-    final latest = await source.latestVersion();
-    if (latest == null) return; // Offline: try again next time.
-    final installed = await installedVersion();
-    final isNew = isNewerVersion(latest, installed);
-    await settings.update(
-      (x) => x.copyWith(
-        lastUpdateCheckAt: now,
-        latestVersion: isNew ? latest : null,
-      ),
-    );
-    if (isNew && latest != s.latestVersion) {
+    if (last != null && clock.now().difference(last) < interval) return;
+    final result = await checkNow();
+    if (result case UpdateAvailable(:final version)
+        when version != s.latestVersion) {
       await gateway.show(
         id: ReminderIds.update,
-        title: S.notifyUpdateTitle(latest),
+        title: S.notifyUpdateTitle(version),
         body: S.notifyUpdateBody,
         channel: NotificationChannel.updates,
         payload: NotificationPayloads.update,
       );
     }
   }
+
+  /// Looks right now (Settings → Über, 1.2.1), without a notification.
+  Future<UpdateResult> checkNow() async {
+    final latest = await source.latestVersion();
+    if (latest == null) return const UpdateCheckFailed();
+    final installed = await installedVersion();
+    final isNew = isNewerVersion(latest, installed);
+    await settings.update(
+      (x) => x.copyWith(
+        lastUpdateCheckAt: clock.now(),
+        latestVersion: isNew ? latest : null,
+      ),
+    );
+    return isNew ? UpdateAvailable(latest) : UpToDate(installed);
+  }
+}
+
+sealed class UpdateResult {
+  const UpdateResult();
+}
+
+final class UpdateAvailable extends UpdateResult {
+  const UpdateAvailable(this.version);
+
+  final String version;
+}
+
+final class UpToDate extends UpdateResult {
+  const UpToDate(this.installed);
+
+  final String installed;
+}
+
+/// Offline or GitHub not reachable.
+final class UpdateCheckFailed extends UpdateResult {
+  const UpdateCheckFailed();
 }

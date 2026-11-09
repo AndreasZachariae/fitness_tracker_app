@@ -7,11 +7,10 @@ import '../../../domain/models/models.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/snackbars.dart';
 import 'plan_actions.dart';
-import 'plan_schedule_sheet.dart';
+import 'plan_page.dart';
 
-enum _PlanAction { schedule, rename, duplicate, delete }
-
-/// Settings → Pläne: order of the plan chips and plan management.
+/// Settings → Pläne: order of the plan chips; tapping a plan opens its page
+/// with everything else (1.2.1).
 class PlanListPage extends ConsumerStatefulWidget {
   const PlanListPage({super.key});
 
@@ -38,19 +37,6 @@ class _PlanListPageState extends ConsumerState<PlanListPage> {
     if (mounted) setState(() => _pending = null);
   }
 
-  Future<void> _onAction(_PlanAction action, Plan plan) async {
-    switch (action) {
-      case _PlanAction.schedule:
-        await showPlanScheduleSheet(context, plan);
-      case _PlanAction.rename:
-        await renamePlanWithDialog(context, ref, plan);
-      case _PlanAction.duplicate:
-        await duplicatePlanWithDialog(context, ref, plan);
-      case _PlanAction.delete:
-        await deletePlanWithConfirmation(context, ref, plan);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final plans = _pending ?? ref.watch(plansProvider).value;
@@ -61,7 +47,11 @@ class _PlanListPageState extends ConsumerState<PlanListPage> {
     return Scaffold(
       appBar: AppBar(title: const Text(S.plansTitle)),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => createPlanWithDialog(context, ref),
+        onPressed: () async {
+          final id = await createPlanWithDialog(context, ref);
+          // Straight on to the training days (1.2.1).
+          if (id != null && context.mounted) await openPlanPage(context, id);
+        },
         icon: const Icon(Icons.add),
         label: const Text(S.newPlan),
       ),
@@ -93,32 +83,10 @@ class _PlanListPageState extends ConsumerState<PlanListPage> {
                 '${formatPlanSchedule([for (final d in schedules)
                   if (d.planId == plan.id) d])}',
               ),
-              onTap: () => showPlanScheduleSheet(context, plan),
+              onTap: () => openPlanPage(context, plan.id),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  PopupMenuButton<_PlanAction>(
-                    tooltip: S.moreActions,
-                    onSelected: (a) => _onAction(a, plan),
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(
-                        value: _PlanAction.schedule,
-                        child: Text(S.planSchedule),
-                      ),
-                      PopupMenuItem(
-                        value: _PlanAction.rename,
-                        child: Text(S.rename),
-                      ),
-                      PopupMenuItem(
-                        value: _PlanAction.duplicate,
-                        child: Text(S.duplicate),
-                      ),
-                      PopupMenuItem(
-                        value: _PlanAction.delete,
-                        child: Text(S.delete),
-                      ),
-                    ],
-                  ),
                   ReorderableDragStartListener(
                     index: i,
                     child: const Padding(

@@ -45,6 +45,14 @@ STATUS: FINISHED
     - Customizable notification settings for users to choose what they want to be notified about.
     - Integration with device notification systems for seamless alerts.
     - Welche anderen notifications könnten sinn machen? Schlage mir die besten Optionen vor und stelle sie mir als fragen. Ich entscheide dann ob wir sie integrieren.
+Version 1.2.1 (Verbesserungen an 1.2.0, gemeinsames Release)
+STATUS: FINISHED
+    - In den Einstellungen sind die einzelnen Abschnitte wie Training Benachrichtigungen eher unauffällig und klein. Abschnitte besser trennen, evtl. einzelne Abschnitte als Unterseite auslagern, z. B. alle Notifications.
+    - Die URL zur Buchungswebsite vorsorglich in einen eigenen Abschnitt „Automatische Buchung“ (eigene Unterseite), dort kommen später die Buchungsdetails hinein.
+    - „Wie lange vorher“ ist fett, inkonsistent mit den anderen Einträgen.
+    - Bei „Nach Updates suchen“ die Bemerkung „(einziger Internetzugriff)“ weglassen.
+    - Einstellungen/Pläne: Draufklicken und drei Punkte doppeln sich. Beim Draufklicken alle Optionen anbieten (umbenennen, duplizieren, löschen); „Aktiv“ und die Trainingstage voneinander trennen. Dasselbe in der Trainingsübersicht; „Frei“ abschaffen, man muss immer erst einen Trainingsplan erstellen.
+    - Einstellungen/Über: neuer Punkt „Nach Updates suchen“ zum Antippen; zeigt, ob ein Update verfügbar ist, mit Button zur Release-Website (Release-Infos lesen, Nutzer entscheidet selbst über den Download).
 Version 1.3.0 (Automatische Buchung)
 STATUS: PLANNED
     - Nutze die öffentliche website um eine Buchung durchzuführen.

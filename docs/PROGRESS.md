@@ -157,6 +157,14 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Pause als Countdown-Benachrichtigung auf dem Sperrbildschirm
   - [x] Update-Hinweis: höchstens einmal am Tag GitHub-Releases abfragen (einziger Internetzugriff), Link im Browser
   - [x] Einstellungen → Benachrichtigungen; Backup-Format 4; Demo-Pläne mit Trainingstagen; Tests; CHANGELOG; Testliste
+- [x] 1.2.1 Verbesserungen an 1.2.0 (`docs/ROADMAP.md`, 1.2.1+16), gemeinsames Release mit 1.2.0
+  - [x] Einstellungen: Startseite mit Unterseiten (Übungen, Pläne, Training, Benachrichtigungen, Automatische Buchung,
+        Darstellung, Daten, Über), Abschnitte mit Linie und farbiger Überschrift; Stepper-Beschriftung wie Listeneinträge
+  - [x] Buchungsseite unter „Automatische Buchung“; Untertitel der Update-Suche ohne „einziger Internetzugriff“
+  - [x] Plan-Seite (Name, Aktiv, Trainingstage, Duplizieren, Löschen) statt Drei-Punkte-Menü und Blatt; öffnet sich aus
+        Einstellungen → Pläne, per langem Druck auf einen Chip und nach dem Anlegen
+  - [x] „Frei“ abgeschafft: immer ein Plan gewählt (sonst der erste), ohne Pläne Hinweis mit „Plan anlegen“
+  - [x] Über → „Nach Updates suchen“ auf Antippen, mit „Zur Release-Seite“; Tests; CHANGELOG [1.2.1]
 
 ## Annahmen
 
@@ -590,6 +598,25 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 - **1.2.0 Tests:** Das Synchronisations-Widget ist in den allgemeinen Oberflächentests abgeschaltet
   (`reminderSyncEnabledProvider`), weil echte Datei-Ein-/Ausgabe und simulierte Zeit sonst ineinandergreifen; eigene Tests
   prüfen es eingeschaltet.
+- **1.2.1 Entscheidungen des Menschen:** ein gemeinsames Release 1.2.1 (1.2.0 nie veröffentlicht, Changelog-Abschnitt
+  zusammengeführt); Einstellungen als Startseite mit Unterseiten; überall dieselbe Plan-Seite (auch langes Drücken auf
+  einen Chip); „Frei“ abschaffen.
+- **1.2.1 „Frei“:** Ausgewählt ist der zuletzt gewählte Plan, sonst (nie gewählt oder gelöscht) der erste. Ohne Pläne
+  zeigt der Training-Tab einen Hinweis mit „Plan anlegen“ (scrollbar, damit nichts hinter der Tastatur überläuft – der
+  Tastatur-Test hat das gefunden). Ein laufendes freies Training aus 1.2.0 und alte freie Trainings funktionieren
+  weiter (Session, Verlauf, Statistik, „Als Plan speichern“ in der Zusammenfassung). Die Datenbank kennt Sessions ohne
+  Plan weiterhin; nur die Oberfläche legt keine mehr an. `lastSelectedPlanId = null` bedeutet jetzt „erster Plan“.
+- **1.2.1 Plan-Seite:** Eigene Route `/plan/:id` über allem, damit Einstellungen → Pläne und der Training-Tab dieselbe
+  Seite öffnen. „Duplizieren“ ersetzt die Seite durch die der Kopie; „Löschen“ schließt sie. Nach dem Anlegen öffnet sich
+  die Seite des neuen Plans (vorher ein Blatt nur mit Trainingstagen). Das Plan-Menü und das Drei-Punkte-Menü entfallen.
+- **1.2.1 Einstellungen:** Abschnittsüberschriften größer, fett, in der Primärfarbe, mit Trennlinie. Stepper in den
+  Einstellungen mit normaler Beschriftung (wie Schalter), im Übungsformular und in Dialogen weiter fett. Die gelbe
+  Backup-Karte steht auf der Startseite und unter „Daten“, aber erst, wenn es Trainings gibt (vorher erschien „Noch kein
+  Backup erstellt“ auch bei einer leeren App). Ein bekanntes Update steht als Untertitel von „Über“ in der Primärfarbe.
+- **1.2.1 Update-Suche:** „Nach Updates suchen“ prüft bei jedem Antippen sofort (ohne 24-h-Grenze und auch, wenn die
+  automatische Suche aus ist), ohne Benachrichtigung; Ergebnis: neueste Version / neue Version mit „Zur Release-Seite“ /
+  keine Verbindung. Auch die Benachrichtigung führt zur Release-Seite („Tippe, um die Neuerungen anzusehen“); der Download
+  bleibt Sache des Nutzers.
 
 ## Datenbank-Migrationen (ab Schema 2)
 
@@ -614,6 +641,13 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.2.1 Verbesserungen
+Nur, was am Handy angesehen werden muss; Abläufe sind automatisch getestet.
+- [ ] Einstellungen: Startseite und Unterseiten wirken übersichtlich, Abschnitte klar getrennt (auch im Dunkelmodus).
+- [ ] Langes Drücken auf einen Plan-Chip öffnet die Plan-Seite; „Frei“ ist weg.
+- [ ] Über → „Nach Updates suchen“: zeigt „Du hast die neueste Version“ bzw. nach dem nächsten Release „Neue Version …“;
+  „Zur Release-Seite“ öffnet GitHub im Browser.
 
 ### 1.2.0 Benachrichtigungen
 Nur, was am Handy geprüft werden muss; Zeitpunkte, Texte, Einstellungen und Synchronisierung sind automatisch getestet.

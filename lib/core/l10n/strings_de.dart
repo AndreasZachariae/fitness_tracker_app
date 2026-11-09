@@ -25,7 +25,7 @@ abstract final class S {
   static const settingsExercises = 'Übungen';
   static const settingsExercisesSubtitle = 'Bibliothek, Archiv';
   static const settingsPlans = 'Pläne';
-  static const settingsPlansSubtitle = 'Reihenfolge, umbenennen, duplizieren';
+  static const settingsPlansSubtitle = 'Trainingstage, aktiv, Reihenfolge';
 
   // Settings – dev build only
   static const devSection = 'Entwicklung (nur GymLog DEV)';
@@ -59,7 +59,6 @@ abstract final class S {
   static const save = 'Speichern';
   static const create = 'Anlegen';
   static const undo = 'Rückgängig';
-  static const rename = 'Umbenennen';
   static const duplicate = 'Duplizieren';
   static const delete = 'Löschen';
   static const archive = 'Archivieren';
@@ -187,7 +186,6 @@ abstract final class S {
       'mit $kg pro Stufe in Stufen umgerechnet.';
   static const convert = 'Umrechnen';
   static const errorRest = 'Gib eine ganze Zahl von 0 bis 3600 ein.';
-  static const errorPositiveNumber = 'Gib eine ganze Zahl größer als 0 ein.';
 
   // Plans
   static const plansTitle = 'Pläne';
@@ -204,15 +202,12 @@ abstract final class S {
       'Verlauf bleiben erhalten.';
 
   // Training tab (no active session)
-  static const freeTraining = 'Frei';
   static const freeTrainingTitle = 'Freies Training';
-  static const freeEmpty = 'Füge Übungen hinzu oder starte direkt.';
   static const planEmpty = 'Dieser Plan hat noch keine Übungen.';
   static const sessionEmpty =
       'Noch keine Übungen in diesem Training. Füge unten eine hinzu.';
   static const sessionDetailEmpty =
       'Dieses Training enthält keine Übungen mehr.';
-  static const noPlansHint = 'Lege mit „+ Plan“ deinen ersten Plan an.';
   static const addExercise = 'Übung hinzufügen';
   static const startTraining = 'Training starten';
   static String removedFromList(String name) => '„$name“ entfernt.';
@@ -699,7 +694,7 @@ abstract final class S {
       '${weeks == 1 ? '1 Woche' : '$weeks Wochen'} in Folge – trainiere bis '
       'Sonntag, damit sie hält.';
   static String notifyUpdateTitle(String version) => 'GymLog $version ist da';
-  static const notifyUpdateBody = 'Tippe, um die neue Version zu laden.';
+  static const notifyUpdateBody = 'Tippe, um die Neuerungen anzusehen.';
   static const notifyRestTitle = 'Pause';
   static const notifyRestBody = 'Danach geht es mit dem nächsten Satz weiter.';
 
@@ -723,20 +718,53 @@ abstract final class S {
   static const settingNotifyStreak = 'Serie in Gefahr';
   static const settingNotifyStreakSubtitle =
       'Samstag 18 Uhr, wenn diese Woche noch kein Training war';
-  static const settingCheckUpdates = 'Nach Updates suchen';
+  static const settingCheckUpdates = 'Automatisch nach Updates suchen';
   static const settingCheckUpdatesSubtitle =
-      'Einmal am Tag auf GitHub nachsehen (einziger Internetzugriff)';
+      'Einmal am Tag, mit Benachrichtigung';
   static const settingBookingUrl = 'Buchungsseite';
   static const settingBookingUrlHint = 'https://…';
   static const errorBookingUrl =
       'Gib eine Adresse ein, die mit https:// beginnt.';
   static String updateAvailable(String version) =>
       'Neue Version $version verfügbar';
-  static const updateDownload = 'Herunterladen';
+  static const updateDownload = 'Zur Release-Seite';
+  static const checkForUpdates = 'Nach Updates suchen';
+  static const checkForUpdatesHint = 'Antippen, um jetzt nachzusehen';
+  static const checkingUpdates = 'Suche …';
+  static String upToDate(String version) =>
+      'Du hast die neueste Version ($version).';
+  static const updateCheckFailed =
+      'Keine Verbindung zu GitHub. Versuch es später noch einmal.';
+
+  // Settings start page (1.2.1)
+  static const settingsTrainingSubtitle =
+      'Sätze, Pause, Steigerung, Pausentimer';
+  static const settingsNotificationsSubtitle = 'Erinnerungen, Pause, Updates';
+  static const sectionBooking = 'Automatische Buchung';
+  static const settingsBookingSubtitle = 'Buchungsseite';
+  static const bookingInfo =
+      'Die Erinnerung am Abend vor einem Trainingstag hat den Knopf „Slot '
+      'buchen“, der diese Seite im Browser öffnet. Das automatische Buchen '
+      'folgt in einer späteren Version.';
+  static const settingsAppearanceSubtitle = 'System, hell oder dunkel';
+  static const settingsDataSubtitle = 'Backup, Wiederherstellen, CSV-Export';
+  static const settingsAboutSubtitle = 'Version, nach Updates suchen';
+  static const sectionReminders = 'Erinnerungen';
+  static const sectionDuringTraining = 'Während des Trainings';
+  static const sectionUpdates = 'Updates';
+  static const sectionBackup = 'Backup';
+  static const sectionExport = 'Export';
+  static const sectionDefaults = 'Standardwerte';
+  static const sectionRestTimer = 'Pause und Display';
+  static const planNameLabel = 'Name';
+  static const planMore = 'Plan';
+  static const noPlansYet =
+      'Noch kein Trainingsplan. Lege deinen ersten Plan an, z. B. '
+      '„Oberkörper“ oder „Spontan“.';
+  static const createFirstPlan = 'Plan anlegen';
 
   // Plans: training days
   static const planSchedule = 'Trainingstage';
-  static const planScheduleTitle = 'Trainingstage und Uhrzeit';
   static const planActive = 'Aktiv';
   static const planActiveSubtitle =
       'Wird gerade trainiert: Erinnerungen an diesen Tagen. Inaktive Pläne '
@@ -751,7 +779,6 @@ abstract final class S {
     'Sonntag',
   ];
   static const changeTime = 'Uhrzeit ändern';
-  static String planScheduleSummary(List<String> days) => days.join(', ');
   static const noTrainingDays = 'Keine festen Trainingstage';
   static const planInactive = 'inaktiv';
 

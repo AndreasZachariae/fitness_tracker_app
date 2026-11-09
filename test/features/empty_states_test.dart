@@ -29,7 +29,7 @@ void main() {
 
   testWidgets('tabs of a fresh install', (tester) async {
     await open(tester);
-    expect(find.text(S.freeEmpty), findsOneWidget);
+    expect(find.text(S.noPlansYet), findsOneWidget);
     await tester.tap(find.text(S.tabHistory));
     await settle(tester);
     expect(find.text(S.historyEmpty), findsOneWidget);

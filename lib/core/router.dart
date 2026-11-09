@@ -5,10 +5,17 @@ import 'package:go_router/go_router.dart';
 import '../features/body/body_page.dart';
 import '../features/history/history_page.dart';
 import '../features/history/session_detail_page.dart';
+import '../features/settings/about_page.dart';
+import '../features/settings/appearance_settings_page.dart';
+import '../features/settings/booking_settings_page.dart';
+import '../features/settings/data/data_settings_page.dart';
 import '../features/settings/exercises/exercise_archive_page.dart';
 import '../features/settings/exercises/exercise_list_page.dart';
+import '../features/settings/notification_settings.dart';
 import '../features/settings/plans/plan_list_page.dart';
+import '../features/settings/plans/plan_page.dart';
 import '../features/settings/settings_page.dart';
+import '../features/settings/training_settings_page.dart';
 import '../features/stats/stats_page.dart';
 import '../features/training/summary/summary_page.dart';
 import '../features/training/training_page.dart';
@@ -27,6 +34,15 @@ abstract final class AppRoutes {
   static const exercises = '/settings/exercises';
   static const exerciseArchive = '/settings/exercises/archive';
   static const plans = '/settings/plans';
+  static const trainingSettings = '/settings/training';
+  static const notificationSettings = '/settings/notifications';
+  static const bookingSettings = '/settings/booking';
+  static const appearanceSettings = '/settings/appearance';
+  static const dataSettings = '/settings/data';
+  static const about = '/settings/about';
+
+  /// One plan: name, active, training days, duplicate, delete (1.2.1).
+  static String plan(int planId) => '/plan/$planId';
 
   /// Full-screen summary after a session (SPEC §6.3).
   static String summary(int sessionId) => '/summary/$sessionId';
@@ -112,7 +128,37 @@ GoRouter createRouter({String initialLocation = AppRoutes.training}) {
             path: 'plans',
             builder: (context, state) => const PlanListPage(),
           ),
+          GoRoute(
+            path: 'training',
+            builder: (context, state) => const TrainingSettingsPage(),
+          ),
+          GoRoute(
+            path: 'notifications',
+            builder: (context, state) => const NotificationSettingsPage(),
+          ),
+          GoRoute(
+            path: 'booking',
+            builder: (context, state) => const BookingSettingsPage(),
+          ),
+          GoRoute(
+            path: 'appearance',
+            builder: (context, state) => const AppearanceSettingsPage(),
+          ),
+          GoRoute(
+            path: 'data',
+            builder: (context, state) => const DataSettingsPage(),
+          ),
+          GoRoute(
+            path: 'about',
+            builder: (context, state) => const AboutPage(),
+          ),
         ],
+      ),
+      GoRoute(
+        path: '/plan/:id',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) =>
+            PlanPage(planId: int.parse(state.pathParameters['id']!)),
       ),
     ],
   );

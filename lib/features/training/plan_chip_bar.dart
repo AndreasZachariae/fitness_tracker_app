@@ -4,7 +4,8 @@ import '../../core/l10n/strings_de.dart';
 import '../../core/theme/gym_colors.dart';
 import '../../domain/models/models.dart';
 
-/// Horizontal plan chips: plans in order, "Frei", "+ Plan" (SPEC §6.1).
+/// Horizontal plan chips: plans in order, "+ Plan" (SPEC §6.1; "Frei" was
+/// removed in 1.2.1). A long press opens the plan page.
 ///
 /// Only one chip can be selected, so there is no checkmark (it looked like a
 /// multi-select filter and changed the chip width). The selected chip is
@@ -21,9 +22,9 @@ class PlanChipBar extends StatelessWidget {
 
   final List<Plan> plans;
 
-  /// `null` = "Frei".
+  /// `null` only without plans.
   final int? selectedPlanId;
-  final ValueChanged<int?> onSelect;
+  final ValueChanged<int> onSelect;
   final VoidCallback onCreate;
   final ValueChanged<Plan> onLongPress;
 
@@ -45,11 +46,6 @@ class PlanChipBar extends StatelessWidget {
                 onSelected: () => onSelect(plan.id),
               ),
             ),
-          _SelectChip(
-            label: S.freeTraining,
-            selected: selectedPlanId == null,
-            onSelected: () => onSelect(null),
-          ),
           ActionChip(
             avatar: const Icon(Icons.add),
             label: const Text(S.addPlanChip),

@@ -4,10 +4,10 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.2.0] – unveröffentlicht
+## [1.2.1] – unveröffentlicht
 
 ### Neu
-- **Trainingstage:** Für jeden Plan Wochentage mit Uhrzeit festlegen – direkt nach dem Anlegen oder über das Plan-Menü „Trainingstage“.
+- **Trainingstage:** Für jeden Plan Wochentage mit Uhrzeit festlegen – direkt nach dem Anlegen oder später auf der Plan-Seite.
 - **Aktive Pläne:** Pläne lassen sich auf inaktiv stellen; sie bleiben sichtbar, sind aber ausgegraut und erinnern nicht.
 - **Erinnerung am Abend vorher** (Standard 20 Uhr) mit Knopf „Slot buchen“, der die Buchungsseite des Studios öffnet. Die Adresse steht in den Einstellungen.
 - **Erinnerung vor dem Training** (Standard 1 Stunde) mit einem von über 30 Motivationssprüchen – mal frech, mal nerdig.
@@ -15,10 +15,17 @@ Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code h
 - **Training noch offen:** Hinweis, wenn 3 Stunden nach dem letzten Satz noch ein Training läuft.
 - **Backup-Erinnerung** und **„Serie in Gefahr“** (Samstag 18 Uhr, wenn diese Woche noch kein Training war) als Benachrichtigung.
 - **Update-Hinweis:** Einmal am Tag schaut GymLog nach, ob es auf GitHub eine neue Version gibt, und meldet sie; der Link öffnet die Download-Seite. Das ist der einzige Internetzugriff der App und lässt sich abschalten.
-- Neuer Bereich **Einstellungen → Benachrichtigungen**: alles einzeln ein- und ausschaltbar, Uhrzeit und Vorlauf einstellbar.
+- Bereich **Einstellungen → Benachrichtigungen**: alles einzeln ein- und ausschaltbar, Uhrzeit und Vorlauf einstellbar.
 
 ### Hinweis
 - Beim ersten Start fragt Android einmal, ob GymLog Benachrichtigungen senden darf.
+
+### Geändert gegenüber der Vorabversion 1.2.0
+- **Einstellungen neu geordnet:** eine Startseite mit Übungen, Pläne, Training, Benachrichtigungen, Automatische Buchung, Darstellung, Daten und Über – jeder Bereich auf einer eigenen Seite mit klar getrennten Abschnitten.
+- **Plan-Seite:** Tippen auf einen Plan (oder langes Drücken auf seinen Chip im Training-Tab) öffnet alles an einem Ort: Name, „Aktiv“, Trainingstage, Duplizieren, Löschen.
+- **„Frei“ entfällt:** Jedes Training startet aus einem Plan. Frühere freie Trainings bleiben im Verlauf.
+- **„Nach Updates suchen“** unter Einstellungen → Über: sucht auf Antippen sofort und führt zur Release-Seite mit den Neuerungen.
+- Die Buchungsseite steht jetzt unter „Automatische Buchung“.
 
 ## [1.1.0] – 2026-11-07
 

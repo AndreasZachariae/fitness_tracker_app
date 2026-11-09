@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/data/db/database.dart';
 import 'package:gymlog/data/repositories/exercise_repository.dart';
@@ -40,9 +41,9 @@ Future<int> addExercise(
   ExerciseDraft(name: name, type: type, category: category),
 );
 
-/// Closes an open bottom sheet by tapping above it, e.g. the training days
-/// sheet that opens after creating a plan (1.2.0).
-Future<void> closeSheet(WidgetTester tester) async {
-  await tester.tapAt(const Offset(200, 40));
+/// Leaves the page on top with its back button, e.g. the plan page that
+/// opens after creating a plan (1.2.1).
+Future<void> leavePage(WidgetTester tester) async {
+  await tester.tap(find.byType(BackButton).last);
   await settle(tester);
 }

@@ -60,20 +60,26 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Scrolls the section "Daten" to the top: reminder card and all tiles
-  /// are on screen.
-  Future<void> showData(WidgetTester tester) async {
-    await scrollTo(tester, S.sectionData);
-    final y = tester.getTopLeft(find.text(S.sectionData)).dy;
-    await tester.drag(find.byType(ListView), Offset(0, 120 - y));
-    await tester.pumpAndSettle();
+  /// Opens an area of the settings start page (1.2.1).
+  Future<void> openArea(WidgetTester tester, String title) async {
+    await tester.dragUntilVisible(
+      find.text(title),
+      find.byType(ListView),
+      const Offset(0, -250),
+    );
+    await tester.tap(find.text(title));
+    await settle(tester);
   }
+
+  /// Opens Settings → Daten: reminder card and all tiles on screen.
+  Future<void> showData(WidgetTester tester) => openArea(tester, S.sectionData);
 
   Future<AppSettings> settings(WidgetTester tester) =>
       dbWork(tester, () => SettingsRepository(db).get());
 
   testWidgets('training settings and theme are saved', (tester) async {
     await openSettings(tester);
+    await openArea(tester, S.sectionTraining);
     await tester.tap(find.byTooltip('${S.settingDefaultSets}: ${S.increase}'));
     await tester.tap(find.byTooltip('${S.settingDefaultRest}: ${S.decrease}'));
     await settle(tester);
@@ -106,7 +112,8 @@ void main() {
       (4, 75, false, true),
     );
 
-    await scrollTo(tester, S.themeDark);
+    await leavePage(tester);
+    await openArea(tester, S.sectionAppearance);
     await tester.tap(find.text(S.themeDark));
     await settle(tester);
     s = await settings(tester);
@@ -120,7 +127,7 @@ void main() {
 
   testWidgets('about: version, build, schema version', (tester) async {
     await openSettings(tester);
-    await scrollTo(tester, S.schemaVersion);
+    await openArea(tester, S.sectionAbout);
     expect(find.text('0.9.0'), findsOneWidget);
     expect(find.text('9'), findsOneWidget);
     expect(find.text('${AppDatabase.currentSchemaVersion}'), findsOneWidget);
@@ -172,6 +179,7 @@ void main() {
     tester,
   ) async {
     await openSettings(tester);
+    await showData(tester);
     await scrollTo(tester, S.exportCsv);
     await tester.tap(find.text(S.exportCsv));
     await tester.pumpAndSettle();
@@ -206,7 +214,7 @@ void main() {
     );
     await dbWork(tester, () => addExercise(Repos(db), 'Wird ersetzt'));
     await openSettings(tester);
-    await scrollTo(tester, S.restoreBackup);
+    await showData(tester);
     await tester.tap(find.text(S.restoreBackup));
     await settle(tester);
 
@@ -248,7 +256,7 @@ void main() {
     files.nextPick = Uint8List.fromList(utf8.encode('{"format":"other"}'));
     await dbWork(tester, () => addExercise(Repos(db), 'Bleibt'));
     await openSettings(tester);
-    await scrollTo(tester, S.restoreBackup);
+    await showData(tester);
     await tester.tap(find.text(S.restoreBackup));
     await settle(tester);
     expect(find.text(S.importErrorTitle), findsOneWidget);
@@ -277,7 +285,7 @@ void main() {
     await settle(tester);
     await tester.tap(find.byTooltip(S.openSettings));
     await settle(tester);
-    await scrollTo(tester, S.restoreBackup);
+    await showData(tester);
     expect(find.text(S.restoreBlocked), findsOneWidget);
     final tile = tester.widget<ListTile>(
       find.ancestor(
@@ -332,8 +340,10 @@ void main() {
   ) async {
     await seedTraining(tester);
     await openSettings(tester);
-    await showData(tester);
+    // Shown on the start page right away (1.2.1) and under "Daten".
     expect(find.text(S.backupAgo(40)), findsOneWidget, reason: '> 30 days');
+    await showData(tester);
+    expect(find.text(S.backupAgo(40)), findsOneWidget);
     final card = find.ancestor(
       of: find.text(S.backupAgo(40)),
       matching: find.byType(Card),

@@ -1,12 +1,39 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/format/formatters.dart';
 import '../../core/l10n/strings_de.dart';
+import '../../data/providers.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/models/models.dart';
 import '../../widgets/number_stepper.dart';
+import '../../widgets/settings_section.dart';
 
-/// Settings → Benachrichtigungen (1.2.0).
+/// Settings → Benachrichtigungen (1.2.0, own page since 1.2.1).
+class NotificationSettingsPage extends ConsumerWidget {
+  const NotificationSettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider).value;
+    return Scaffold(
+      appBar: AppBar(title: const Text(S.sectionNotifications)),
+      body: settings == null
+          ? const SizedBox.shrink()
+          : ListView(
+              padding: const EdgeInsets.only(bottom: 32),
+              children: [
+                NotificationSettings(
+                  settings: settings,
+                  update: settingsUpdater(context, ref),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
 class NotificationSettings extends StatelessWidget {
   const NotificationSettings({
     required this.settings,
@@ -15,7 +42,7 @@ class NotificationSettings extends StatelessWidget {
   });
 
   final AppSettings settings;
-  final Future<void> Function(AppSettings Function(AppSettings)) update;
+  final SettingsUpdate update;
 
   Future<void> _pickEvening(BuildContext context) async {
     final m = settings.eveningMinute;
@@ -41,6 +68,7 @@ class NotificationSettings extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const SettingsSectionHeader(S.sectionReminders, first: true),
         SwitchListTile(
           title: const Text(S.settingNotifyEvening),
           subtitle: Text(
@@ -69,6 +97,7 @@ class NotificationSettings extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 32, right: 16),
             child: NumberStepper(
+              plainLabel: true,
               label: S.settingBeforeMinutes,
               valueText: '${s.beforeMinutes} ${S.minutesUnit}',
               onDecrement: s.beforeMinutes > step
@@ -83,13 +112,19 @@ class NotificationSettings extends StatelessWidget {
                   : null,
             ),
           ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: _BookingUrlField(
-            initial: s.bookingUrl,
-            onSave: (url) => update((x) => x.copyWith(bookingUrl: url)),
-          ),
+        SwitchListTile(
+          title: const Text(S.settingNotifyStreak),
+          subtitle: const Text(S.settingNotifyStreakSubtitle),
+          value: s.notifyStreak,
+          onChanged: (v) => update((x) => x.copyWith(notifyStreak: v)),
         ),
+        SwitchListTile(
+          title: const Text(S.settingNotifyBackup),
+          subtitle: const Text(S.settingNotifyBackupSubtitle),
+          value: s.notifyBackup,
+          onChanged: (v) => update((x) => x.copyWith(notifyBackup: v)),
+        ),
+        const SettingsSectionHeader(S.sectionDuringTraining),
         SwitchListTile(
           title: const Text(S.settingNotifyRest),
           subtitle: const Text(S.settingNotifyRestSubtitle),
@@ -102,18 +137,7 @@ class NotificationSettings extends StatelessWidget {
           value: s.notifyOpenSession,
           onChanged: (v) => update((x) => x.copyWith(notifyOpenSession: v)),
         ),
-        SwitchListTile(
-          title: const Text(S.settingNotifyBackup),
-          subtitle: const Text(S.settingNotifyBackupSubtitle),
-          value: s.notifyBackup,
-          onChanged: (v) => update((x) => x.copyWith(notifyBackup: v)),
-        ),
-        SwitchListTile(
-          title: const Text(S.settingNotifyStreak),
-          subtitle: const Text(S.settingNotifyStreakSubtitle),
-          value: s.notifyStreak,
-          onChanged: (v) => update((x) => x.copyWith(notifyStreak: v)),
-        ),
+        const SettingsSectionHeader(S.sectionUpdates),
         SwitchListTile(
           title: const Text(S.settingCheckUpdates),
           subtitle: const Text(S.settingCheckUpdatesSubtitle),
@@ -126,17 +150,21 @@ class NotificationSettings extends StatelessWidget {
 }
 
 /// The booking page; saved when leaving the field or pressing "done".
-class _BookingUrlField extends StatefulWidget {
-  const _BookingUrlField({required this.initial, required this.onSave});
+class BookingUrlField extends StatefulWidget {
+  const BookingUrlField({
+    required this.initial,
+    required this.onSave,
+    super.key,
+  });
 
   final String initial;
   final Future<void> Function(String) onSave;
 
   @override
-  State<_BookingUrlField> createState() => _BookingUrlFieldState();
+  State<BookingUrlField> createState() => _BookingUrlFieldState();
 }
 
-class _BookingUrlFieldState extends State<_BookingUrlField> {
+class _BookingUrlFieldState extends State<BookingUrlField> {
   late final _controller = TextEditingController(text: widget.initial);
   String? _error;
 

@@ -3,24 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/build_info.dart';
-import '../../core/format/exercise_format.dart';
-import '../../core/format/formatters.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../core/router.dart';
-import '../../data/db/database.dart';
-import '../../data/notifications/update_checker.dart';
 import '../../data/providers.dart';
-import '../../domain/models/models.dart';
 import '../../domain/reminders.dart';
-import '../../widgets/number_stepper.dart';
-import '../../widgets/snackbars.dart';
-import '../notifications/reminder_sync.dart';
 import 'data/backup_hint.dart';
-import 'data/data_actions.dart';
 import 'dev_tools_section.dart';
-import 'notification_settings.dart';
 
-/// Settings, shown above the tab shell (SPEC §6.7).
+/// Settings, shown above the tab shell (SPEC §6.7). Since 1.2.1 a start
+/// page: one entry per area, each with its own page.
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key, this.showDevTools = isDevBuild});
 
@@ -30,290 +21,126 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider).value;
-    final sessionRunning = ref.watch(activeSessionProvider).value != null;
     final info = ref.watch(appInfoProvider).value;
+    final update = settings?.latestVersion;
+    final updateAvailable =
+        update != null && info != null && isNewerVersion(update, info.version);
 
-    Future<void> update(AppSettings Function(AppSettings) change) async {
-      try {
-        await ref.read(settingsRepositoryProvider).update(change);
-      } on Object catch (e) {
-        if (context.mounted) showError(context, e);
-      }
-    }
+    Widget entry(
+      IconData icon,
+      String title,
+      String subtitle,
+      String route, {
+      bool highlight = false,
+    }) => _SettingsEntry(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+      highlight: highlight,
+      onTap: () => context.push(route),
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text(S.settings)),
-      body: settings == null
-          ? const SizedBox.shrink()
-          : ListView(
-              padding: const EdgeInsets.only(bottom: 32),
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.fitness_center),
-                  title: const Text(S.settingsExercises),
-                  subtitle: const Text(S.settingsExercisesSubtitle),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(AppRoutes.exercises),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.list_alt_outlined),
-                  title: const Text(S.settingsPlans),
-                  subtitle: const Text(S.settingsPlansSubtitle),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(AppRoutes.plans),
-                ),
-                const _Header(S.sectionTraining),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: [
-                      NumberStepper(
-                        label: S.settingDefaultSets,
-                        valueText: '${settings.defaultSets}',
-                        onDecrement: settings.defaultSets > 1
-                            ? () => update(
-                                (s) =>
-                                    s.copyWith(defaultSets: s.defaultSets - 1),
-                              )
-                            : null,
-                        onIncrement: settings.defaultSets < 10
-                            ? () => update(
-                                (s) =>
-                                    s.copyWith(defaultSets: s.defaultSets + 1),
-                              )
-                            : null,
-                      ),
-                      NumberStepper(
-                        label: S.settingDefaultRest,
-                        valueText: formatDuration(settings.defaultRestSec),
-                        onDecrement: settings.defaultRestSec >= 15
-                            ? () => update(
-                                (s) => s.copyWith(
-                                  defaultRestSec: s.defaultRestSec - 15,
-                                ),
-                              )
-                            : null,
-                        onIncrement: settings.defaultRestSec <= 585
-                            ? () => update(
-                                (s) => s.copyWith(
-                                  defaultRestSec: s.defaultRestSec + 15,
-                                ),
-                              )
-                            : null,
-                      ),
-                      _DefaultStep(settings: settings, update: update),
-                    ],
-                  ),
-                ),
-                SwitchListTile(
-                  title: const Text(S.settingRestTimer),
-                  value: settings.restTimerEnabled,
-                  onChanged: (v) =>
-                      update((s) => s.copyWith(restTimerEnabled: v)),
-                ),
-                SwitchListTile(
-                  title: const Text(S.settingVibration),
-                  value: settings.vibrationEnabled,
-                  onChanged: (v) =>
-                      update((s) => s.copyWith(vibrationEnabled: v)),
-                ),
-                SwitchListTile(
-                  title: const Text(S.settingKeepScreenOn),
-                  subtitle: const Text(S.settingKeepScreenOnSubtitle),
-                  value: settings.keepScreenOn,
-                  onChanged: (v) => update((s) => s.copyWith(keepScreenOn: v)),
-                ),
-                SwitchListTile(
-                  title: const Text(S.settingAutoActivate),
-                  value: settings.autoActivateNext,
-                  onChanged: (v) =>
-                      update((s) => s.copyWith(autoActivateNext: v)),
-                ),
-                const _Header(S.sectionNotifications),
-                NotificationSettings(settings: settings, update: update),
-                const _Header(S.sectionAppearance),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SegmentedButton<ThemePreference>(
-                    showSelectedIcon: false,
-                    segments: const [
-                      ButtonSegment(
-                        value: ThemePreference.system,
-                        label: Text(S.themeSystem),
-                      ),
-                      ButtonSegment(
-                        value: ThemePreference.light,
-                        label: Text(S.themeLight),
-                      ),
-                      ButtonSegment(
-                        value: ThemePreference.dark,
-                        label: Text(S.themeDark),
-                      ),
-                    ],
-                    selected: {settings.themeMode},
-                    onSelectionChanged: (v) =>
-                        update((s) => s.copyWith(themeMode: v.single)),
-                  ),
-                ),
-                const _Header(S.sectionData),
-                const BackupHint(),
-                ListTile(
-                  leading: const Icon(Icons.table_view_outlined),
-                  title: const Text(S.exportCsv),
-                  subtitle: const Text(S.exportCsvSubtitle),
-                  onTap: () => exportCsvFlow(context, ref),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.backup_outlined),
-                  title: const Text(S.createBackup),
-                  subtitle: Text(
-                    settings.lastBackupAt == null
-                        ? S.noBackupYet
-                        : S.lastBackup(formatDateTime(settings.lastBackupAt!)),
-                  ),
-                  onTap: () => createBackupFlow(context, ref),
-                ),
-                ListTile(
-                  enabled: !sessionRunning,
-                  leading: const Icon(Icons.settings_backup_restore),
-                  title: const Text(S.restoreBackup),
-                  subtitle: sessionRunning
-                      ? const Text(S.restoreBlocked)
-                      : null,
-                  onTap: () => restoreBackupFlow(context, ref),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: NumberStepper(
-                    label: S.backupReminder,
-                    valueText: settings.backupReminderDays == 0
-                        ? S.backupReminderOff
-                        : S.days(settings.backupReminderDays),
-                    onDecrement: settings.backupReminderDays > 0
-                        ? () => update(
-                            (s) => s.copyWith(
-                              backupReminderDays: s.backupReminderDays - 1,
-                            ),
-                          )
-                        : null,
-                    onIncrement: settings.backupReminderDays < 365
-                        ? () => update(
-                            (s) => s.copyWith(
-                              backupReminderDays: s.backupReminderDays + 1,
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-                const _Header(S.sectionAbout),
-                if (settings.latestVersion case final latest?
-                    when info != null && isNewerVersion(latest, info.version))
-                  ListTile(
-                    leading: const Icon(Icons.system_update_outlined),
-                    title: Text(S.updateAvailable(latest)),
-                    trailing: FilledButton.tonal(
-                      onPressed: () => openInBrowser(latestReleaseUrl),
-                      child: const Text(S.updateDownload),
-                    ),
-                  ),
-                ListTile(
-                  title: const Text(S.appVersion),
-                  trailing: Text(info?.version ?? '–'),
-                ),
-                ListTile(
-                  title: const Text(S.buildNumber),
-                  trailing: Text(info?.buildNumber ?? '–'),
-                ),
-                const ListTile(
-                  title: Text(S.schemaVersion),
-                  trailing: Text('${AppDatabase.currentSchemaVersion}'),
-                ),
-                ListTile(
-                  title: const Text(S.licenses),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => showLicensePage(
-                    context: context,
-                    applicationName: S.appName,
-                    applicationVersion: info == null
-                        ? null
-                        : '${info.version}+${info.buildNumber}',
-                  ),
-                ),
-                if (showDevTools) const DevToolsSection(),
-              ],
-            ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 4),
-      child: Text(
-        text,
-        style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
-        ),
+      body: ListView(
+        padding: const EdgeInsets.only(top: 8, bottom: 32),
+        children: [
+          // A due backup shows right here (1.2.1), too.
+          const BackupHint(),
+          entry(
+            Icons.fitness_center,
+            S.settingsExercises,
+            S.settingsExercisesSubtitle,
+            AppRoutes.exercises,
+          ),
+          entry(
+            Icons.list_alt_outlined,
+            S.settingsPlans,
+            S.settingsPlansSubtitle,
+            AppRoutes.plans,
+          ),
+          entry(
+            Icons.timer_outlined,
+            S.sectionTraining,
+            S.settingsTrainingSubtitle,
+            AppRoutes.trainingSettings,
+          ),
+          entry(
+            Icons.notifications_outlined,
+            S.sectionNotifications,
+            S.settingsNotificationsSubtitle,
+            AppRoutes.notificationSettings,
+          ),
+          entry(
+            Icons.event_available_outlined,
+            S.sectionBooking,
+            S.settingsBookingSubtitle,
+            AppRoutes.bookingSettings,
+          ),
+          entry(
+            Icons.palette_outlined,
+            S.sectionAppearance,
+            S.settingsAppearanceSubtitle,
+            AppRoutes.appearanceSettings,
+          ),
+          entry(
+            Icons.save_outlined,
+            S.sectionData,
+            S.settingsDataSubtitle,
+            AppRoutes.dataSettings,
+          ),
+          entry(
+            Icons.info_outline,
+            S.sectionAbout,
+            updateAvailable
+                ? S.updateAvailable(update)
+                : S.settingsAboutSubtitle,
+            AppRoutes.about,
+            highlight: updateAvailable,
+          ),
+          if (showDevTools) const DevToolsSection(),
+        ],
       ),
     );
   }
 }
 
-/// "Standard-Steigerung": value and kg/lbs (1.1.0). Steps of 0,5 kg or
-/// 5 lbs.
-class _DefaultStep extends StatelessWidget {
-  const _DefaultStep({required this.settings, required this.update});
+/// One area of the settings: icon in a tinted circle, title, short
+/// description (1.2.1).
+class _SettingsEntry extends StatelessWidget {
+  const _SettingsEntry({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.highlight = false,
+  });
 
-  final AppSettings settings;
-  final Future<void> Function(AppSettings Function(AppSettings)) update;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool highlight;
 
   @override
   Widget build(BuildContext context) {
-    final unit = settings.defaultStepUnit;
-    final (step, min, max) = switch (unit) {
-      WeightUnit.kg => (0.5, 0.5, 50.0),
-      WeightUnit.lbs => (5.0, 5.0, 100.0),
-    };
-    final value = settings.defaultStep;
-    return NumberStepper(
-      label: S.settingDefaultStep,
-      helper: S.settingDefaultStepSubtitle,
-      valueText: '${formatWeight(value)} ${S.unit(unit)}',
-      onDecrement: value - step >= min - 1e-9
-          ? () => update((s) => s.copyWith(defaultStep: value - step))
-          : null,
-      onIncrement: value + step <= max + 1e-9
-          ? () => update((s) => s.copyWith(defaultStep: value + step))
-          : null,
-      // The unit right below the number it belongs to (1.1.0).
-      belowValue: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: SegmentedButton<WeightUnit>(
-          showSelectedIcon: false,
-          style: const ButtonStyle(visualDensity: VisualDensity.compact),
-          segments: [
-            for (final u in WeightUnit.values)
-              ButtonSegment(value: u, label: Text(S.unit(u))),
-          ],
-          selected: {unit},
-          // The number stays, only the unit changes (within its limits).
-          onSelectionChanged: (v) => update((s) {
-            final u = v.single;
-            final limit = u == WeightUnit.kg ? 50.0 : 100.0;
-            return s.copyWith(
-              defaultStepUnit: u,
-              defaultStep: s.defaultStep > limit ? limit : s.defaultStep,
-            );
-          }),
-        ),
+    final scheme = Theme.of(context).colorScheme;
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: CircleAvatar(
+        backgroundColor: scheme.secondaryContainer,
+        foregroundColor: scheme.onSecondaryContainer,
+        child: Icon(icon),
       ),
+      title: Text(title, style: Theme.of(context).textTheme.titleMedium),
+      subtitle: Text(
+        subtitle,
+        style: highlight
+            ? TextStyle(color: scheme.primary, fontWeight: FontWeight.w600)
+            : null,
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 }

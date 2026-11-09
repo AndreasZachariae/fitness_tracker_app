@@ -23,7 +23,7 @@ void main() {
         await tester.enterText(find.byType(TextField), 'Push');
         await tester.tap(find.text(S.create));
         await settle(tester);
-        await closeSheet(tester);
+        await leavePage(tester);
       }
       await tester.tap(find.text(S.addPlanChip));
       await tester.pumpAndSettle();

@@ -16,7 +16,9 @@ class BackupHint extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider).value;
-    if (settings == null || settings.backupReminderDays == 0) {
+    // Nothing to back up yet: no card (1.2.1, it is on the start page now).
+    final trained = ref.watch(historyProvider).value?.isNotEmpty ?? false;
+    if (settings == null || settings.backupReminderDays == 0 || !trained) {
       return const SizedBox.shrink();
     }
     final last = settings.lastBackupAt;

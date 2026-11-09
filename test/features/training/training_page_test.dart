@@ -60,20 +60,23 @@ void main() {
     await settle(tester);
   }
 
-  testWidgets('without plans "Frei" is selected and can start directly', (
-    tester,
-  ) async {
+  testWidgets('without plans: hint, "Plan anlegen" opens the plan page '
+      '(1.2.1, no "Frei")', (tester) async {
     await start(tester);
-    expect(isSelected(tester, S.freeTraining), isTrue);
-    expect(find.text(S.freeEmpty), findsOneWidget);
-    expect(find.text(S.addExercise), findsOneWidget);
+    expect(find.text(S.noPlansYet), findsOneWidget);
+    expect(find.text(S.startTraining), findsNothing);
+    expect(find.text('Frei'), findsNothing);
 
-    await tester.tap(find.text(S.startTraining));
+    await tester.tap(find.text(S.createFirstPlan));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Spontan');
+    await tester.tap(find.text(S.create));
     await settle(tester);
-    final session = await dbWork(tester, r.sessions.getActive);
-    expect(session!.isFreeTraining, isTrue);
-    expect(find.text(S.freeTrainingTitle), findsOneWidget);
-    expect(find.text(S.finishTraining), findsOneWidget);
+    expect(find.text(S.planSchedule), findsOneWidget, reason: 'plan page');
+    await leavePage(tester);
+    expect(isSelected(tester, 'Spontan'), isTrue);
+    expect(find.text(S.planEmpty), findsOneWidget);
+    expect(find.text(S.startTraining), findsOneWidget);
     await disposeApp(tester, db);
   });
 
@@ -86,7 +89,7 @@ void main() {
     await tester.enterText(find.byType(TextField), '  Push  ');
     await tester.tap(find.text(S.create));
     await settle(tester);
-    await closeSheet(tester);
+    await leavePage(tester);
     expect(isSelected(tester, 'Push'), isTrue);
     expect(find.text(S.planEmpty), findsOneWidget);
     final plans = await dbWork(tester, r.plans.getPlans);
@@ -132,15 +135,16 @@ void main() {
   });
 
   testWidgets('selecting a chip is remembered', (tester) async {
-    await seedPlan(tester);
+    final first = await seedPlan(tester);
+    final second = await dbWork(tester, () => r.plans.create('Beine'));
     await start(tester);
-    await tester.tap(find.text(S.freeTraining));
+    await tester.tap(find.text('Beine'));
     await settle(tester);
-    expect((await settings(tester)).lastSelectedPlanId, isNull);
-    expect(find.text(S.freeEmpty), findsOneWidget);
+    expect((await settings(tester)).lastSelectedPlanId, second);
+    expect(find.text(S.planEmpty), findsOneWidget);
     await tester.tap(find.text('Oberkörper'));
     await settle(tester);
-    expect((await settings(tester)).lastSelectedPlanId, isNotNull);
+    expect((await settings(tester)).lastSelectedPlanId, first);
     expect(find.text('Bankdrücken'), findsOneWidget);
     await disposeApp(tester, db);
   });
@@ -149,17 +153,18 @@ void main() {
     tester,
   ) async {
     await seedPlan(tester);
+    final second = await dbWork(tester, () => r.plans.create('Beine'));
     await start(tester);
     final chipWidget = tester.widget<ChoiceChip>(chip('Oberkörper'));
     expect(chipWidget.showCheckmark, isFalse);
     expect(chipWidget.selectedColor, isNotNull);
     // The new selection shows at once, before the database round trip.
-    await tester.tap(find.text(S.freeTraining));
+    await tester.tap(find.text('Beine'));
     await tester.pump();
-    expect(isSelected(tester, S.freeTraining), isTrue);
+    expect(isSelected(tester, 'Beine'), isTrue);
     expect(isSelected(tester, 'Oberkörper'), isFalse);
     await settle(tester);
-    expect((await settings(tester)).lastSelectedPlanId, isNull);
+    expect((await settings(tester)).lastSelectedPlanId, second);
     await disposeApp(tester, db);
   });
 
@@ -207,6 +212,7 @@ void main() {
   testWidgets('"Neue Übung anlegen" creates the exercise and adds it', (
     tester,
   ) async {
+    await dbWork(tester, () => r.plans.create('Spontan'));
     await start(tester);
     await openPicker(tester);
     await tester.enterText(
@@ -320,21 +326,31 @@ void main() {
     await disposeApp(tester, db);
   });
 
-  testWidgets('long-press menu renames and deletes a plan', (tester) async {
+  testWidgets('long press opens the plan page: rename, delete (1.2.1)', (
+    tester,
+  ) async {
     await seedPlan(tester);
     await start(tester);
 
     await tester.longPress(find.text('Oberkörper'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(S.rename));
+    await settle(tester);
+    expect(find.text(S.planSchedule), findsOneWidget);
+    await tester.tap(find.text(S.planNameLabel));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Push');
     await tester.tap(find.text(S.save));
     await settle(tester);
-    expect(find.text('Push'), findsOneWidget);
+    expect(find.text('Push'), findsWidgets, reason: 'title and name');
+    await leavePage(tester);
+    expect(isSelected(tester, 'Push'), isTrue);
 
     await tester.longPress(find.text('Push'));
-    await tester.pumpAndSettle();
+    await settle(tester);
+    await tester.scrollUntilVisible(
+      find.text(S.delete),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
     await tester.tap(find.text(S.delete));
     await tester.pumpAndSettle();
     expect(find.text(S.deletePlanTitle('Push')), findsOneWidget);
@@ -342,47 +358,12 @@ void main() {
     await settle(tester);
 
     expect(await dbWork(tester, r.plans.getPlans), isEmpty);
-    expect(isSelected(tester, S.freeTraining), isTrue);
+    expect(find.text(S.noPlansYet), findsOneWidget, reason: 'back, no plan');
     expect(
       find.byType(SnackBar),
       findsNothing,
       reason: 'no confirmation (1.0.1)',
     );
-    await disposeApp(tester, db);
-  });
-
-  testWidgets('free list: add, remove with undo, start copies the list', (
-    tester,
-  ) async {
-    await dbWork(tester, () async {
-      await addExercise(r, 'Latzug');
-      await addExercise(r, 'Dips', ExerciseType.bodyweight);
-    });
-    await start(tester);
-
-    for (final name in ['Latzug', 'Dips']) {
-      await openPicker(tester);
-      await tester.tap(find.text(name).last);
-      await settle(tester);
-    }
-    expect(find.text(S.freeEmpty), findsNothing);
-
-    await tester.drag(find.text('Latzug'), const Offset(-600, 0));
-    await settle(tester);
-    expect(find.text('Latzug'), findsNothing);
-    await tester.tap(find.text(S.undo));
-    await settle(tester);
-    expect(find.text('Latzug'), findsOneWidget);
-
-    await tester.tap(find.text(S.startTraining));
-    await settle(tester);
-    final session = await dbWork(tester, r.sessions.getActive);
-    final details = await dbWork(
-      tester,
-      () => r.sessions.watchDetails(session!.id).first,
-    );
-    expect(details.map((d) => d.exercise.name), ['Latzug', 'Dips']);
-    expect(details.first.sessionExercise.status, SessionExerciseStatus.active);
     await disposeApp(tester, db);
   });
 
@@ -414,12 +395,15 @@ void main() {
     await disposeApp(tester, db);
   });
 
-  testWidgets('a deleted selected plan falls back to "Frei"', (tester) async {
+  testWidgets('a deleted selected plan falls back to the first plan', (
+    tester,
+  ) async {
     final plan = await seedPlan(tester);
+    await dbWork(tester, () => r.plans.create('Beine'));
     await start(tester);
     await dbWork(tester, () => r.plans.delete(plan));
     await settle(tester);
-    expect(isSelected(tester, S.freeTraining), isTrue);
+    expect(isSelected(tester, 'Beine'), isTrue);
     await disposeApp(tester, db);
   });
 }

@@ -417,6 +417,16 @@ void main() {
   });
 
   group('Pläne', () {
+    /// Scrolls the plan page until [text] is on screen.
+    Future<void> reveal(WidgetTester tester, String text) async {
+      await tester.scrollUntilVisible(
+        find.text(text),
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
+    }
+
     Future<void> seed(WidgetTester tester) => dbWork(tester, () async {
       final bench = await addExercise(r, 'Bankdrücken');
       final a = await r.plans.create('Oberkörper');
@@ -444,29 +454,35 @@ void main() {
       await tester.enterText(find.byType(TextField), 'Beine');
       await tester.tap(find.text(S.create));
       await settle(tester);
-      await closeSheet(tester);
+      await leavePage(tester);
       expect(find.text('Beine'), findsOneWidget);
 
-      await tester.tap(find.byTooltip(S.moreActions).first);
-      await tester.pumpAndSettle();
+      // No "⋮" menu any more: tapping a plan opens its page (1.2.1).
+      expect(find.byTooltip(S.moreActions), findsNothing);
+      await tester.tap(find.text('Oberkörper'));
+      await settle(tester);
+      await reveal(tester, S.duplicate);
       await tester.tap(find.text(S.duplicate));
       await tester.pumpAndSettle();
       expect(find.text(S.copyName('Oberkörper')), findsOneWidget);
       await tester.tap(find.widgetWithText(TextButton, S.duplicate));
       await settle(tester);
-      expect(find.text(S.copyName('Oberkörper')), findsOneWidget);
+      // The page of the copy replaces the original's page.
+      expect(find.text(S.copyName('Oberkörper')), findsWidgets);
+      await leavePage(tester);
       expect(
         find.text('${S.exerciseCount(1)} · ${S.noTrainingDays}'),
         findsNWidgets(2),
       );
 
-      await tester.tap(find.byTooltip(S.moreActions).first);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(S.rename));
+      await tester.tap(find.text('Oberkörper'));
+      await settle(tester);
+      await tester.tap(find.text(S.planNameLabel));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'Push');
       await tester.tap(find.text(S.save));
       await settle(tester);
+      await leavePage(tester);
       final names = (await dbWork(tester, r.plans.getPlans)).map((p) => p.name);
       expect(names, ['Push', 'Unterkörper', 'Beine', 'Oberkörper (Kopie)']);
       await disposeApp(tester, db);
@@ -484,8 +500,9 @@ void main() {
       });
       await openSettings(tester, S.settingsPlans);
 
-      await tester.tap(find.byTooltip(S.moreActions).first);
-      await tester.pumpAndSettle();
+      await tester.tap(find.text('Oberkörper'));
+      await settle(tester);
+      await reveal(tester, S.delete);
       await tester.tap(find.text(S.delete));
       await tester.pumpAndSettle();
       expect(find.text(S.deletePlanBody), findsOneWidget);

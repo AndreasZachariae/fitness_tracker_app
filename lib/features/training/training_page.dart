@@ -4,14 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../data/providers.dart';
 import '../../domain/models/models.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/group_frame.dart';
 import '../../widgets/settings_action.dart';
 import '../../widgets/snackbars.dart';
 import '../settings/exercises/exercise_form_page.dart';
 import '../settings/plans/plan_actions.dart';
-import '../settings/plans/plan_schedule_sheet.dart';
+import '../settings/plans/plan_page.dart';
 import 'exercise_picker_sheet.dart';
-import 'free_training.dart';
 import 'plan_chip_bar.dart';
 import 'plan_entry_sheet.dart';
 import 'session/session_view.dart';
@@ -36,9 +36,8 @@ class TrainingPage extends ConsumerWidget {
   }
 }
 
-enum _PlanMenuAction { schedule, rename, duplicate, delete }
-
-/// SPEC §6.1: choose a plan (or "Frei"), arrange exercises, start.
+/// SPEC §6.1: choose a plan, arrange exercises, start. Since 1.2.1 there is
+/// no "Frei" any more: every training starts from a plan.
 class _PlanningView extends ConsumerStatefulWidget {
   const _PlanningView();
 
@@ -56,7 +55,8 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
   AppSettings get _settings =>
       ref.read(settingsProvider).value ?? AppSettings.defaults;
 
-  /// The selected plan, or `null` for "Frei" (also if it no longer exists).
+  /// The selected plan; the first one if none (or a deleted one) is
+  /// stored; `null` only without plans.
   Plan? _selectedPlan(List<Plan> plans) {
     final stored = ref.watch(settingsProvider).value?.lastSelectedPlanId;
     // Once the stored value caught up, the pending one is no longer needed
@@ -66,44 +66,19 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
     for (final p in plans) {
       if (p.id == id) return p;
     }
-    return null;
+    return plans.firstOrNull;
   }
 
-  /// Items of the plan or the free list; `null` while a plan is loading.
-  List<TrainingItem>? _items(Plan? plan) {
-    if (plan != null) {
-      final entries = ref.watch(planEntriesProvider(plan.id));
-      if (!entries.hasValue) return null;
-      return [for (final e in entries.value!) TrainingItem.fromPlanEntry(e)];
-    }
-    final exercises = ref.watch(exercisesByIdProvider).value ?? const {};
-    return [
-      for (final entry in ref.watch(freeTrainingProvider))
-        if (exercises[entry.exerciseId] case final exercise?)
-          TrainingItem(
-            exercise: exercise,
-            targets: entry.targets,
-            groupKey: entry.supersetKey,
-          ),
-    ];
+  /// Items of the plan; `null` while it is loading.
+  List<TrainingItem>? _items(Plan plan) {
+    final entries = ref.watch(planEntriesProvider(plan.id));
+    if (!entries.hasValue) return null;
+    return [for (final e in entries.value!) TrainingItem.fromPlanEntry(e)];
   }
 
-  Map<int, TrainingGroup> _groups(Plan? plan) {
-    if (plan != null) {
-      final groups = ref.watch(planGroupsProvider(plan.id)).value ?? const {};
-      return {for (final g in groups.values) g.id: TrainingGroup.fromPlan(g)};
-    }
-    final result = <int, TrainingGroup>{};
-    for (final e in ref.watch(freeTrainingProvider)) {
-      final key = e.supersetKey;
-      if (key == null) continue;
-      result[key] = TrainingGroup(
-        key: key,
-        kind: PlanGroupKind.superset,
-        restSec: e.supersetRestSec,
-      );
-    }
-    return result;
+  Map<int, TrainingGroup> _groups(Plan plan) {
+    final groups = ref.watch(planGroupsProvider(plan.id)).value ?? const {};
+    return {for (final g in groups.values) g.id: TrainingGroup.fromPlan(g)};
   }
 
   Future<void> _guard(Future<void> Function() action) async {
@@ -114,7 +89,7 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
     }
   }
 
-  Future<void> _select(int? planId) async {
+  Future<void> _select(int planId) async {
     setState(() {
       _pendingPlanId = planId;
       _hasPending = true;
@@ -131,62 +106,12 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
     }
   }
 
+  /// "+ Plan": create, select, and straight on to its training days.
   Future<void> _createPlan() async {
     final id = await createPlanWithDialog(context, ref);
-    if (id != null) await _select(id);
-  }
-
-  Future<void> _planMenu(Plan plan) async {
-    final action = await showModalBottomSheet<_PlanMenuAction>(
-      context: context,
-      useRootNavigator: true,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.event_outlined),
-              title: const Text(S.planSchedule),
-              onTap: () => Navigator.pop(context, _PlanMenuAction.schedule),
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit_outlined),
-              title: const Text(S.rename),
-              onTap: () => Navigator.pop(context, _PlanMenuAction.rename),
-            ),
-            ListTile(
-              leading: const Icon(Icons.copy_outlined),
-              title: const Text(S.duplicate),
-              onTap: () => Navigator.pop(context, _PlanMenuAction.duplicate),
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.delete_outline,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              title: Text(
-                S.delete,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-              onTap: () => Navigator.pop(context, _PlanMenuAction.delete),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (action == null || !mounted) return;
-    switch (action) {
-      case _PlanMenuAction.schedule:
-        await showPlanScheduleSheet(context, plan);
-      case _PlanMenuAction.rename:
-        await renamePlanWithDialog(context, ref, plan);
-      case _PlanMenuAction.duplicate:
-        final id = await duplicatePlanWithDialog(context, ref, plan);
-        if (id != null) await _select(id);
-      case _PlanMenuAction.delete:
-        await deletePlanWithConfirmation(context, ref, plan);
-    }
+    if (id == null || !mounted) return;
+    await _select(id);
+    if (mounted) await openPlanPage(context, id);
   }
 
   /// Picks an exercise (or creates one) that is not in the list yet.
@@ -209,14 +134,10 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
     };
   }
 
-  Future<void> _add(Plan? plan, List<TrainingItem> items) async {
+  Future<void> _add(Plan plan, List<TrainingItem> items) async {
     final toAdd = await _pickNew(items);
     if (toAdd == null || !mounted) return;
     final (exerciseId, targets) = toAdd;
-    if (plan == null) {
-      ref.read(freeTrainingProvider.notifier).add(exerciseId, targets);
-      return;
-    }
     await _guard(
       () => ref
           .read(planRepositoryProvider)
@@ -231,13 +152,7 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
     );
   }
 
-  Future<void> _reorder(Plan? plan, List<TrainingItem> ordered) async {
-    if (plan == null) {
-      ref.read(freeTrainingProvider.notifier).reorderTo([
-        for (final i in ordered) i.exercise.id,
-      ]);
-      return;
-    }
+  Future<void> _reorder(Plan plan, List<TrainingItem> ordered) async {
     await _guard(
       () => ref.read(planRepositoryProvider).reorderEntries(plan.id, [
         for (final i in ordered) i.planExercise!.id,
@@ -245,20 +160,8 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
     );
   }
 
-  Future<void> _remove(Plan? plan, TrainingItem item) async {
+  Future<void> _remove(TrainingItem item) async {
     final name = item.exercise.name;
-    if (plan == null) {
-      final free = ref.read(freeTrainingProvider.notifier);
-      final removed = free.remove(item.exercise.id);
-      if (removed == null || !mounted) return;
-      final (index, entry) = removed;
-      showMessage(
-        context,
-        S.removedFromList(name),
-        onUndo: () => free.insert(index, entry),
-      );
-      return;
-    }
     final repo = ref.read(planRepositoryProvider);
     try {
       final removed = await repo.removeEntry(item.planExercise!.id);
@@ -276,7 +179,6 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
   }
 
   Future<void> _edit(
-    Plan? plan,
     TrainingItem item,
     Map<int, TrainingGroup> groups,
     List<TrainingItem> items,
@@ -295,8 +197,8 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
       exercise: item.exercise,
       targets: item.targets,
       defaultRestSec: _settings.defaultRestSec,
-      isPlan: plan != null,
-      onChanged: (t) => _saveTargets(plan, item, t),
+      isPlan: true,
+      onChanged: (t) => _saveTargets(item, t),
       groupKind: group?.kind,
       canMakeDue: canMakeDue,
     );
@@ -305,17 +207,11 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
       case PlanEntrySheetResult.editExercise:
         await openExerciseForm(context, exercise: item.exercise);
       case PlanEntrySheetResult.removeFromGroup:
-        if (plan == null) {
-          ref
-              .read(freeTrainingProvider.notifier)
-              .removeFromSuperset(item.exercise.id);
-        } else {
-          await _guard(
-            () => ref
-                .read(planRepositoryProvider)
-                .removeFromGroup(item.planExercise!.id),
-          );
-        }
+        await _guard(
+          () => ref
+              .read(planRepositoryProvider)
+              .removeFromGroup(item.planExercise!.id),
+        );
       case PlanEntrySheetResult.makeDue:
         await _makeDue(group!, item);
       case null:
@@ -328,17 +224,7 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
         .setRotationCurrent(group.key, item.exercise.id),
   );
 
-  Future<void> _saveTargets(
-    Plan? plan,
-    TrainingItem item,
-    ExerciseTargets t,
-  ) async {
-    if (plan == null) {
-      ref
-          .read(freeTrainingProvider.notifier)
-          .updateTargets(item.exercise.id, t);
-      return;
-    }
+  Future<void> _saveTargets(TrainingItem item, ExerciseTargets t) async {
     await _guard(
       () => ref
           .read(planRepositoryProvider)
@@ -355,7 +241,7 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
 
   /// "Superset erstellen" / "Rotation erstellen" (M9).
   Future<void> _createGroup(
-    Plan? plan,
+    Plan plan,
     PlanGroupKind kind,
     List<TrainingItem> items,
     Map<int, TrainingGroup> groups,
@@ -374,12 +260,6 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
       for (final i in free)
         if (chosen.contains(i.key)) i,
     ];
-    if (plan == null) {
-      ref.read(freeTrainingProvider.notifier).createSuperset([
-        for (final i in picked) i.exercise.id,
-      ]);
-      return;
-    }
     // No snackbar: the new frame shows the result, and a snackbar would
     // cover "Training starten".
     await _guard(
@@ -390,7 +270,6 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
   }
 
   Future<void> _groupOptions(
-    Plan? plan,
     TrainingGroup group,
     List<TrainingItem> members,
     List<TrainingItem> items,
@@ -423,7 +302,6 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
     );
     if (option == null || !mounted) return;
     final plans = ref.read(planRepositoryProvider);
-    final free = ref.read(freeTrainingProvider.notifier);
     switch (option) {
       case _GroupAction.rest:
         final last = members.last.exercise.restSec ?? _settings.defaultRestSec;
@@ -433,15 +311,11 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
           defaultRestSec: members.last.targets.restSec ?? last,
         );
         if (choice == null) return;
-        if (plan == null) {
-          free.setSupersetRest(group.key, choice.restSec);
-        } else {
-          await _guard(
-            () => plans.updateGroup(
-              group.planGroup!.copyWith(restSec: choice.restSec),
-            ),
-          );
-        }
+        await _guard(
+          () => plans.updateGroup(
+            group.planGroup!.copyWith(restSec: choice.restSec),
+          ),
+        );
       case _GroupAction.every:
         final every = await showRotationEveryDialog(
           context,
@@ -464,24 +338,16 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
       case _GroupAction.add:
         final toAdd = await _pickNew(items);
         if (toAdd == null || !mounted) return;
-        if (plan == null) {
-          free.add(toAdd.$1, toAdd.$2, supersetKey: group.key);
-        } else {
-          await _guard(
-            () => plans.addExerciseToGroup(group.key, toAdd.$1, toAdd.$2),
-          );
-        }
+        await _guard(
+          () => plans.addExerciseToGroup(group.key, toAdd.$1, toAdd.$2),
+        );
       case _GroupAction.dissolve:
-        if (plan == null) {
-          free.dissolveSuperset(group.key);
-        } else {
-          await _guard(() => plans.dissolveGroup(group.key));
-        }
+        await _guard(() => plans.dissolveGroup(group.key));
     }
   }
 
   Future<void> _start(
-    Plan? plan,
+    Plan plan,
     List<TrainingItem> items,
     Map<int, TrainingGroup> groups,
   ) async {
@@ -490,7 +356,6 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
       await ref
           .read(sessionRepositoryProvider)
           .start(plan: plan, exercises: sessionDrafts(items, groups));
-      if (plan == null) ref.read(freeTrainingProvider.notifier).clear();
     } on Object catch (e) {
       if (mounted) showError(context, e);
     } finally {
@@ -500,8 +365,55 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
 
   @override
   Widget build(BuildContext context) {
-    final plans = ref.watch(plansProvider).value ?? const [];
-    final plan = _selectedPlan(plans);
+    final plans = ref.watch(plansProvider).value;
+    final plan = plans == null ? null : _selectedPlan(plans);
+    final chips = PlanChipBar(
+      plans: plans ?? const [],
+      selectedPlanId: plan?.id,
+      onSelect: _select,
+      onCreate: _createPlan,
+      onLongPress: (p) => openPlanPage(context, p.id),
+    );
+    final appBar = AppBar(
+      title: const Text(S.tabTraining),
+      actions: const [SettingsAction()],
+    );
+    if (plan == null) {
+      // Loading, or no plan yet (1.2.1: every training needs a plan).
+      return Scaffold(
+        resizeToAvoidBottomInset: false,
+        appBar: appBar,
+        body: plans == null
+            ? const SizedBox.shrink()
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  chips,
+                  Expanded(
+                    // Scrolls instead of overflowing behind the keyboard.
+                    child: Center(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const EmptyState(
+                              icon: Icons.list_alt_outlined,
+                              message: S.noPlansYet,
+                            ),
+                            FilledButton.icon(
+                              icon: const Icon(Icons.add),
+                              label: const Text(S.createFirstPlan),
+                              onPressed: _createPlan,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      );
+    }
     final loaded = _items(plan);
     final items = loaded ?? const <TrainingItem>[];
     final groups = _groups(plan);
@@ -511,38 +423,27 @@ class _PlanningViewState extends ConsumerState<_PlanningView> {
       // No text field on this page; dialogs move above the keyboard on their
       // own. Resizing squeezed the page behind the "+ Plan" dialog (1.0.1).
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        title: const Text(S.tabTraining),
-        actions: const [SettingsAction()],
-      ),
+      appBar: appBar,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PlanChipBar(
-            plans: plans,
-            selectedPlanId: plan?.id,
-            onSelect: _select,
-            onCreate: _createPlan,
-            onLongPress: _planMenu,
-          ),
+          chips,
           Expanded(
             child: TrainingList(
-              key: ValueKey(plan?.id ?? 'free'),
+              key: ValueKey(plan.id),
               items: items,
               groups: groups,
               loading: loaded == null,
               lastPerformances: last,
-              emptyText: plan == null ? S.freeEmpty : S.planEmpty,
+              emptyText: S.planEmpty,
               onReorder: (ordered) => _reorder(plan, ordered),
-              onRemove: (item) => _remove(plan, item),
-              onTap: (item) => _edit(plan, item, groups, items),
+              onRemove: _remove,
+              onTap: (item) => _edit(item, groups, items),
               onAdd: () => _add(plan, items),
-              groupKinds: plan == null
-                  ? const [PlanGroupKind.superset]
-                  : PlanGroupKind.values,
+              groupKinds: PlanGroupKind.values,
               onCreateGroup: (kind) => _createGroup(plan, kind, items, groups),
               onGroupOptions: (group, members) =>
-                  _groupOptions(plan, group, members, items),
+                  _groupOptions(group, members, items),
             ),
           ),
           SafeArea(

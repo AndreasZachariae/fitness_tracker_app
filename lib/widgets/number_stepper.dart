@@ -13,6 +13,7 @@ class NumberStepper extends StatelessWidget {
     required this.onIncrement,
     this.helper,
     this.belowValue,
+    this.plainLabel = false,
     super.key,
   });
 
@@ -27,6 +28,10 @@ class NumberStepper extends StatelessWidget {
   /// Centered right below `[−] value [+]`, e.g. a unit switch (1.1.0).
   final Widget? belowValue;
 
+  /// Label like a list entry (not bold), for settings pages next to
+  /// switches (1.2.1).
+  final bool plainLabel;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -38,7 +43,12 @@ class NumberStepper extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: theme.textTheme.titleMedium),
+                Text(
+                  label,
+                  style: plainLabel
+                      ? theme.textTheme.bodyLarge
+                      : theme.textTheme.titleMedium,
+                ),
                 if (helper != null)
                   Text(
                     helper!,

@@ -142,7 +142,7 @@ Es darf höchstens eine aktive Session geben (im Repository erzwingen).
 
 **`app_settings`** – genau eine Zeile (`id` = 1):
 `defaultSets` (3) · `defaultRestSec` (90) · `restTimerEnabled` (true) · `vibrationEnabled` (true) · `keepScreenOn` (true) ·
-`autoActivateNext` (false) · `themeMode` (`system` | `light` | `dark`) · `lastSelectedPlanId` nullable (null = Frei) ·
+`autoActivateNext` (false) · `themeMode` (`system` | `light` | `dark`) · `lastSelectedPlanId` nullable (null = Frei; ab 1.2.1 null/gelöscht = erster Plan) ·
 `lastBackupAt` nullable · `backupReminderDays` (14, ab 1.0.1 Standard 30; 0 = aus) · ab 1.1.0 `defaultStep` real
 (Standard 15) und `defaultStepUnit` `kg` | `lbs` (Standard `lbs`)
 
@@ -160,9 +160,11 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
 
 ### 6.1 Training – keine aktive Session
 
-- **Plan-Leiste** oben: horizontale Chips mit allen Plänen in `position`-Reihenfolge, dann „Frei“, dann „+ Plan“
-  (Namensdialog → neuer leerer Plan, wird ausgewählt). Auswahl wird in `lastSelectedPlanId` gemerkt.
-  Long-Press auf Plan-Chip → Menü: Umbenennen, Duplizieren, Löschen (mit Bestätigung).
+- **Plan-Leiste** oben: horizontale Chips mit allen Plänen in `position`-Reihenfolge, dann „+ Plan“
+  (Namensdialog → neuer leerer Plan, wird ausgewählt, ab 1.2.1 öffnet sich danach die Plan-Seite). Auswahl wird in
+  `lastSelectedPlanId` gemerkt. Long-Press auf Plan-Chip → ab 1.2.1 die Plan-Seite (siehe §6.7).
+- **Ab 1.2.1 gibt es kein „Frei“ mehr:** Jedes Training startet aus einem Plan. Ohne Pläne zeigt der Tab „Noch kein
+  Trainingsplan …“ mit „Plan anlegen“. Frühere freie Trainings bleiben im Verlauf und in der Statistik unverändert.
 - **Liste** der Plan-Übungen (`ReorderableListView`). Kachel kompakt: Typ-Icon, Name, Ziel („3 × 10“, „3 × 45 s“, „3 Sätze“),
   Referenz „Zuletzt: 60 kg × 10, 10, 8“ (aus der letzten Session mit dieser Übung, egal welcher Plan), Drag-Handle.
   - Reorder ändert den Plan sofort (persistiert).
@@ -174,9 +176,8 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
 - **Neue Übung anlegen** (Formular): Name, Typ (Gewicht × Wdh / Körpergewicht / Zeit), Kategorie, Ziel-Sätze (Standard aus
   Einstellungen), Ziel-Wdh bzw. Ziel-Dauer (optional), Gewichtsschritte (ab 1.1.0: Standard / Eigene in kg oder lbs / Stufen mit optional kg pro Stufe; neue Übungen: Standard), Pause (optional), Notiz.
   Speichern legt die Übung an und fügt sie direkt hinzu.
-- Im Modus **„Frei“** ist die Liste temporär (nur im State, nicht als Plan gespeichert). Leerzustand:
-  „Füge Übungen hinzu oder starte direkt.“
-- Unten fixiert: Primärbutton **„Training starten“** (auch bei leerer freier Liste möglich).
+- (Bis 1.2.0: Modus „Frei“ mit temporärer Liste.)
+- Unten fixiert: Primärbutton **„Training starten“** (auch bei leerem Plan möglich).
   Start legt `sessions`-Zeile an, kopiert die Liste in `session_exercises` und aktiviert die erste Übung.
 
 ### 6.2 Training – aktive Session
@@ -281,15 +282,22 @@ Der Zeitraum schneidet nur die Anzeige zu; Berechnungen nutzen immer die gesamte
 
 ### 6.7 Einstellungen
 
+Ab 1.2.1 eine Startseite mit je einem Eintrag (Symbol, Titel, Kurzbeschreibung) pro Bereich; jeder Bereich ist eine eigene
+Seite mit deutlich abgesetzten Abschnitten: Übungen, Pläne, Training, Benachrichtigungen, Automatische Buchung
+(Buchungsseite, später Buchungsdetails), Darstellung, Daten, Über. Ein fälliges Backup zeigt die gelbe Karte auch oben auf
+der Startseite (nur wenn es Trainings gibt).
+
 - **Übungen:** Liste mit Suche und Kategorie-Filter; anlegen, bearbeiten, archivieren bzw. löschen (§5); Archiv mit „Wiederherstellen“.
-- **Pläne:** Liste mit Reorder (= Reihenfolge der Chips), anlegen, umbenennen, duplizieren, löschen.
+- **Pläne:** Liste mit Reorder (= Reihenfolge der Chips) und Trainingstagen; Tippen öffnet die **Plan-Seite** (ab 1.2.1):
+  Name ändern, Schalter „Aktiv“, Abschnitt „Trainingstage“ (Wochentag + Uhrzeit), „Duplizieren“, „Löschen“.
 - **Training:** Standard-Satzanzahl, Standard-Pause (s), Pausentimer an/aus, Vibration an/aus, Display anlassen,
   Nächste Übung automatisch aktivieren.
 - **Darstellung:** System / Hell / Dunkel.
 - **Daten:** „CSV exportieren“, „Backup erstellen“, „Backup wiederherstellen“, „Letztes Backup: 3.11.2026, 18:20“,
   Backup-Erinnerung (Tage, 0 = aus). Ab 1.0.1 steht hier unter „Daten“ der gelbe Hinweis „Letztes Backup vor … Tagen“
   mit „Backup erstellen“, sobald die Erinnerung fällig ist.
-- **Über:** App-Version, Build-Nummer, Datenbank-Schemaversion.
+- **Über:** „Nach Updates suchen“ (ab 1.2.1, Antippen sucht sofort; neue Version → Hinweis und „Zur Release-Seite“, die
+  der Nutzer im Browser liest und selbst entscheidet), App-Version, Build-Nummer, Datenbank-Schemaversion, Lizenzen.
 - **Nur im Dev-Build** (`de.gymlog.app.dev`): „Demo-Daten erzeugen“ und „Alle Daten löschen“ (mit Bestätigung).
 
 ## 7. Logik und Formeln (Domain, reines Dart, mit Tabellentests)

@@ -34,9 +34,8 @@ void main() {
     await settle(tester);
   }
 
-  testWidgets('a new plan offers its training days; inactive is greyed', (
-    tester,
-  ) async {
+  testWidgets('a new plan opens its page: days and "Aktiv" separately '
+      '(1.2.1)', (tester) async {
     phone(tester);
     await pumpApp(tester, db: db);
     await tester.tap(find.text(S.addPlanChip));
@@ -45,7 +44,8 @@ void main() {
     await tester.tap(find.text(S.create));
     await settle(tester);
 
-    expect(find.textContaining(S.planScheduleTitle), findsOneWidget);
+    expect(find.text(S.planSchedule), findsOneWidget, reason: 'plan page');
+    expect(find.text(S.planActive), findsOneWidget);
     await tester.tap(find.text(S.weekdays[0]));
     await settle(tester);
     await tester.tap(find.text(S.weekdays[3]));
@@ -66,12 +66,11 @@ void main() {
     await tester.tap(find.text(S.planActive));
     await settle(tester);
     expect((await dbWork(tester, r.plans.getPlans)).single.active, isFalse);
-    await tester.tapAt(const Offset(200, 60));
-    await settle(tester);
+    await leavePage(tester);
 
-    // Long press menu offers the training days again.
+    // A long press on the chip opens the same page.
     await tester.longPress(find.widgetWithText(ChoiceChip, 'Push'));
-    await tester.pumpAndSettle();
+    await settle(tester);
     expect(find.text(S.planSchedule), findsOneWidget);
     await disposeApp(tester, db);
   });
@@ -89,7 +88,23 @@ void main() {
     await pumpApp(tester, db: db);
     await tester.tap(find.byTooltip(S.openSettings));
     await settle(tester);
+    // Installed is 0.9.0 in tests: "Über" on the start page shows it.
+    await tester.dragUntilVisible(
+      find.text(S.updateAvailable('1.3.0')),
+      find.byType(ListView),
+      const Offset(0, -300),
+    );
+    expect(find.text(S.updateAvailable('1.3.0')), findsOneWidget);
+    await tester.dragUntilVisible(
+      find.text(S.sectionNotifications),
+      find.byType(ListView),
+      const Offset(0, 300),
+    );
 
+    await tester.tap(find.text(S.sectionNotifications));
+    await settle(tester);
+    // Plain label like the switches, no "(einziger Internetzugriff)".
+    expect(find.textContaining('Internetzugriff'), findsNothing);
     await tester.dragUntilVisible(
       find.text(S.settingNotifyStreak),
       find.byType(ListView),
@@ -101,8 +116,11 @@ void main() {
       isFalse,
     );
 
+    await leavePage(tester);
+    await tester.tap(find.text(S.sectionBooking));
+    await settle(tester);
+    expect(find.text(S.bookingInfo), findsOneWidget);
     final url = find.widgetWithText(TextField, S.settingBookingUrl);
-    await tester.ensureVisible(url);
     await tester.enterText(url, 'http://unsicher.de');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await settle(tester);
@@ -119,12 +137,10 @@ void main() {
       'https://buchen.example/termin',
     );
 
-    // Installed is 0.9.0 in tests.
-    await tester.dragUntilVisible(
-      find.text(S.updateAvailable('1.3.0')),
-      find.byType(ListView),
-      const Offset(0, -300),
-    );
+    await leavePage(tester);
+    await tester.tap(find.text(S.sectionAbout));
+    await settle(tester);
+    expect(find.text(S.updateAvailable('1.3.0')), findsOneWidget);
     expect(find.text(S.updateDownload), findsOneWidget);
     await disposeApp(tester, db);
   });
@@ -173,6 +189,47 @@ void main() {
     expect(
       notifications.scheduled.values.map((n) => n.title),
       contains(S.notifyEveningTitle('Beine', '10:00')),
+    );
+    await disposeApp(tester, db);
+  });
+
+  testWidgets('Über: "Nach Updates suchen" on demand (1.2.1)', (tester) async {
+    phone(tester);
+    final releases = FakeReleases();
+    await pumpApp(tester, db: db, releases: releases);
+    await tester.tap(find.byTooltip(S.openSettings));
+    await settle(tester);
+    await tester.dragUntilVisible(
+      find.text(S.sectionAbout),
+      find.byType(ListView),
+      const Offset(0, -300),
+    );
+    await tester.tap(find.text(S.sectionAbout));
+    await settle(tester);
+    expect(find.text(S.checkForUpdatesHint), findsOneWidget);
+
+    // Offline.
+    await tester.tap(find.text(S.checkForUpdates));
+    await settle(tester);
+    expect(find.text(S.updateCheckFailed), findsOneWidget);
+
+    // Same version as installed (0.9.0 in tests).
+    releases.version = '0.9.0';
+    await tester.tap(find.text(S.checkForUpdates));
+    await settle(tester);
+    expect(find.text(S.upToDate('0.9.0')), findsOneWidget);
+    expect(find.text(S.updateDownload), findsNothing);
+
+    // Newer: hint and the button to the release page (not a download).
+    releases.version = '1.3.0';
+    await tester.tap(find.text(S.checkForUpdates));
+    await settle(tester);
+    expect(find.text(S.updateAvailable('1.3.0')), findsOneWidget);
+    expect(find.text(S.updateDownload), findsOneWidget);
+    expect(releases.calls, 3, reason: 'each tap looks, no 24 h limit');
+    expect(
+      (await dbWork(tester, SettingsRepository(db).get)).latestVersion,
+      '1.3.0',
     );
     await disposeApp(tester, db);
   });

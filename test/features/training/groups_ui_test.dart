@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/core/l10n/strings_de.dart';
 import 'package:gymlog/data/db/database.dart';
 import 'package:gymlog/data/repositories/settings_repository.dart';
 import 'package:gymlog/domain/models/models.dart';
-import 'package:gymlog/features/training/free_training.dart';
 import 'package:gymlog/features/training/session/session_tiles.dart';
-import 'package:gymlog/features/training/training_page.dart';
 import 'package:gymlog/widgets/group_frame.dart';
 
 import '../../helpers/pump_app.dart';
@@ -287,36 +284,6 @@ void main() {
     await tester.tap(find.text(S.removeFromGroup(PlanGroupKind.rotation)));
     await settle(tester);
     expect(find.text(rotation), findsNothing);
-    await disposeApp(tester, db);
-  });
-
-  testWidgets('free list: superset (no rotation offered)', (tester) async {
-    late int a, b;
-    await dbWork(tester, () async {
-      a = await addExercise(r, 'Klimmzüge', ExerciseType.bodyweight);
-      b = await addExercise(r, 'Dips', ExerciseType.bodyweight);
-    });
-    await open(tester);
-    final container = ProviderScope.containerOf(
-      tester.element(find.byType(TrainingPage)),
-    );
-    container.read(freeTrainingProvider.notifier)
-      ..add(a, const ExerciseTargets(sets: 2, reps: 10))
-      ..add(b, const ExerciseTargets(sets: 2, reps: 10));
-    await settle(tester);
-    expect(find.text(S.createGroup(PlanGroupKind.rotation)), findsNothing);
-    await createGroup(tester, PlanGroupKind.superset, ['Klimmzüge', 'Dips']);
-    expect(find.text(superset), findsOneWidget);
-
-    await tester.tap(find.text(S.startTraining));
-    await settle(tester);
-    final session = await dbWork(tester, r.sessions.getActive);
-    final supersets = await dbWork(
-      tester,
-      () => r.sessions.getSupersets(session!.id),
-    );
-    expect(supersets, hasLength(1));
-    expect(find.text(superset), findsOneWidget);
     await disposeApp(tester, db);
   });
 
