@@ -130,22 +130,46 @@ void main() {
     });
 
     test('a newer version is notified once and remembered', () async {
-      await checker.checkIfDue();
+      final found = await checker.checkIfDue();
+      expect(found?.version, '1.3.0', reason: 'new: the app shows its page');
       expect(notifications.shown.single.title, S.notifyUpdateTitle('1.3.0'));
       expect(notifications.shown.single.payload, NotificationPayloads.update);
       final s = await settings.get();
       expect((s.latestVersion, s.lastUpdateCheckAt), ('1.3.0', testNow));
+      expect(checker.latest?.notes, contains('Etwas Neues'));
 
-      // Within 24 h no request at all.
-      clock.advance(const Duration(hours: 23));
-      await checker.checkIfDue();
+      // Opened again within 15 minutes: no request at all.
+      clock.advance(const Duration(minutes: 14));
+      expect(await checker.checkIfDue(), isNull);
       expect(releases.calls, 1);
 
-      // A day later: same version, no second notification.
-      clock.advance(const Duration(hours: 2));
-      await checker.checkIfDue();
+      // Later: same version, no second notification, page not again.
+      clock.advance(const Duration(minutes: 2));
+      expect(await checker.checkIfDue(), isNull);
       expect(releases.calls, 2);
       expect(notifications.shown, hasLength(1));
+
+      // The known result without going online.
+      expect(await checker.lastResult(), isA<UpdateAvailable>());
+      expect(releases.calls, 2);
+    });
+
+    test('DEV app: the counter of the pre-release decides (1.2.2)', () async {
+      var installed = '1.2.1-dev.30';
+      checker = UpdateChecker(
+        source: releases..version = '1.2.2-dev.31',
+        settings: settings,
+        gateway: notifications,
+        clock: clock,
+        installedVersion: () async => installed,
+      );
+      expect((await checker.checkIfDue())?.version, '1.2.2-dev.31');
+      // After installing it: up to date, the notes stay readable.
+      installed = '1.2.2-dev.31';
+      final result = await checker.checkNow();
+      expect(result, isA<UpToDate>());
+      expect((result as UpToDate).release.version, '1.2.2-dev.31');
+      expect((await settings.get()).latestVersion, isNull);
     });
 
     test('offline, same version or switched off: no notification', () async {

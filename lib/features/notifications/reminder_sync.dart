@@ -7,7 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/notifications.dart';
 import '../../core/router.dart';
 import '../../data/notifications/reminder_service.dart';
-import '../../data/notifications/update_checker.dart';
 import '../../data/providers.dart';
 import '../../domain/models/models.dart';
 
@@ -17,8 +16,8 @@ final reminderSyncEnabledProvider = Provider<bool>((ref) => true);
 
 /// Keeps the planned notifications in line with the data (1.2.0): plans
 /// them again after every relevant change and on every return to the app,
-/// asks once for the permission, looks for updates once a day and handles
-/// taps on notifications. Invisible; wraps the whole app.
+/// asks once for the permission, looks for updates on every opening (1.2.2)
+/// and handles taps on notifications. Invisible; wraps the whole app.
 class ReminderSync extends ConsumerStatefulWidget {
   const ReminderSync({required this.child, super.key});
 
@@ -116,7 +115,13 @@ class _ReminderSyncState extends ConsumerState<ReminderSync>
   Future<void> _checkUpdates() async {
     if (!mounted) return;
     try {
-      await ref.read(updateCheckerProvider).checkIfDue();
+      final release = await ref.read(updateCheckerProvider).checkIfDue();
+      // A new version shows its page once (1.2.2) – but never in the middle
+      // of a training; the notification and Settings still point to it.
+      if (release != null && mounted) {
+        final active = await ref.read(activeSessionProvider.future);
+        if (active == null && mounted) _openUpdatePage();
+      }
     } on Object catch (e) {
       debugPrint('Update check failed: $e');
     }
@@ -131,13 +136,19 @@ class _ReminderSyncState extends ConsumerState<ReminderSync>
     }
     switch (payload) {
       case NotificationPayloads.update:
-        await openInBrowser(latestReleaseUrl);
+        _openUpdatePage();
       case NotificationPayloads.backup:
         unawaited(ref.read(routerProvider).push(AppRoutes.settings));
       default:
         // The app opens; a running training shows itself.
         break;
     }
+  }
+
+  void _openUpdatePage() {
+    final router = ref.read(routerProvider);
+    if (router.state.matchedLocation == AppRoutes.update) return;
+    unawaited(router.push(AppRoutes.update));
   }
 
   @override

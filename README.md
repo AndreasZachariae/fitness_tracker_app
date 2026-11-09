@@ -17,8 +17,9 @@ claude --resume
 ./scripts/install-dev.sh
 # Testliste fürs Handy in docs/PROGRESS.md durchgehen
 
-# Außerhalb des containers releasen:
-./scripts/release.sh
+# Außerhalb des containers, auf dem PC:
+./scripts/release-dev.sh           # DEV-App über GitHub ans Handy (Update erscheint in der DEV-App)
+./scripts/release.sh               # echte Version veröffentlichen
 
 ./scripts/install-release.sh
 
@@ -121,6 +122,37 @@ flutter run                        # alternativ mit Live-Vorschau: r = neu laden
 
 In der DEV-App gibt es unter Einstellungen → „Entwicklung (nur GymLog DEV)“ „Demo-Daten erzeugen“ und „Alle Daten löschen“.
 
+### DEV-App über GitHub (ohne Kabel und WLAN-Debugging)
+
+Ab 1.2.2 kommt die DEV-App auch über GitHub aufs Handy: als **eine einzige Vorab-Release „dev“**, die bei jedem Lauf
+ersetzt wird (der Releases-Tab bleibt übersichtlich, „Latest“ bleibt die echte Version). Ihr Text enthält die
+**Testliste fürs Handy** und die Änderungen. GymLog DEV findet sie beim nächsten Öffnen, meldet sie und bietet
+„Herunterladen und installieren“ an; die Testliste steht dort und unter Einstellungen → Über zum Aufklappen.
+
+**Einmalig: GitHub-Token auf dem PC** (bleibt auf dem PC, der Container sieht ihn nie):
+
+1. GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → „Generate new token“.
+2. Repository access: „Only select repositories“ → `fitness_tracker_app`. Permissions → Repository permissions →
+   **Contents: Read and write** (sonst nichts). Ablaufdatum z. B. 1 Jahr.
+3. Token speichern:
+   ```bash
+   mkdir -p ~/.config/gymlog
+   (umask 077; read -rsp "Token: " T && printf '%s' "$T" > ~/.config/gymlog/github-token)
+   ```
+
+**Jedes Mal, auf dem PC im Projektordner** (alles committet, Container läuft):
+
+```bash
+./scripts/release-dev.sh           # Tests, DEV-APK bauen, main pushen, Vorab-Release "dev" ersetzen
+./scripts/release-dev.sh --quick   # ohne Tests, für Kleinigkeiten
+```
+
+Die DEV-Version heißt `<pubspec-Version>-dev.<Anzahl Commits>`, z. B. `1.2.2-dev.31`. Ein neuer DEV-Build braucht also
+einen neuen Commit; derselbe Stand wird nicht als Update angeboten. Gebaut wird im Container mit dessen Debug-Schlüssel
+(wie `install-dev.sh`), daher passen Kabel-Installationen und Updates über GitHub zusammen. Der Schlüssel liegt im
+Docker-Volume `android-home`: `docker compose down -v` erzeugt einen neuen, danach die DEV-App einmal deinstallieren
+und neu installieren (nur Testdaten).
+
 ### Neue Funktionen: über `docs/ROADMAP.md`
 
 1. Ideen unter einer Versionsnummer in `docs/ROADMAP.md` eintragen, Status `PLANNED`.
@@ -217,8 +249,8 @@ Gut zu wissen:
 - Die APK enthält nur 64-Bit-ARM (~23 MB) und läuft auf praktisch jedem Handy ab Android 7.
 - Freunde installieren wie in der Release beschrieben; mit [Obtainium](https://github.com/ImranR98/Obtainium) und der
   Repo-Adresse sehen sie neue Versionen automatisch.
-- Danach die eigene GymLog-App aktualisieren: `./scripts/install-release.sh` (im Container) oder die APK aus der
-  Release auf dem Handy installieren – die Daten bleiben.
+- Danach die eigene GymLog-App aktualisieren: ab 1.2.2 direkt in der App („Herunterladen und installieren“), sonst
+  `./scripts/install-release.sh` (im Container) oder die APK aus der Release auf dem Handy – die Daten bleiben.
 - Das Repository ist öffentlich: Code, Doku und Commit-Verlauf sind sichtbar, `.secrets/` nicht.
 
 ---
@@ -233,6 +265,9 @@ Gut zu wissen:
 | `scripts/phone-connect-usb.sh` | Container | Handy per USB verbinden |
 | `scripts/phone-connect-wifi.sh` | Container | Handy per WLAN koppeln/verbinden |
 | `scripts/install-dev.sh` | Container | DEV-App bauen, installieren, starten |
+| `scripts/release-dev.sh` | **PC** | DEV-App als Vorab-Release „dev“ auf GitHub (nur du, braucht den Token) |
+| `scripts/build-dev-apk.sh` | Container | wird von `release-dev.sh` aufgerufen: DEV-APK nach `dist/gymlog-dev.apk` |
+| `scripts/dev-version.sh` | PC oder Container | DEV-Versionsname und Build-Nummer aus dem Commit-Stand |
 | `scripts/install-release.sh` | Container | echte App installieren/aktualisieren |
 | `scripts/build-release-apk.sh` | Container | echte App als APK-Datei nach `dist/` |
 | `scripts/release.sh` | **PC** | Version als GitHub-Release veröffentlichen (nur du) |
@@ -255,5 +290,7 @@ Gut zu wissen:
 | `release.sh`: „läuft auf dem PC, nicht im Container“ | Terminal auf dem PC öffnen, im Projektordner starten. |
 | `release.sh`: „ANDEREN Schlüssel“ | `.secrets/` aus der Sicherung zurückholen; niemals mit einem neuen Schlüssel veröffentlichen. |
 | `release.sh`: Push fehlgeschlagen | Das Skript nennt den Befehl zum Zurücksetzen. |
+| `release-dev.sh`: „Token wird nicht akzeptiert“ | Token abgelaufen oder ohne „Contents: Read and write“ für dieses Repository: neuen anlegen (siehe DEV-App über GitHub). |
+| DEV-Update: „App nicht installiert“ | Die DEV-App auf dem Handy hat einen anderen Debug-Schlüssel (Volume gelöscht): DEV-App deinstallieren, APK erneut installieren. Nur Testdaten. |
 | Release-Seite nicht geöffnet | Link aus der Ausgabe kopieren; Tag ist schon auf GitHub, die Release lässt sich jederzeit nachholen. |
 | Skripte melden `\r`-Fehler (Windows) | Projekt im WSL-Dateisystem ablegen; `.gitattributes` erzwingt LF. |

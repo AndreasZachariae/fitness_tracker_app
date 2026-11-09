@@ -245,24 +245,3 @@ int _streak(Set<LocalDate> weeks, LocalDate monday) {
 
 DateTime _local(LocalDate day, int minuteOfDay) =>
     DateTime(day.year, day.month, day.day, minuteOfDay ~/ 60, minuteOfDay % 60);
-
-/// Whether release [latest] (e.g. `v1.3.0`) is newer than the installed
-/// [current] (e.g. `1.2.0`, build numbers ignored).
-bool isNewerVersion(String latest, String current) {
-  List<int>? parse(String v) {
-    final core = v.trim().replaceFirst(RegExp('^v'), '').split('+').first;
-    final parts = core.split('.');
-    if (parts.length != 3) return null;
-    final numbers = parts.map(int.tryParse).toList();
-    if (numbers.contains(null)) return null;
-    return numbers.cast<int>();
-  }
-
-  final a = parse(latest);
-  final b = parse(current);
-  if (a == null || b == null) return false;
-  for (var i = 0; i < 3; i++) {
-    if (a[i] != b[i]) return a[i] > b[i];
-  }
-  return false;
-}

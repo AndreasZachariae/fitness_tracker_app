@@ -16,6 +16,7 @@ import '../features/settings/plans/plan_list_page.dart';
 import '../features/settings/plans/plan_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/settings/training_settings_page.dart';
+import '../features/settings/update_page.dart';
 import '../features/stats/stats_page.dart';
 import '../features/training/summary/summary_page.dart';
 import '../features/training/training_page.dart';
@@ -43,6 +44,9 @@ abstract final class AppRoutes {
 
   /// One plan: name, active, training days, duplicate, delete (1.2.1).
   static String plan(int planId) => '/plan/$planId';
+
+  /// A new version: news, download and install (1.2.2).
+  static const update = '/update';
 
   /// Full-screen summary after a session (SPEC §6.3).
   static String summary(int sessionId) => '/summary/$sessionId';
@@ -153,6 +157,11 @@ GoRouter createRouter({String initialLocation = AppRoutes.training}) {
             builder: (context, state) => const AboutPage(),
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.update,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const UpdatePage(),
       ),
       GoRoute(
         path: '/plan/:id',

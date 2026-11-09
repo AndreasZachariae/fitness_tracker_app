@@ -206,13 +206,4 @@ void main() {
       expect(streak(const []), isEmpty);
     });
   });
-
-  test('isNewerVersion', () {
-    expect(isNewerVersion('v1.3.0', '1.2.0'), isTrue);
-    expect(isNewerVersion('v1.2.1', '1.2.0+15'), isTrue);
-    expect(isNewerVersion('v1.2.0', '1.2.0'), isFalse);
-    expect(isNewerVersion('v1.1.9', '1.2.0'), isFalse);
-    expect(isNewerVersion('v2.0.0', '1.10.4'), isTrue);
-    expect(isNewerVersion('nightly', '1.2.0'), isFalse);
-  });
 }

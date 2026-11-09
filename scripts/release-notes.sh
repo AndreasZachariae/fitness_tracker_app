@@ -6,6 +6,7 @@
 #   ./scripts/release-notes.sh commits             Commit-Liste seit dem letzten Release-Tag (Markdown)
 #   ./scripts/release-notes.sh notes   <version>   kompletter Release-Text (Vorschau), wie ihn scripts/release.sh nutzt
 #   ./scripts/release-notes.sh finalize <version> <datum>   gibt CHANGELOG.md mit Datum und Commit-Liste aus (schreibt nicht)
+#   ./scripts/release-notes.sh dev     <dev-version>  Text der DEV-Vorab-Release: Testliste fürs Handy, Änderungen, Commits
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -14,7 +15,7 @@ FOOTER=".github/release-footer.md"
 REPO_URL="https://github.com/AndreasZachariae/fitness_tracker_app"
 
 usage() {
-  sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//' >&2
+  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' >&2
   exit 2
 }
 
@@ -133,10 +134,42 @@ finalize() {
   rm -f "$block_file"
 }
 
+# Neueste Testliste aus docs/PROGRESS.md: der erste "### "-Abschnitt unter "## Manuelle Tests am Handy".
+# Umbrochene Zeilen (eingerückt) werden angehängt, weil GitHub jeden Zeilenumbruch anzeigt.
+test_list() {
+  awk '
+    function out() { if (have) print line; have = 0 }
+    /^## Manuelle Tests am Handy/ { inside = 1; next }
+    inside && /^## / { exit }
+    inside && /^### / { if (found) exit; found = 1; sub(/^### /, ""); line = "**" $0 "**"; have = 1; next }
+    !found { next }
+    /^[ \t]+[^ \t-]/ && have && line ~ /^[-*] / { sub(/^[ \t]+/, ""); line = line " " $0; next }
+    { out(); line = $0; have = 1 }
+    END { out() }
+  ' docs/PROGRESS.md | sed -e ':a' -e '/^\n*$/{$d;N;ba' -e '}'
+}
+
+# Text der DEV-Vorab-Release (1.2.2).
+dev_notes() {
+  local name="$1" top body
+  printf 'Vorab-Version zum Testen: **GymLog DEV %s** – nur für die DEV-App (de.gymlog.app.dev), nicht für die echte App.\n\n' "$name"
+  printf '## Testliste fürs Handy\n\n'
+  test_list
+  printf '\n'
+  top="$(grep -m1 '^## \[' "$CHANGELOG" || true)"
+  if [[ "$top" == *"unveröffentlicht"* ]]; then
+    body="$(section_body "$(sed -n 's/^## \[\([^]]*\)\].*/\1/p' <<<"$top")")"
+    printf '\n## Änderungen\n\n%s\n' "$body"
+  fi
+  printf '\n'
+  commit_block
+}
+
 case "${1:-}" in
   check) [ $# -eq 2 ] || usage; check "$2" ;;
   commits) [ $# -eq 1 ] || usage; commit_block ;;
   notes) [ $# -eq 2 ] || usage; notes "$2" ;;
   finalize) [ $# -eq 3 ] || usage; finalize "$2" "$3" ;;
+  dev) [ $# -eq 2 ] || usage; dev_notes "$2" ;;
   *) usage ;;
 esac

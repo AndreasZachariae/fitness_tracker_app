@@ -165,8 +165,46 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         Einstellungen → Pläne, per langem Druck auf einen Chip und nach dem Anlegen
   - [x] „Frei“ abgeschafft: immer ein Plan gewählt (sonst der erste), ohne Pläne Hinweis mit „Plan anlegen“
   - [x] Über → „Nach Updates suchen“ auf Antippen, mit „Zur Release-Seite“; Tests; CHANGELOG [1.2.1]
+- [x] 1.2.2 DEV-App und Updates über GitHub (`docs/ROADMAP.md`, 1.2.2+17)
+  - [x] Build-Typ `beta`: DEV-App (`.dev`, Debug-Schlüssel) im Release-Modus; Version `X.Y.Z-dev.N`, Build `100000 + N`
+        (N = Anzahl Commits), auch für `install-dev.sh`
+  - [x] Skripte: `dev-version.sh`, `build-dev-apk.sh` (Container), `release-dev.sh` (PC: Token, Push per SSH, eine
+        Vorab-Release „dev“ ersetzen, APK hochladen), `release-notes.sh dev` (Testliste + Änderungen + Commits)
+  - [x] App: Suche bei jedem Öffnen (höchstens alle 15 min), echte App → neueste Release, DEV → Vorab-Release „dev“
+  - [x] Update-Seite: Neuerungen/Testliste, „Herunterladen und installieren“ (Download mit Fortschritt, Android-Installer
+        über FileProvider, Freigabe-Dialog), „Auf GitHub ansehen“; öffnet sich einmal pro Version (nicht im Training),
+        auch aus der Benachrichtigung und aus Über
+  - [x] Über: „Neuerungen der neuesten Version“ bzw. „Testliste und Änderungen (DEV)“ zum Aufklappen
+  - [x] Permission `REQUEST_INSTALL_PACKAGES` (vom Menschen freigegeben), CLAUDE.md-Regeln, Deny-Liste, README, Tests
 
 ## Annahmen
+- **1.2.2 Versionsnummer:** „DEV-App und Updates über GitHub“ als 1.2.2, damit die geplanten 1.3.0 (Automatische Buchung)
+  und 1.4.0 ihre Nummern behalten.
+- **1.2.2 DEV-Build für GitHub:** Eigener Build-Typ `beta` (Release-Modus, schnell wie die echte App, aber Paket
+  `de.gymlog.app.dev`, gelbes Icon, Debug-Schlüssel des Containers, ohne R8-Verkleinerung, weil Flutter seine R8-Regeln
+  nur für `release` einträgt). Der Release-Schlüssel aus `.secrets/` wird dafür nie benutzt. Debug- und Beta-Build haben
+  denselben Schlüssel und dieselbe Nummerierung (`X.Y.Z-dev.N`, Build `100000 + N`), also gehen Kabel-Installation und
+  Update über GitHub in beide Richtungen; 100000 liegt über allen alten DEV-Build-Nummern.
+- **1.2.2 Vorab-Release:** Genau eine Release mit Tag `dev`, `prerelease`, nie „Latest“; `release-dev.sh` löscht die
+  alte Release und den Tag und legt beide neu an (der Tag zeigt auf den gepushten Commit). `release.sh` und
+  `release-dev.sh` holen nur `main` und `v*`-Tags, damit der wandernde Tag nicht stört. Der GitHub-Token
+  (fine-grained, nur dieses Repository, Contents: Read and write) liegt auf dem PC unter `~/.config/gymlog/github-token`,
+  außerhalb des Projektordners und damit außerhalb des Containers.
+- **1.2.2 Testliste in der DEV-Release:** Der erste `###`-Abschnitt unter „Manuelle Tests am Handy“ in dieser Datei, also
+  die neueste Testliste; dazu der oberste Changelog-Abschnitt, solange er „unveröffentlicht“ ist.
+- **1.2.2 Update-Suche:** Bei jedem Öffnen und Zurückkehren, höchstens alle 15 Minuten (GitHub erlaubt ohne Konto
+  60 Anfragen pro Stunde), abschaltbar wie bisher. Die DEV-App vergleicht nur den Zähler N; Versionen ohne Zähler (z. B.
+  `flutter run`) bekommen kein Update angeboten. Neu gefundene Version: einmal Benachrichtigung und einmal die
+  Update-Seite – aber nicht während eines laufenden Trainings (dann nur Benachrichtigung und Hinweis in den
+  Einstellungen). Release-Text und APK-Adresse bleiben nur im Speicher (keine Schemaänderung).
+- **1.2.2 Herunterladen und installieren:** Download mit `HttpClient` in `cache/updates/` (vorher geleert), Größe muss zur
+  Angabe von GitHub passen; Übergabe an den Android-Installer per FileProvider (nur dieser Ordner freigegeben). Android
+  fragt beim ersten Mal nach „Apps aus dieser Quelle zulassen“ (ein Dialog erklärt das vorher) und vor jeder Installation;
+  es akzeptiert nur ein APK mit demselben Schlüssel, ein falsches APK kann die App also weder ersetzen noch Daten
+  löschen. Fehlt in der Release die APK, gibt es nur „Auf GitHub ansehen“.
+- **1.2.2 Release-Text in der App:** Eigener kleiner Markdown-Leser (Domain, getestet) statt eines Pakets: Überschriften,
+  Listen, Testlisten-Kästchen, fett, Code, Links als Text. Weggelassen werden die Commit-Liste (`<details>`) und alles
+  nach `---` (Installationsanleitung der Release-Seite).
 
 <!-- Entscheidungen, die die Spezifikation offenlässt: Was wurde angenommen, warum? -->
 
@@ -641,6 +679,20 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.2.2 DEV-App und Updates über GitHub
+Nur, was live ausprobiert werden muss. Einmalig vorher: Token anlegen (README, „DEV-App über GitHub“).
+- [ ] PC: `./scripts/release-dev.sh` läuft durch; auf GitHub gibt es genau eine Vorab-Release „GymLog DEV …“, „Latest“
+  bleibt 1.2.1.
+- [ ] Handy: `gymlog-dev.apk` aus dieser Release im Browser laden und über die bisherige DEV-App installieren (klappt ohne
+  Deinstallieren); Über zeigt die Version `1.2.2-dev.…` und unter „Testliste und Änderungen (DEV)“ diese Liste.
+- [ ] Update testen: auf dem PC `git commit --allow-empty -m "chore: test dev update"` und
+  `./scripts/release-dev.sh --quick`. DEV-App öffnen: Benachrichtigung und Update-Seite erscheinen.
+- [ ] „Herunterladen und installieren“: erst der Erklär-Dialog, Android-Freigabe erteilen, zurück, erneut tippen →
+  Fortschritt, Android fragt, DEV-App startet mit neuer Version; Daten sind noch da.
+- [ ] „Auf GitHub ansehen“ öffnet die Release im Browser; die Seite wirkt auch im Dunkelmodus gut lesbar.
+- [ ] Echte App: 1.2.2 nach dem Release noch wie gewohnt installieren; das direkte Update lässt sich erst mit der
+  nächsten Version ausprobieren.
 
 ### 1.2.1 Verbesserungen
 Nur, was am Handy angesehen werden muss; Abläufe sind automatisch getestet.

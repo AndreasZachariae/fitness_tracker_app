@@ -6,7 +6,7 @@ import '../../core/build_info.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../core/router.dart';
 import '../../data/providers.dart';
-import '../../domain/reminders.dart';
+import '../../domain/updates.dart';
 import 'data/backup_hint.dart';
 import 'dev_tools_section.dart';
 

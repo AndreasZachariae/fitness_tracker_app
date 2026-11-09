@@ -5,35 +5,68 @@ import '../../core/clock.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../core/notifications.dart';
 import '../../domain/reminders.dart';
+import '../../domain/updates.dart';
 import '../repositories/settings_repository.dart';
 import 'reminder_service.dart';
 
-/// Page of the newest release; opened in the browser to download the APK.
-const latestReleaseUrl =
-    'https://github.com/AndreasZachariae/fitness_tracker_app/releases/latest';
+const _repo = 'AndreasZachariae/fitness_tracker_app';
 
-/// The newest release, e.g. `1.3.0` (without "v").
-abstract interface class ReleaseSource {
-  Future<String?> latestVersion();
+/// Page of the newest release; fallback when GitHub sent no address.
+const latestReleaseUrl = 'https://github.com/$_repo/releases/latest';
+
+/// A release on GitHub as the app needs it (1.2.2).
+final class ReleaseInfo {
+  const ReleaseInfo({
+    required this.version,
+    required this.notes,
+    required this.pageUrl,
+    this.apkUrl,
+    this.apkSize,
+  });
+
+  /// `1.3.0` (release app) or `1.2.2-dev.31` (DEV app).
+  final String version;
+
+  /// Markdown text of the release: news, for DEV also the test list.
+  final String notes;
+
+  /// The release page on GitHub.
+  final String pageUrl;
+
+  /// Download of the APK; null if the release has none (yet).
+  final String? apkUrl;
+
+  /// Size of the APK in bytes, to check the download.
+  final int? apkSize;
 }
 
-/// One GET to the public GitHub API (1.2.0) – the only network access of
-/// GymLog. No account, no data sent except what every HTTP request has.
-final class GitHubReleases implements ReleaseSource {
-  const GitHubReleases();
+/// The newest release of the channel of this app.
+abstract interface class ReleaseSource {
+  /// Null when offline or GitHub does not answer.
+  Future<ReleaseInfo?> latest();
+}
 
-  static final _api = Uri.parse(
-    'https://api.github.com/repos/AndreasZachariae/fitness_tracker_app/'
-    'releases/latest',
+/// One GET to the public GitHub API, without account or token. The release
+/// app reads the newest release, the DEV app the pre-release "dev" (1.2.2).
+final class GitHubReleases implements ReleaseSource {
+  const GitHubReleases({required this.dev});
+
+  final bool dev;
+
+  static final _latest = Uri.parse(
+    'https://api.github.com/repos/$_repo/releases/latest',
+  );
+  static final _dev = Uri.parse(
+    'https://api.github.com/repos/$_repo/releases/tags/dev',
   );
 
   @override
-  Future<String?> latestVersion() async {
+  Future<ReleaseInfo?> latest() async {
     final client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 10)
       ..userAgent = 'GymLog';
     try {
-      final request = await client.getUrl(_api);
+      final request = await client.getUrl(dev ? _dev : _latest);
       request.headers.set(
         HttpHeaders.acceptHeader,
         'application/vnd.github+json',
@@ -43,18 +76,53 @@ final class GitHubReleases implements ReleaseSource {
       );
       if (response.statusCode != 200) return null;
       final body = await response.transform(utf8.decoder).join();
-      final tag = (jsonDecode(body) as Map<String, Object?>)['tag_name'];
-      return tag is String ? tag.replaceFirst(RegExp('^v'), '') : null;
+      return parse(jsonDecode(body), dev: dev);
     } on Object {
       return null;
     } finally {
       client.close(force: true);
     }
   }
+
+  /// The answer of the GitHub API; null if it is not a usable release.
+  static ReleaseInfo? parse(Object? json, {required bool dev}) {
+    if (json is! Map<String, Object?>) return null;
+    final tag = json['tag_name'];
+    final name = json['name'];
+    final version = dev
+        ? devVersionIn(name is String ? name : '')
+        : tag is String
+        ? tag.replaceFirst(RegExp('^v'), '')
+        : null;
+    if (version == null) return null;
+    final assets = json['assets'];
+    Map<String, Object?>? apk;
+    if (assets is List) {
+      for (final a in assets) {
+        if (a is Map<String, Object?> &&
+            a['name'] is String &&
+            (a['name']! as String).endsWith('.apk') &&
+            a['browser_download_url'] is String) {
+          apk = a;
+          break;
+        }
+      }
+    }
+    final page = json['html_url'];
+    final notes = json['body'];
+    return ReleaseInfo(
+      version: version,
+      notes: notes is String ? notes : '',
+      pageUrl: page is String ? page : latestReleaseUrl,
+      apkUrl: apk?['browser_download_url'] as String?,
+      apkSize: apk?['size'] is int ? apk!['size']! as int : null,
+    );
+  }
 }
 
-/// Looks for a newer release at most once a day (1.2.0). A newer version
-/// is notified once and stays visible in the settings.
+/// Looks for a newer release whenever the app is opened (at most every
+/// 15 minutes, 1.2.2). A newer version is notified once and stays visible in
+/// the settings.
 class UpdateChecker {
   UpdateChecker({
     required this.source,
@@ -70,40 +138,59 @@ class UpdateChecker {
   final Clock clock;
   final Future<String> Function() installedVersion;
 
-  static const interval = Duration(hours: 24);
+  static const interval = Duration(minutes: 15);
 
-  /// The automatic check: at most once a day, notifies a new version once.
-  Future<void> checkIfDue() async {
+  /// The newest release of the last successful look (in memory only).
+  ReleaseInfo? get latest => _latest;
+  ReleaseInfo? _latest;
+
+  /// The automatic check on opening the app. Returns the release when it is
+  /// new to the app (notified now, shown once); otherwise null.
+  Future<ReleaseInfo?> checkIfDue() async {
     final s = await settings.get();
-    if (!s.checkUpdates) return;
+    if (!s.checkUpdates) return null;
     final last = s.lastUpdateCheckAt;
-    if (last != null && clock.now().difference(last) < interval) return;
+    if (last != null && clock.now().difference(last) < interval) return null;
     final result = await checkNow();
-    if (result case UpdateAvailable(:final version)
-        when version != s.latestVersion) {
+    if (result case UpdateAvailable(:final release)
+        when release.version != s.latestVersion) {
       await gateway.show(
         id: ReminderIds.update,
-        title: S.notifyUpdateTitle(version),
+        title: S.notifyUpdateTitle(release.version),
         body: S.notifyUpdateBody,
         channel: NotificationChannel.updates,
         payload: NotificationPayloads.update,
       );
+      return release;
     }
+    return null;
   }
 
-  /// Looks right now (Settings → Über, 1.2.1), without a notification.
-  Future<UpdateResult> checkNow() async {
-    final latest = await source.latestVersion();
-    if (latest == null) return const UpdateCheckFailed();
+  /// The result of the last successful look, without going online; null if
+  /// there was none since the app started.
+  Future<UpdateResult?> lastResult() async {
+    final release = _latest;
+    if (release == null) return null;
     final installed = await installedVersion();
-    final isNew = isNewerVersion(latest, installed);
+    return isNewerVersion(release.version, installed)
+        ? UpdateAvailable(release)
+        : UpToDate(installed, release);
+  }
+
+  /// Looks right now (Settings → Über, update page), without notification.
+  Future<UpdateResult> checkNow() async {
+    final release = await source.latest();
+    if (release == null) return const UpdateCheckFailed();
+    _latest = release;
+    final installed = await installedVersion();
+    final isNew = isNewerVersion(release.version, installed);
     await settings.update(
       (x) => x.copyWith(
         lastUpdateCheckAt: clock.now(),
-        latestVersion: isNew ? latest : null,
+        latestVersion: isNew ? release.version : null,
       ),
     );
-    return isNew ? UpdateAvailable(latest) : UpToDate(installed);
+    return isNew ? UpdateAvailable(release) : UpToDate(installed, release);
   }
 }
 
@@ -112,15 +199,20 @@ sealed class UpdateResult {
 }
 
 final class UpdateAvailable extends UpdateResult {
-  const UpdateAvailable(this.version);
+  const UpdateAvailable(this.release);
 
-  final String version;
+  final ReleaseInfo release;
+
+  String get version => release.version;
 }
 
 final class UpToDate extends UpdateResult {
-  const UpToDate(this.installed);
+  const UpToDate(this.installed, this.release);
 
   final String installed;
+
+  /// The newest release (its notes describe the installed version).
+  final ReleaseInfo release;
 }
 
 /// Offline or GitHub not reachable.

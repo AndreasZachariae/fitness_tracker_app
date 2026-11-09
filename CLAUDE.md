@@ -25,6 +25,7 @@ aus dem Gedächtnis an: Bei Unsicherheit im lokalen SDK (`/home/flutter/sdks/flu
 | Format + Analyse + Tests (muss grün sein) | `./scripts/check.sh` |
 | Code-Generierung (drift) | `dart run build_runner build --delete-conflicting-outputs` |
 | Debug-APK bauen | `flutter build apk --debug` |
+| DEV-APK wie für GitHub bauen (Debug-Schlüssel, nur lokal) | `./scripts/build-dev-apk.sh [--quick]` → `dist/gymlog-dev.apk` |
 | DEV-App aufs Handy + starten | `./scripts/install-dev.sh` |
 | Screenshot vom Handy | `./scripts/screenshot.sh <name>` → gibt Pfad zur PNG aus, die du dir ansehen kannst |
 | Vorschau Release-Text (nur lesen) | `./scripts/release-notes.sh notes <version>`, Prüfung: `./scripts/release-notes.sh check <version>` |
@@ -59,8 +60,9 @@ Auf dem Handy liegen echte Trainingsdaten in der Release-App `de.gymlog.app`. De
 1. **Niemals** `applicationId`/`namespace` (`de.gymlog.app`), den Debug-Suffix `.dev`, die Signatur-Konfiguration oder den
    Keystore ändern, neu erzeugen oder entfernen.
 2. **Niemals** `adb uninstall`, `adb shell pm …`, `adb install …`, `flutter install`, `scripts/install-release.sh`,
-   `scripts/build-release-apk.sh`, `scripts/release-build.sh`, `scripts/release.sh` oder `flutter build apk --release`
-   ausführen (Release-Builds nutzen `.secrets/`). Kein `git push`, kein `git tag`, keine `gh`-Befehle. Releases startet nur
+   `scripts/build-release-apk.sh`, `scripts/release-build.sh`, `scripts/release.sh`, `scripts/release-dev.sh` oder
+   `flutter build apk --release` ausführen (Release-Builds nutzen `.secrets/`; `release-dev.sh` veröffentlicht die
+   DEV-App auf GitHub). `~/.config/gymlog/` (GitHub-Token, nur auf dem PC) nie lesen. Kein `git push`, kein `git tag`, keine `gh`-Befehle. Releases startet nur
    der Mensch auf seinem PC; im Container gibt es absichtlich keinen GitHub-Zugang.
    Interaktion mit dem Handy ausschließlich über `scripts/install-dev.sh` und `scripts/screenshot.sh` (nur Paket `de.gymlog.app.dev`).
 3. `.secrets/` weder lesen noch schreiben.
@@ -70,7 +72,8 @@ Auf dem Handy liegen echte Trainingsdaten in der Release-App `de.gymlog.app`. De
 6. Keine Analytics, keine Crash-Reporter, keine Laufzeit-Downloads (Schriften als Assets bündeln). Erlaubte Permissions
    (jeweils vom Menschen freigegeben): `VIBRATE`; `USE_EXACT_ALARM` und `SCHEDULE_EXACT_ALARM` mit `maxSdkVersion="32"`
    (Pausen-Vibration, 1.0.1); `POST_NOTIFICATIONS` und `RECEIVE_BOOT_COMPLETED` (Erinnerungen, 1.2.0); `INTERNET`
-   **ausschließlich** für die tägliche Update-Abfrage der GitHub-Releases (1.2.0, abschaltbar). Kein anderer Netzzugriff,
+   **ausschließlich** für die Update-Abfrage der GitHub-Releases (1.2.0, abschaltbar) und das Herunterladen des Updates
+   von GitHub (1.2.2); `REQUEST_INSTALL_PACKAGES` für „Herunterladen und installieren“ (1.2.2). Kein anderer Netzzugriff,
    keine weiteren Permissions.
 
 ## Konventionen

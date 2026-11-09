@@ -24,6 +24,7 @@ Future<AppDatabase> pumpApp(
   FakeFileGateway? files,
   FakeNotifications? notifications,
   FakeReleases? releases,
+  FakeUpdateInstaller? installer,
   bool reminderSync = false,
 }) async {
   final database = db ?? newTestDatabase();
@@ -39,6 +40,9 @@ Future<AppDatabase> pumpApp(
           notifications ?? FakeNotifications(),
         ),
         releaseSourceProvider.overrideWithValue(releases ?? FakeReleases()),
+        updateInstallerProvider.overrideWithValue(
+          installer ?? FakeUpdateInstaller(),
+        ),
         reminderSyncEnabledProvider.overrideWithValue(reminderSync),
         appInfoProvider.overrideWith(
           (ref) async => (version: '0.9.0', buildNumber: '9'),

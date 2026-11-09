@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../core/build_info.dart';
 import '../core/clock.dart';
 import '../core/notifications.dart';
 import '../domain/history.dart';
@@ -13,6 +14,7 @@ import 'io/data_transfer_service.dart';
 import 'io/file_gateway.dart';
 import 'notifications/reminder_service.dart';
 import 'notifications/update_checker.dart';
+import 'notifications/update_installer.dart';
 import 'repositories/body_weight_repository.dart';
 import 'repositories/exercise_repository.dart';
 import 'repositories/maintenance_repository.dart';
@@ -199,8 +201,13 @@ final reminderServiceProvider = Provider<ReminderService>(
   ),
 );
 
+/// The release app looks for releases, the DEV app for the pre-release "dev".
 final releaseSourceProvider = Provider<ReleaseSource>(
-  (ref) => const GitHubReleases(),
+  (ref) => const GitHubReleases(dev: isDevBuild),
+);
+
+final updateInstallerProvider = Provider<UpdateInstaller>(
+  (ref) => const PlatformUpdateInstaller(),
 );
 
 final updateCheckerProvider = Provider<UpdateChecker>(

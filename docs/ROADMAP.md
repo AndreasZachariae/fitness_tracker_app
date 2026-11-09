@@ -53,6 +53,13 @@ STATUS: FINISHED
     - Bei „Nach Updates suchen“ die Bemerkung „(einziger Internetzugriff)“ weglassen.
     - Einstellungen/Pläne: Draufklicken und drei Punkte doppeln sich. Beim Draufklicken alle Optionen anbieten (umbenennen, duplizieren, löschen); „Aktiv“ und die Trainingstage voneinander trennen. Dasselbe in der Trainingsübersicht; „Frei“ abschaffen, man muss immer erst einen Trainingsplan erstellen.
     - Einstellungen/Über: neuer Punkt „Nach Updates suchen“ zum Antippen; zeigt, ob ein Update verfügbar ist, mit Button zur Release-Website (Release-Infos lesen, Nutzer entscheidet selbst über den Download).
+Version 1.2.2 (DEV-App und Updates über GitHub)
+STATUS: FINISHED
+    - Die DEV-App über GitHub verteilen, damit zum Testen kein USB/WLAN mehr nötig ist: eine einzige Vorab-Release „dev“ (Releases-Tab bleibt übersichtlich), die bei jedem neuen DEV-Build ersetzt wird.
+    - Gebaut und hochgeladen per Skript auf dem PC; alle Secrets (Debug-Schlüssel, GitHub-Zugang) bleiben auf dem PC.
+    - Die DEV-Release enthält die Testliste fürs Handy (aus PROGRESS.md) und die Änderungen.
+    - Beide Apps (echte und DEV) suchen bei jedem Öffnen nach einem Update. Ist eines da: Benachrichtigung und Info in der App mit mehreren Optionen – Link zu GitHub (herunterladen, Changelog lesen) und ein Knopf, der direkt herunterlädt und installiert (neues Recht nötig).
+    - Den Changelog bzw. die Testliste kann man in der App aufklappen.
 Version 1.3.0 (Automatische Buchung)
 STATUS: PLANNED
     - Nutze die öffentliche website um eine Buchung durchzuführen.

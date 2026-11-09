@@ -12,7 +12,9 @@ if ! adb get-state >/dev/null 2>&1; then
   exit 1
 fi
 
-flutter build apk --debug
+# Gleiche Versionsnummer wie die DEV-Builds über GitHub (1.2.2), damit beide sich gegenseitig ersetzen.
+{ read -r NAME; read -r CODE; } < <(./scripts/dev-version.sh)
+flutter build apk --debug --build-name "$NAME" --build-number "$CODE"
 
 AAPT2="$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1)"
 PKG="$("$AAPT2" dump packagename "$APK")"

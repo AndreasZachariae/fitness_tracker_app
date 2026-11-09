@@ -89,6 +89,34 @@ android {
             resValue("string", "app_name", "GymLog")
             signingConfig = signingConfigs.findByName("release")
         }
+        // DEV app over the air (1.2.2): release-mode Dart (fast, small), but the DEV app de.gymlog.app.dev with its
+        // yellow icon, signed with the same debug key as install-dev.sh, so both update each other. The real app
+        // and its release signing above are not touched. Built by scripts/build-dev-apk.sh (gradle assembleBeta).
+        create("beta") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "GymLog DEV")
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+            // Flutter adds its R8 rules only to "release"; the Java part is tiny anyway.
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
+    }
+
+    // The DEV icons of debug/profile also for beta.
+    sourceSets.getByName("beta").res.srcDir("src/debug/res")
+}
+
+// Version of DEV builds (beta) from scripts/build-dev-apk.sh: -Pgymlog-version-code / -Pgymlog-version-name.
+androidComponents {
+    onVariants(selector().withBuildType("beta")) { variant ->
+        val code = (project.findProperty("gymlog-version-code") as String?)?.toInt()
+        val name = project.findProperty("gymlog-version-name") as String?
+        variant.outputs.forEach { output ->
+            if (code != null) output.versionCode.set(code)
+            if (name != null) output.versionName.set(name)
+        }
     }
 }
 

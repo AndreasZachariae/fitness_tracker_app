@@ -1,6 +1,7 @@
 import 'package:gymlog/core/device.dart';
 import 'package:gymlog/core/notifications.dart';
 import 'package:gymlog/data/notifications/update_checker.dart';
+import 'package:gymlog/data/notifications/update_installer.dart';
 
 /// Records calls instead of vibrating.
 final class FakeFeedback implements DeviceFeedback {
@@ -131,14 +132,56 @@ final class FakeNotifications implements NotificationGateway {
 
 /// A fixed answer of the GitHub releases (null = offline).
 final class FakeReleases implements ReleaseSource {
-  FakeReleases([this.version]);
+  FakeReleases([this.version, this.notes = '### Neu\n- Etwas Neues']);
 
   String? version;
+  String notes;
+  String? apkUrl = 'https://example.org/gymlog.apk';
   int calls = 0;
 
   @override
-  Future<String?> latestVersion() async {
+  Future<ReleaseInfo?> latest() async {
     calls++;
-    return version;
+    final v = version;
+    return v == null
+        ? null
+        : ReleaseInfo(
+            version: v,
+            notes: notes,
+            pageUrl: 'https://example.org/releases/$v',
+            apkUrl: apkUrl,
+            apkSize: 3,
+          );
   }
+}
+
+/// Records the steps of "Herunterladen und installieren" (1.2.2).
+final class FakeUpdateInstaller implements UpdateInstaller {
+  bool allowed = true;
+  bool failDownload = false;
+  final calls = <String>[];
+
+  @override
+  Future<bool> canInstall() async {
+    calls.add('canInstall');
+    return allowed;
+  }
+
+  @override
+  Future<void> openInstallSettings() async => calls.add('openInstallSettings');
+
+  @override
+  Future<String> download(
+    ReleaseInfo release, {
+    void Function(double? progress)? onProgress,
+  }) async {
+    calls.add('download ${release.version}');
+    onProgress?.call(0.5);
+    if (failDownload) throw const UpdateDownloadException('offline');
+    onProgress?.call(1);
+    return '/cache/updates/gymlog-update.apk';
+  }
+
+  @override
+  Future<void> install(String path) async => calls.add('install $path');
 }

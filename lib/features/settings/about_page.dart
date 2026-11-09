@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../core/build_info.dart';
 
 import '../../core/l10n/strings_de.dart';
+import '../../core/router.dart';
 import '../../data/db/database.dart';
 import '../../data/notifications/update_checker.dart';
 import '../../data/providers.dart';
-import '../../domain/reminders.dart';
-import '../notifications/reminder_sync.dart';
+import '../../domain/updates.dart';
+import 'release_notes_view.dart';
 
 /// Settings → Über (1.2.1): look for updates on demand, versions, licenses.
 class AboutPage extends ConsumerWidget {
@@ -21,6 +25,7 @@ class AboutPage extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: 32),
         children: [
           const UpdateCheckTile(),
+          const LatestNotesTile(),
           const Divider(),
           ListTile(
             title: const Text(S.appVersion),
@@ -52,7 +57,8 @@ class AboutPage extends ConsumerWidget {
 }
 
 /// "Nach Updates suchen": tap to look now; a newer version offers the
-/// release page, where the user reads what is new and decides (1.2.1).
+/// update page, where the user reads what is new and decides (1.2.1, page
+/// since 1.2.2).
 class UpdateCheckTile extends ConsumerStatefulWidget {
   const UpdateCheckTile({super.key});
 
@@ -122,12 +128,76 @@ class _UpdateCheckTileState extends ConsumerState<UpdateCheckTile> {
             child: Align(
               alignment: Alignment.centerLeft,
               child: FilledButton.tonalIcon(
-                icon: const Icon(Icons.open_in_new),
-                label: const Text(S.updateDownload),
-                onPressed: () => openInBrowser(latestReleaseUrl),
+                icon: const Icon(Icons.system_update),
+                label: const Text(S.updateOpen),
+                onPressed: () => context.push(AppRoutes.update),
               ),
             ),
           ),
+      ],
+    );
+  }
+}
+
+/// The text of the newest release to fold open (1.2.2): what is new, in the
+/// DEV app also the test list for the phone. Loads it when opened.
+class LatestNotesTile extends ConsumerStatefulWidget {
+  const LatestNotesTile({super.key});
+
+  @override
+  ConsumerState<LatestNotesTile> createState() => _LatestNotesTileState();
+}
+
+class _LatestNotesTileState extends ConsumerState<LatestNotesTile> {
+  bool _loading = false;
+  bool _failed = false;
+
+  Future<void> _expanded(bool open) async {
+    final checker = ref.read(updateCheckerProvider);
+    if (!open || _loading) return;
+    if (checker.latest != null) {
+      // Found meanwhile by "Nach Updates suchen".
+      setState(() => _failed = false);
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _failed = false;
+    });
+    final result = await checker.checkNow();
+    if (mounted) {
+      setState(() {
+        _loading = false;
+        _failed = result is UpdateCheckFailed;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final release = ref.read(updateCheckerProvider).latest;
+    return ExpansionTile(
+      leading: const Icon(Icons.article_outlined),
+      title: const Text(
+        isDevBuild ? S.releaseNotesLatestDev : S.releaseNotesLatest,
+      ),
+      subtitle: Text(release?.version ?? S.releaseNotesHint),
+      shape: const Border(),
+      onExpansionChanged: _expanded,
+      childrenPadding: const EdgeInsets.fromLTRB(72, 0, 16, 16),
+      children: [
+        if (_loading)
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+          )
+        else if (release != null)
+          ReleaseNotesView(markdown: release.notes)
+        else if (_failed)
+          const Text(S.updateCheckFailed),
       ],
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/core/l10n/strings_de.dart';
 import 'package:gymlog/data/db/database.dart';
+import 'package:gymlog/data/notifications/reminder_service.dart';
 import 'package:gymlog/data/repositories/settings_repository.dart';
 import 'package:gymlog/domain/models/models.dart';
 import 'package:gymlog/domain/reminders.dart';
@@ -141,7 +142,7 @@ void main() {
     await tester.tap(find.text(S.sectionAbout));
     await settle(tester);
     expect(find.text(S.updateAvailable('1.3.0')), findsOneWidget);
-    expect(find.text(S.updateDownload), findsOneWidget);
+    expect(find.text(S.updateOpen), findsOneWidget);
     await disposeApp(tester, db);
   });
 
@@ -174,6 +175,9 @@ void main() {
       contains(S.notifyEveningTitle('Beine', '17:00')),
     );
     expect(notifications.shown.single.id, ReminderIds.update);
+    // A new version shows its page once (1.2.2).
+    expect(find.text(S.updateHeadline('DEV 1.0.0')), findsOneWidget);
+    expect(find.text('Etwas Neues'), findsOneWidget);
 
     // A new training day is planned right away.
     await dbWork(tester, () async {
@@ -218,19 +222,129 @@ void main() {
     await tester.tap(find.text(S.checkForUpdates));
     await settle(tester);
     expect(find.text(S.upToDate('0.9.0')), findsOneWidget);
-    expect(find.text(S.updateDownload), findsNothing);
+    expect(find.text(S.updateOpen), findsNothing);
 
-    // Newer: hint and the button to the release page (not a download).
+    // Newer: hint and the button to the update page.
     releases.version = '1.3.0';
     await tester.tap(find.text(S.checkForUpdates));
     await settle(tester);
     expect(find.text(S.updateAvailable('1.3.0')), findsOneWidget);
-    expect(find.text(S.updateDownload), findsOneWidget);
-    expect(releases.calls, 3, reason: 'each tap looks, no 24 h limit');
+    expect(find.text(S.updateOpen), findsOneWidget);
+    expect(releases.calls, 3, reason: 'each tap looks, no time limit');
     expect(
       (await dbWork(tester, SettingsRepository(db).get)).latestVersion,
       '1.3.0',
     );
+
+    // The notes of the newest release fold open (1.2.2).
+    expect(find.text('Etwas Neues'), findsNothing);
+    await tester.tap(find.text(S.releaseNotesLatestDev));
+    await settle(tester);
+    expect(find.text('Etwas Neues'), findsOneWidget);
+    expect(releases.calls, 3, reason: 'already loaded');
+    await disposeApp(tester, db);
+  });
+
+  testWidgets('update page: permission, download, install, GitHub (1.2.2)', (
+    tester,
+  ) async {
+    phone(tester);
+    final releases = FakeReleases('1.3.0');
+    final installer = FakeUpdateInstaller()..allowed = false;
+    await pumpApp(tester, db: db, releases: releases, installer: installer);
+    await tester.tap(find.byTooltip(S.openSettings));
+    await settle(tester);
+    await tester.dragUntilVisible(
+      find.text(S.sectionAbout),
+      find.byType(ListView),
+      const Offset(0, -300),
+    );
+    await tester.tap(find.text(S.sectionAbout));
+    await settle(tester);
+    await tester.tap(find.text(S.checkForUpdates));
+    await settle(tester);
+    await tester.tap(find.text(S.updateOpen));
+    await settle(tester);
+
+    expect(find.text(S.updateHeadline('DEV 1.3.0')), findsOneWidget);
+    expect(find.text(S.updateInstalled('0.9.0')), findsOneWidget);
+    expect(find.text(S.updateOnGitHub), findsOneWidget);
+    expect(find.text(S.releaseNotesDev), findsOneWidget);
+    expect(find.text('Etwas Neues'), findsOneWidget, reason: 'open at once');
+    expect(releases.calls, 1, reason: 'the page uses the known result');
+
+    // Not allowed yet: explained, then the Android page.
+    await tester.tap(find.text(S.updateInstall));
+    await settle(tester);
+    expect(find.text(S.updatePermissionBody), findsOneWidget);
+    await tester.tap(find.text(S.updatePermissionOpen));
+    await settle(tester);
+    expect(installer.calls, ['canInstall', 'openInstallSettings']);
+
+    // Download fails: message, nothing installed.
+    installer
+      ..allowed = true
+      ..failDownload = true
+      ..calls.clear();
+    await tester.tap(find.text(S.updateInstall));
+    await settle(tester);
+    expect(find.text(S.updateDownloadFailed), findsOneWidget);
+    expect(installer.calls, ['canInstall', 'download 1.3.0']);
+
+    // Works: downloaded and handed to the Android installer.
+    installer
+      ..failDownload = false
+      ..calls.clear();
+    await tester.tap(find.text(S.updateInstall));
+    await settle(tester);
+    expect(find.text(S.updateDownloadFailed), findsNothing);
+    expect(installer.calls, [
+      'canInstall',
+      'download 1.3.0',
+      'install /cache/updates/gymlog-update.apk',
+    ]);
+
+    // A release without APK only offers GitHub.
+    releases.apkUrl = null;
+    await leavePage(tester);
+    await tester.tap(find.text(S.checkForUpdates));
+    await settle(tester);
+    await tester.tap(find.text(S.updateOpen));
+    await settle(tester);
+    expect(find.text(S.updateNoApk), findsOneWidget);
+    expect(find.text(S.updateInstall), findsNothing);
+    expect(find.text(S.updateOnGitHub), findsOneWidget);
+    await disposeApp(tester, db);
+  });
+
+  testWidgets('a new version does not open its page during a training', (
+    tester,
+  ) async {
+    phone(tester);
+    await dbWork(tester, () async {
+      final planId = await r.plans.create('Push');
+      await r.sessions.start(
+        plan: (await r.plans.getPlans()).firstWhere((p) => p.id == planId),
+        exercises: const [],
+      );
+    });
+    final notifications = FakeNotifications();
+    await pumpApp(
+      tester,
+      db: db,
+      notifications: notifications,
+      releases: FakeReleases('1.3.0'),
+      reminderSync: true,
+    );
+    await tester.pump(const Duration(seconds: 1));
+    await settle(tester);
+    expect(notifications.shown.single.id, ReminderIds.update);
+    expect(find.text(S.updateHeadline('DEV 1.3.0')), findsNothing);
+
+    // The notification leads there.
+    notifications.onTap!(NotificationPayloads.update, null);
+    await settle(tester);
+    expect(find.text(S.updateHeadline('DEV 1.3.0')), findsOneWidget);
     await disposeApp(tester, db);
   });
 }

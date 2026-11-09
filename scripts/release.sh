@@ -42,7 +42,8 @@ docker compose ps --status running --services 2>/dev/null | grep -qx dev ||
   fail "Der Container läuft nicht. Erst: docker compose up -d"
 [ "$(git rev-parse --abbrev-ref HEAD)" = main ] || fail "Releases nur vom Branch main."
 [ -z "$(git status --porcelain)" ] || fail "Es gibt nicht committete Änderungen (git status)."
-git fetch --quiet --tags origin main
+# Nur main und Versions-Tags; der wandernde Tag "dev" der DEV-Builds (1.2.2) würde sonst stören.
+git fetch --quiet origin main 'refs/tags/v*:refs/tags/v*'
 git merge-base --is-ancestor origin/main HEAD ||
   fail "Auf GitHub (origin/main) gibt es Commits, die hier fehlen. Erst: git pull"
 

@@ -43,7 +43,8 @@ void main() {
         .toList();
     // Exact alarm for the rest-over vibration in the background (1.0.1).
     // 1.2.0 (approved): notifications, rescheduling after a reboot and the
-    // daily update check on GitHub – the only network access.
+    // update check on GitHub – the only network access. 1.2.2 (approved):
+    // download and install an update from GitHub.
     expect(permissions, [
       'android.permission.VIBRATE',
       'android.permission.USE_EXACT_ALARM',
@@ -51,6 +52,7 @@ void main() {
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.RECEIVE_BOOT_COMPLETED',
       'android.permission.INTERNET',
+      'android.permission.REQUEST_INSTALL_PACKAGES',
     ]);
     expect(
       manifest,
@@ -58,6 +60,30 @@ void main() {
         '"android.permission.SCHEDULE_EXACT_ALARM" '
         'android:maxSdkVersion="32"',
       ),
+    );
+  });
+
+  test('network only for updates from GitHub (1.2.0, 1.2.2)', () {
+    const allowed = {
+      'lib/data/notifications/update_checker.dart',
+      'lib/data/notifications/update_installer.dart',
+    };
+    final users = [
+      for (final file in Directory('lib').listSync(recursive: true))
+        if (file is File &&
+            file.path.endsWith('.dart') &&
+            RegExp(r'HttpClient|package:http/|Socket\b')
+                .hasMatch(file.readAsStringSync()))
+          file.path,
+    ];
+    expect(users.toSet(), allowed);
+    final checker = File(allowed.first).readAsStringSync();
+    expect(
+      RegExp(r'https://([^/\s]+)/')
+          .allMatches(checker)
+          .map((m) => m.group(1))
+          .toSet(),
+      {'github.com', 'api.github.com'},
     );
   });
 
