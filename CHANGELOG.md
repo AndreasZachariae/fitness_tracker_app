@@ -4,7 +4,7 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.3.1] – unveröffentlicht
+## [1.3.1] – 2026-11-10
 
 Enthält die nie einzeln veröffentlichte Version 1.3.0.
 
@@ -22,6 +22,21 @@ Enthält die nie einzeln veröffentlichte Version 1.3.0.
 
 ### Behoben
 - **Benachrichtigungen kommen an:** Erinnerungen am Abend vorher und vor dem Training, der Update-Hinweis und die Timer auf dem Sperrbildschirm erschienen in der veröffentlichten App nicht, weil beim Bauen das Benachrichtigungs-Symbol verloren ging.
+
+<details>
+<summary>Commits seit v1.2.2 (für Entwickler)</summary>
+
+#### Features
+- countdown for timed sets, stronger vibration, lock screen timers (1.3.0) (`df2c377`)
+
+#### Fehlerbehebungen
+- notification icon in release builds, vibration only for timers (1.3.1) (`5b68ee4`)
+- icon check failed under pipefail (SIGPIPE from grep -q) (`c184720`)
+
+#### Dokumentation
+- merge the unreleased 1.3.0 into the 1.3.1 changelog (`203c8a7`)
+
+</details>
 
 ## [1.2.2] – 2026-11-09
 
