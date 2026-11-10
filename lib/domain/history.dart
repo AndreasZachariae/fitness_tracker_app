@@ -1,3 +1,4 @@
+import 'metrics.dart';
 import 'models/models.dart';
 
 /// Why a start/end change of a finished session is rejected.
@@ -27,16 +28,50 @@ final class SessionSummary {
     required this.setCount,
     required this.volume,
     required this.hasRecords,
+    this.volumeChange,
   });
 
   final Session session;
   final int setCount;
+
+  /// Volume against the previous training of the same plan in percent, as
+  /// in the summary (1.3.1); null without one.
+  final double? volumeChange;
 
   /// Σ weight × reps of `weight_reps` working sets (SPEC §7.6).
   final double volume;
   final bool hasRecords;
 
   Duration get duration => session.endedAt!.difference(session.startedAt);
+}
+
+/// For each finished session (any order): the volume change in percent
+/// against the previous finished session of the same plan – the same
+/// comparison as the summary after a training (SPEC §6.3). Sessions without
+/// plan, the first of a plan and those after a session without volume have
+/// none.
+Map<int, double> planVolumeChanges(
+  Iterable<Session> sessions,
+  Map<int, double> volume,
+) {
+  final byPlan = <int, List<Session>>{};
+  for (final s in sessions) {
+    if (s.planId case final plan? when s.endedAt != null) {
+      byPlan.putIfAbsent(plan, () => []).add(s);
+    }
+  }
+  final result = <int, double>{};
+  for (final list in byPlan.values) {
+    list.sort((a, b) => a.startedAt.compareTo(b.startedAt));
+    for (var i = 1; i < list.length; i++) {
+      final change = percentChange(
+        volume[list[i].id] ?? 0,
+        volume[list[i - 1].id],
+      );
+      if (change != null) result[list[i].id] = change;
+    }
+  }
+  return result;
 }
 
 /// Groups [items] (newest first) by local month, keeping the order.

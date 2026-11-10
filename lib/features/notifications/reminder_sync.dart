@@ -115,15 +115,10 @@ class _ReminderSyncState extends ConsumerState<ReminderSync>
   Future<void> _checkUpdates({bool appStarted = false}) async {
     if (!mounted) return;
     try {
-      final release = await ref
-          .read(updateCheckerProvider)
-          .checkIfDue(force: appStarted);
-      // A new version shows its page once (1.2.2) – but never in the middle
-      // of a training; the notification and Settings still point to it.
-      if (release != null && mounted) {
-        final active = await ref.read(activeSessionProvider.future);
-        if (active == null && mounted) _openUpdatePage();
-      }
+      // A new version: notification and the blue dot on the gear; the
+      // user opens the update page when it suits (1.3.1, before the page
+      // opened by itself).
+      await ref.read(updateCheckerProvider).checkIfDue(force: appStarted);
     } on Object catch (e) {
       debugPrint('Update check failed: $e');
     }

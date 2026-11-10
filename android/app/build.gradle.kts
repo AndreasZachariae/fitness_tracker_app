@@ -98,7 +98,9 @@ android {
             resValue("string", "app_name", "GymLog DEV")
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
-            // Flutter adds its R8 rules only to "release"; the Java part is tiny anyway.
+            // Not shrunk: Flutter copies this build type with its minify flag into the plugin modules, which would
+            // then be shrunk on their own and lose their classes. Release-only resource problems (the notification
+            // icon, 1.3.1) are caught by res/raw/keep.xml, its test and the APK check in scripts/release-build.sh.
             isMinifyEnabled = false
             isShrinkResources = false
         }

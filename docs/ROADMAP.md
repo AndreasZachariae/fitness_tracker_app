@@ -67,6 +67,14 @@ STATUS: FINISHED
     - Timer wird nicht auf dem Sperrbildschirm angezeigt
     - Benachrichtigung auf Sperrbildschirm wenn Pausentimer abgelaufen ist
     - Wenn ich übung abtippen sollte die ganze übung sichtbar aufklappen sein bzw nach oben scrollen damit der Anfang sichtbar ist
+Version 1.3.1 (Bug fixes)
+STATUS: FINISHED
+    - Keine Vibration beim Satz speichern und auch nicht bei neuem Rekord. Nur für den Pausentimer
+    - Setze die Vibration von Pausenende auf etwas runter auf 300 300 300 ms bei voller stärke.
+    - DIe Benachrichtigung zu Buchung am Abend vorher und auch vor dem Training kom bei der finalen app nicht durch. die dev app hat e smir geschickt aber evtl hatte ich die gerade offen. Schau ob das auch am falschen Kanal liegt.
+    - Bei neuem Update nicht sofort den ganzen zupdate Bildschirn anzeigen. DIe Benachrichtigung und der blaue Punkt am Zahnrad reicht aus. Dann kann man selber entscheiden wann man das update durchführt.
+    - Im Verlauf der Trainings würde ich gerne genauso wie auf dem Zusammenfassungsbericht nach dem Training die Steigerung in Prozent zum letzten mal sehen. Einfach direkt auf dem chip der session +3 % oder so.
+    - In der Statistik das Wochenvolumen sit nciht so aussagekräftig. Nehme stattdessen das Trainingsvolumen. Die TImeline muss auch nicht unbedingt stimmen. Setze die Balken einfach nebeneinander.
 Version 1.X.0 (Automatische Buchung)
 STATUS: PLANNED
     - Nutze die öffentliche website um eine Buchung durchzuführen.

@@ -51,7 +51,7 @@ void main() {
     final watch = Stopwatch()..start();
     for (var i = 0; i < 5; i++) {
       strengthIndex(data, today);
-      weeklyVolume(data, today);
+      trainingVolumes(data);
       trainingHeatmap(data, today);
       trainingsPerWeek(data, StatsPeriod.all, today);
       currentStreak(data, today);

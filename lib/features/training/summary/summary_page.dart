@@ -266,10 +266,7 @@ class _SummaryBody extends StatelessWidget {
               value: '${number.format(volume.round())} ${S.unitKg}',
               footer: change == null
                   ? null
-                  : S.compareLast(
-                      '${change >= 0 ? '+' : '−'}'
-                      '${number.format(change.abs().round())} %',
-                    ),
+                  : S.compareLast(formatPercentChange(change)),
               footerColor: change == null
                   ? null
                   : change >= 0

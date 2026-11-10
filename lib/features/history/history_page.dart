@@ -100,6 +100,11 @@ class _HistoryTile extends StatelessWidget {
                   ],
                 ),
               ),
+              if (summary.volumeChange case final change?)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: _ChangePill(change: change),
+                ),
               if (summary.hasRecords)
                 Padding(
                   padding: const EdgeInsets.only(left: 8),
@@ -111,6 +116,41 @@ class _HistoryTile extends StatelessWidget {
                 ),
               const Icon(Icons.chevron_right),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "+3 %": volume against the previous training of the plan, as in the
+/// summary (1.3.1); green when it went up.
+class _ChangePill extends StatelessWidget {
+  const _ChangePill({required this.change});
+
+  final double change;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final gym = GymColors.of(context);
+    final up = change >= 0;
+    return Tooltip(
+      message: S.compareLast(formatPercentChange(change)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: up
+              ? gym.successContainer
+              : theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          formatPercentChange(change),
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: up
+                ? gym.onSuccessContainer
+                : theme.colorScheme.onSurfaceVariant,
           ),
         ),
       ),

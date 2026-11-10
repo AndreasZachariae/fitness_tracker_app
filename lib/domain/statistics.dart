@@ -380,30 +380,26 @@ List<IndexPoint> strengthIndex(StatsData data, LocalDate today) {
 }
 
 // ---------------------------------------------------------------------------
-// §7.6 weekly volume and other overall charts
+// §7.6 training volume and other overall charts
 
-final class WeekValue {
-  const WeekValue(this.monday, this.value);
+/// The volume of one training (1.3.1).
+final class TrainingVolume {
+  const TrainingVolume(this.day, this.value, {this.planName});
 
-  final LocalDate monday;
+  final LocalDate day;
   final double value;
+  final String? planName;
 }
 
-/// Volume per ISO week from the first training week to the current week,
-/// weeks without training included as 0.
-List<WeekValue> weeklyVolume(StatsData data, LocalDate today) {
-  if (data.trainings.isEmpty) return const [];
-  final byWeek = <LocalDate, double>{};
-  for (final t in data.trainings) {
-    final monday = mondayOf(t.day);
-    byWeek[monday] = (byWeek[monday] ?? 0) + sessionVolume(t.exercises);
-  }
-  final first = mondayOf(data.trainings.first.day);
-  return [
-    for (var w = first; !w.isAfter(mondayOf(today)); w = w.addDays(7))
-      WeekValue(w, byWeek[w] ?? 0),
-  ];
-}
+/// Volume of every training, oldest first – one bar each, side by side
+/// without a time axis (1.3.1, replaces the weekly volume: weeks mix one
+/// and three trainings). Trainings without volume (only bodyweight or timed
+/// exercises) are left out.
+List<TrainingVolume> trainingVolumes(StatsData data) => [
+  for (final t in data.trainings)
+    if (sessionVolume(t.exercises) case final v when v > 0)
+      TrainingVolume(t.day, v, planName: t.session.planNameSnapshot),
+];
 
 /// Sets per local day for the last [weeks] weeks: `[week][weekday]` with
 /// weekday 0 = Monday, oldest week first, the current week last.

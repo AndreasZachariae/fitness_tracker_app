@@ -172,7 +172,7 @@ abstract final class S {
   static const stepLevelsHint =
       'Für Geräte mit nummerierten Stufen. Mit kg pro Stufe zeigt GymLog '
       '„Stufe 10 (45 kg)“ und rechnet in kg; ohne zählt die Übung nicht zum '
-      'Wochenvolumen.';
+      'Volumen.';
   static const errorStepLbs = 'Gib eine Zahl größer als 0 ein, z. B. 15.';
   static const errorLevelKg =
       'Gib eine Zahl größer als 0 ein oder lass es leer.';
@@ -512,12 +512,14 @@ abstract final class S {
       'weiter, höchstens 8 Wochen lang.\n\n'
       'Welche Übungen zählen, stellst du je Übung ein. Der Verlauf wird bei '
       'jeder Änderung komplett neu berechnet.';
-  static const weeklyVolumeInfo =
-      'Das insgesamt bewegte Gewicht einer Kalenderwoche (Mo–So): die Summe aus '
-      'Gewicht × Wiederholungen aller Sätze von Übungen mit Gewicht × Wdh.\n\n'
+  static const trainingVolumeInfo =
+      'Das insgesamt bewegte Gewicht eines Trainings: die Summe aus Gewicht × '
+      'Wiederholungen aller Sätze von Übungen mit Gewicht × Wdh.\n\n'
       'Beispiel: 3 × 10 mit 60 kg = 1.800 kg.\n\n'
-      'Körpergewichts- und Zeitübungen zählen nicht mit. Das Volumen zeigt die '
-      'Trainingsmenge, nicht die Maximalkraft.';
+      'Ein Balken pro Training, nebeneinander und ohne Zeitachse; Tippen zeigt '
+      'Datum und Plan. Körpergewichts- und Zeitübungen zählen nicht mit, '
+      'Trainings nur damit fehlen. Das Volumen zeigt die Trainingsmenge, nicht '
+      'die Maximalkraft.';
   static const calendarInfo =
       'Jedes Kästchen ist ein Tag der letzten 26 Wochen (Spalten = Wochen, '
       'Zeilen = Mo–So). Je kräftiger die Farbe, desto mehr Sätze.\n\n'
@@ -559,7 +561,7 @@ abstract final class S {
   static const strengthIndexEmpty =
       'Für den Kraftindex brauchst du Trainings mit Übungen, die im Kraftindex '
       'zählen.';
-  static const weeklyVolume = 'Wochenvolumen';
+  static const trainingVolume = 'Trainingsvolumen';
   static const volumeEmpty = 'Noch kein Volumen im Zeitraum.';
   static const calendar = 'Trainingskalender';
   static const calendarSubtitle = 'Letzte 26 Wochen · Sätze pro Tag';

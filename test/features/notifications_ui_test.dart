@@ -182,9 +182,10 @@ void main() {
       contains(S.notifyEveningTitle('Beine', '17:00')),
     );
     expect(notifications.shown.single.id, ReminderIds.update);
-    // A new version shows its page once (1.2.2).
-    expect(find.text(S.updateHeadline('DEV 1.0.0')), findsOneWidget);
-    expect(find.text('Etwas Neues'), findsOneWidget);
+    // A new version: notification and blue dot, no page of its own (1.3.1).
+    expect(find.text(S.updateHeadline('DEV 1.0.0')), findsNothing);
+    final dot = find.byKey(const ValueKey('settings-update-dot'));
+    expect(tester.widget<Badge>(dot.first).isLabelVisible, isTrue);
 
     // A new training day is planned right away.
     await dbWork(tester, () async {
@@ -312,17 +313,9 @@ void main() {
     await disposeApp(tester, db);
   });
 
-  testWidgets('a new version does not open its page during a training', (
-    tester,
-  ) async {
+  testWidgets('a new version only notifies; the notification leads to its '
+      'page (1.3.1)', (tester) async {
     phone(tester);
-    await dbWork(tester, () async {
-      final planId = await r.plans.create('Push');
-      await r.sessions.start(
-        plan: (await r.plans.getPlans()).firstWhere((p) => p.id == planId),
-        exercises: const [],
-      );
-    });
     final notifications = FakeNotifications();
     await pumpApp(
       tester,

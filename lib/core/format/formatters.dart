@@ -89,6 +89,11 @@ String formatMonth(DateTime time) =>
 final NumberFormat _oneDecimal = NumberFormat('#,##0.0', appLocale);
 
 /// Body weight with one decimal: `81,5 kg`.
+/// "+3 %", "−12 %" (1.3.1: summary and history).
+String formatPercentChange(double change) =>
+    '${change >= 0 ? '+' : '−'}'
+    '${NumberFormat.decimalPattern(appLocale).format(change.abs().round())} %';
+
 String formatKg1(double kg) => '${_oneDecimal.format(kg)} kg';
 
 /// Number with one decimal without unit: `81,5`.

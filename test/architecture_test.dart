@@ -84,6 +84,35 @@ void main() {
     );
   });
 
+  test('drawables named only from Dart survive resource shrinking (1.3.1)', () {
+    // Release builds remove resources the native code does not reference;
+    // without the notification icon Android rejected every notification.
+    final named = {
+      for (final file in Directory('lib').listSync(recursive: true))
+        if (file is File && file.path.endsWith('.dart'))
+          for (final m in RegExp(
+            r"'(ic_[a-z0-9_]+)'",
+          ).allMatches(file.readAsStringSync()))
+            m.group(1)!,
+    };
+    expect(named, contains('ic_notification'));
+    final keep = File('android/app/src/main/res/raw/keep.xml')
+        .readAsStringSync();
+    for (final name in named) {
+      expect(keep, contains('@drawable/$name'), reason: name);
+      expect(
+        File('android/app/src/main/res/drawable-mdpi/$name.png').existsSync(),
+        isTrue,
+        reason: name,
+      );
+    }
+    // The release check refuses an APK without the icon.
+    expect(
+      File('scripts/release-build.sh').readAsStringSync(),
+      contains('drawable/ic_notification'),
+    );
+  });
+
   test('application id and debug suffix are unchanged', () {
     final gradle = File('android/app/build.gradle.kts').readAsStringSync();
     expect(gradle, contains('namespace = "de.gymlog.app"'));

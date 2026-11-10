@@ -7,12 +7,6 @@ final class FakeFeedback implements DeviceFeedback {
   final calls = <String>[];
 
   @override
-  Future<void> setSaved() async => calls.add('setSaved');
-
-  @override
-  Future<void> record() async => calls.add('record');
-
-  @override
   Future<void> restOver() async => calls.add('restOver');
 }
 

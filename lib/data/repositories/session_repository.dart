@@ -564,6 +564,7 @@ class SessionRepository {
         if (flagged.contains(h.set.id)) withRecords.add(h.sessionId);
       }
     }
+    final changes = planVolumeChanges(sessions, volume);
     return [
       for (final s in sessions)
         SessionSummary(
@@ -571,6 +572,7 @@ class SessionRepository {
           setCount: count[s.id] ?? 0,
           volume: volume[s.id] ?? 0,
           hasRecords: withRecords.contains(s.id),
+          volumeChange: changes[s.id],
         ),
     ];
   }

@@ -66,10 +66,10 @@ class OverallStatsTab extends StatelessWidget {
           minX: minX,
           maxX: maxX,
         ),
-        _WeeklyVolumeChart(
-          weeks: [
-            for (final w in weeklyVolume(data, today))
-              if (!w.monday.addDays(6).isBefore(from)) w,
+        _TrainingVolumeChart(
+          trainings: [
+            for (final t in trainingVolumes(data))
+              if (!t.day.isBefore(from)) t,
           ],
         ),
         _Heatmap(
@@ -247,30 +247,31 @@ class _BodyWeightChart extends StatelessWidget {
 
 final _int = NumberFormat.decimalPattern(appLocale);
 
-class _WeeklyVolumeChart extends StatelessWidget {
-  const _WeeklyVolumeChart({required this.weeks});
+/// One bar per training, side by side (1.3.1).
+class _TrainingVolumeChart extends StatelessWidget {
+  const _TrainingVolumeChart({required this.trainings});
 
-  final List<WeekValue> weeks;
+  final List<TrainingVolume> trainings;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final gym = GymColors.of(context);
-    if (weeks.every((w) => w.value == 0)) {
+    if (trainings.isEmpty) {
       return const ChartCard(
-        title: S.weeklyVolume,
-        info: S.weeklyVolumeInfo,
+        title: S.trainingVolume,
+        info: S.trainingVolumeInfo,
         height: 100,
         child: ChartEmpty(S.volumeEmpty),
       );
     }
-    final labelEvery = (weeks.length / 4).ceil().clamp(1, 1000);
+    final labelEvery = (trainings.length / 4).ceil().clamp(1, 1000);
     final style = theme.textTheme.labelSmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
     return ChartCard(
-      title: S.weeklyVolume,
-      info: S.weeklyVolumeInfo,
+      title: S.trainingVolume,
+      info: S.trainingVolumeInfo,
       subtitle: S.unitKg,
       child: BarChart(
         BarChartData(
@@ -281,7 +282,8 @@ class _WeeklyVolumeChart extends StatelessWidget {
             touchTooltipData: BarTouchTooltipData(
               getTooltipColor: (_) => theme.colorScheme.inverseSurface,
               getTooltipItem: (group, groupIndex, rod, rodIndex) => BarTooltipItem(
-                '${formatShortDate(weeks[groupIndex].monday.toLocalDateTime())}: '
+                '${formatShortDate(trainings[groupIndex].day.toLocalDateTime())}'
+                '${trainings[groupIndex].planName == null ? '' : ' · ${trainings[groupIndex].planName}'}\n'
                 '${_int.format(rod.toY.round())} ${S.unitKg}',
                 TextStyle(color: theme.colorScheme.onInverseSurface),
               ),
@@ -313,13 +315,13 @@ class _WeeklyVolumeChart extends StatelessWidget {
                 reservedSize: 28,
                 getTitlesWidget: (value, meta) {
                   final i = value.toInt();
-                  if (i % labelEvery != 0 || i >= weeks.length) {
+                  if (i % labelEvery != 0 || i >= trainings.length) {
                     return const SizedBox.shrink();
                   }
                   return SideTitleWidget(
                     meta: meta,
                     child: Text(
-                      formatShortDate(weeks[i].monday.toLocalDateTime()),
+                      formatShortDate(trainings[i].day.toLocalDateTime()),
                       style: style,
                     ),
                   );
@@ -328,14 +330,14 @@ class _WeeklyVolumeChart extends StatelessWidget {
             ),
           ),
           barGroups: [
-            for (final (i, w) in weeks.indexed)
+            for (final (i, t) in trainings.indexed)
               BarChartGroupData(
                 x: i,
                 barRods: [
                   BarChartRodData(
-                    toY: w.value,
+                    toY: t.value,
                     color: gym.activeEdge,
-                    width: (240 / weeks.length).clamp(2.0, 14.0),
+                    width: (240 / trainings.length).clamp(2.0, 14.0),
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(2),
                     ),

@@ -3,16 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vibration/vibration.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-/// Haptics and vibration. Failures are ignored everywhere: a missing
-/// vibration must never look like an error (data is already stored).
+/// Vibration. Failures are ignored everywhere: a missing vibration must
+/// never look like an error (data is already stored). Since 1.3.1 GymLog
+/// vibrates only at the end of a timer, not after "Satz speichern" or for a
+/// record (decided by the user).
 abstract interface class DeviceFeedback {
-  /// After "Satz speichern".
-  Future<void> setSaved();
-
-  /// On a new record.
-  Future<void> record();
-
-  /// End of the rest: 3 × short (SPEC §6.2.1).
+  /// End of the rest or of a countdown: 3 × 300 ms (SPEC §6.2.1).
   Future<void> restOver();
 }
 
@@ -34,17 +30,10 @@ abstract interface class ScreenAwake {
 final class PlatformFeedback implements DeviceFeedback {
   const PlatformFeedback();
 
-  /// Wait, buzz, pause, buzz, pause, long buzz (ms); 1.3.0: much stronger
-  /// than before (3 × 150 ms), at full strength. Same as RestAlarm.kt.
-  static const restOverPattern = [0, 500, 250, 500, 250, 800];
+  /// Wait, buzz, pause, buzz, pause, buzz (ms) at full strength; 1.3.1:
+  /// 3 × 300 ms (1.3.0: 500/500/800 was too much). Same as RestAlarm.kt.
+  static const restOverPattern = [0, 300, 250, 300, 250, 300];
   static const restOverIntensities = [0, 255, 0, 255, 0, 255];
-
-  /// A short, clearly noticeable knock after "Satz speichern" (1.3.0).
-  static const setSavedMs = 90;
-
-  /// Two knocks for a record (1.3.0).
-  static const recordPattern = [0, 150, 100, 350];
-  static const recordIntensities = [0, 255, 0, 255];
 
   static Future<void> _safe(Future<void> Function() action) async {
     try {
@@ -66,21 +55,6 @@ final class PlatformFeedback implements DeviceFeedback {
       await fallback();
     }
   });
-
-  @override
-  Future<void> setSaved() => _buzz(
-    () => Vibration.vibrate(duration: setSavedMs, amplitude: 255),
-    HapticFeedback.heavyImpact,
-  );
-
-  @override
-  Future<void> record() => _buzz(
-    () => Vibration.vibrate(
-      pattern: recordPattern,
-      intensities: recordIntensities,
-    ),
-    HapticFeedback.heavyImpact,
-  );
 
   @override
   Future<void> restOver() => _buzz(

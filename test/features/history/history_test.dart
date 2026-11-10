@@ -95,6 +95,10 @@ void main() {
     expect(find.text('52 min · 3 Sätze · 1.250 kg'), findsOneWidget);
     // Only the 3.11. session beat earlier sets.
     expect(find.byIcon(Icons.emoji_events), findsOneWidget);
+    // Volume against the previous Push training, as in the summary (1.3.1):
+    // 1.250 kg after 600 kg. The first Push and the free one have none.
+    expect(find.text('+108 %'), findsOneWidget);
+    expect(find.textContaining(' %'), findsOneWidget);
     // Newest first.
     final nov = tester.getTopLeft(find.text('Di, 3.11. · Push')).dy;
     final oct = tester.getTopLeft(find.text('Mi, 28.10. · Push')).dy;

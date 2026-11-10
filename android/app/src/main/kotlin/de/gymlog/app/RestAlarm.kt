@@ -21,8 +21,8 @@ import android.os.VibratorManager
 object RestAlarm {
     const val CHANNEL = "de.gymlog.app/rest_alarm"
 
-    /** Same as PlatformFeedback.restOverPattern: wait, buzz, pause, buzz, pause, long buzz (ms), full strength (1.3.0). */
-    val PATTERN = longArrayOf(0, 500, 250, 500, 250, 800)
+    /** Same as PlatformFeedback.restOverPattern: wait, then 3 × 300 ms at full strength (1.3.1). */
+    val PATTERN = longArrayOf(0, 300, 250, 300, 250, 300)
     val AMPLITUDES = intArrayOf(0, 255, 0, 255, 0, 255)
 
     private fun intent(context: Context): PendingIntent = PendingIntent.getBroadcast(

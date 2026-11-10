@@ -4,6 +4,17 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
+## [1.3.1] – unveröffentlicht
+
+### Behoben
+- **Benachrichtigungen der App kommen wieder an:** Erinnerungen am Abend vorher und vor dem Training, der Update-Hinweis und die Timer auf dem Sperrbildschirm erschienen in der veröffentlichten App nicht, weil beim Bauen das Benachrichtigungs-Symbol verloren ging.
+
+### Geändert
+- **Vibration nur noch für Timer:** „Satz speichern“ und Rekorde vibrieren nicht mehr. Das Pausenende vibriert etwas sanfter (3 × kurz).
+- **Kein Update-Bildschirm mehr von selbst:** Ein neues Update meldet sich per Benachrichtigung und mit dem blauen Punkt am Zahnrad; wann es installiert wird, entscheidest du.
+- **Verlauf mit Steigerung:** Jedes Training zeigt wie die Zusammenfassung „+3 %“ gegenüber dem letzten Training desselben Plans.
+- **Statistik: Trainingsvolumen statt Wochenvolumen:** ein Balken pro Training, nebeneinander.
+
 ## [1.3.0] – unveröffentlicht
 
 ### Neu

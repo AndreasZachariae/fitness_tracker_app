@@ -206,7 +206,8 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
   - **Erledigt** (`done`): ausgegraut, eingeklappt, Haken, Zusammenfassung „3 Sätze, bestes 62,5 kg × 10“. Kein Drag-Handle.
     Tap → klappt auf (Sätze ansehen/ändern) mit Button „Wieder öffnen“ (→ aktiv, weitere Sätze möglich).
   - **Übersprungen** (`skipped`): wie erledigt, Label „übersprungen“.
-- **Satz speichern:** Satz sofort in DB, leichte Haptik, nächster Satz vorbefüllt (§7.1), Pausentimer startet (§6.2.1).
+- **Satz speichern:** Satz sofort in DB, nächster Satz vorbefüllt (§7.1), Pausentimer startet (§6.2.1). Ab 1.3.1 ohne
+  Vibration (auch bei Rekorden, die nur noch rot aufleuchten): GymLog vibriert nur am Ende von Pause und Countdown.
   Ab 1.0.1 ohne Snackbar (Sätze lassen sich jederzeit bearbeiten oder löschen).
   Ist `targetSets` erreicht → Status `done`, Kachel klappt zu. Danach **keine** automatische Aktivierung der nächsten Übung
   (außer Einstellung `autoActivateNext`); stattdessen wird die nächste offene Kachel dezent markiert.
@@ -225,8 +226,8 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
 - Leiste am unteren Rand über der NavigationBar: „Pause 1:12“, Fortschrittsbalken, Buttons „−15 s“, „+15 s“, „Überspringen“.
 - Dauer: `restSec` der Session-Übung → der Übung → `defaultRestSec`. Ende = `completedAt` des letzten Satzes + Dauer
   (+/− Anpassungen im State). Dadurch nach App-Neustart korrekt rekonstruierbar.
-- Bei 0: Vibrationsmuster (wenn `vibrationEnabled`; ab 1.3.0 deutlich stärker: 500 – 500 – 800 ms bei voller Stärke statt
-  3 × 150 ms), Leiste wechselt für 10 s auf „Pause vorbei“.
+- Bei 0: Vibrationsmuster (wenn `vibrationEnabled`; ab 1.3.1: 3 × 300 ms bei voller Stärke, vorher 3 × 150 ms und in 1.3.0
+  500 – 500 – 800 ms), Leiste wechselt für 10 s auf „Pause vorbei“.
 - Ab 1.0.1 auch im Hintergrund und bei gesperrtem Display: Geht die App während einer Pause in den Hintergrund, vibriert
   ein exakter Android-Alarm zum Pausenende (gleiches Muster). Ab 1.2.0 mit Countdown-Benachrichtigung (`notifyRest`), ab
   1.3.0 auf einem Kanal, den Android auch auf dem Sperrbildschirm zeigt, und am Ende die Benachrichtigung „Pause vorbei“
@@ -251,7 +252,8 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
 ### 6.4 Verlauf
 
 - Liste nach Monat gruppiert („November 2026“). Eintrag: Datum („Di, 3.11.“), Planname oder „Freies Training“, Dauer,
-  Anzahl Sätze, Volumen, Rekord-Markierung falls neue Rekorde.
+  Anzahl Sätze, Volumen, Rekord-Markierung falls neue Rekorde. Ab 1.3.1 rechts ein Etikett „+3 %“ (grün, wenn mehr): Volumen
+  gegenüber dem vorherigen Training desselben Plans wie in der Zusammenfassung (§6.3); ohne Vorgänger kein Etikett.
 - Detail: Datum, Start–Ende (änderbar), Notiz; je Übung die Sätze. Satz antippen → ändern/löschen. Übung aus Session entfernen.
   Session löschen mit Bestätigung, die Datum und Planname nennt.
 - Leerzustand: „Noch keine Trainings. Starte dein erstes im Tab Training.“
@@ -273,7 +275,8 @@ Der Zeitraum schneidet nur die Anzeige zu; Berechnungen nutzen immer die gesamte
   2. **Serie** (ab 1.0.1 eigene, hervorgehobene Karte): „N Wochen in Folge“ mit Training; ohne aktive Serie „Keine aktive
      Serie“; die längste Serie mit „nicht aktiv“, wenn sie länger ist als die aktuelle.
   3. **Körpergewicht** (ab 1.0.1 immer, ohne Schalter) mit gleicher Zeitachse wie der Kraftindex (keine Doppelachse).
-  4. **Wochenvolumen** (Balken, kg, §7.6).
+  4. **Trainingsvolumen** (Balken, kg, §7.6; bis 1.3.0 Wochenvolumen): ein Balken pro Training, nebeneinander ohne
+     Zeitachse, Tippen zeigt Datum und Plan; Trainings ohne Volumen fehlen.
   5. **Trainingskalender** als Heatmap: letzte 26 Wochen, Spalten = Wochen, Zeilen = Mo–So, Intensität = Anzahl Sätze.
      Kennzahl: Ø Trainings pro Woche.
   6. **Trainingsdauer** pro Training.
@@ -310,8 +313,9 @@ der Startseite (nur wenn es Trainings gibt).
   Build-Nummer, Datenbank-Schemaversion, Lizenzen.
 - **Update-Seite (1.2.2):** GymLog sucht bei jedem Start und beim Zurückkehren (höchstens einmal pro Minute, mit ETag)
   nach einer neuen Version: die echte App nach der neuesten Release, die DEV-App nach der Vorab-Release `dev`
-  (verglichen über den Zähler in `X.Y.Z-dev.N`). Eine neue Version wird einmal gemeldet und ihre Seite einmal geöffnet
-  (nicht während eines Trainings); solange sie bereitsteht, zeigen Zahnrad und „Über“ einen blauen Punkt. Die Seite
+  (verglichen über den Zähler in `X.Y.Z-dev.N`). Eine neue Version wird einmal gemeldet; solange sie bereitsteht, zeigen
+  Zahnrad und „Über“ einen blauen Punkt. Die Seite öffnet sich ab 1.3.1 nicht mehr von selbst, sondern über die
+  Benachrichtigung oder Einstellungen → Über („Update ansehen“). Die Seite
   zeigt Version, Neuerungen (aufgeklappt), „APK herunterladen“ (öffnet die APK im Browser; installiert wird durch
   Antippen der Datei) und „Auf GitHub ansehen“.
 - **Nur im Dev-Build** (`de.gymlog.app.dev`): „Demo-Daten erzeugen“ und „Alle Daten löschen“ (mit Bestätigung).
@@ -352,7 +356,7 @@ Arbeitssätze = Sätze mit `isWarmup == false`. Alle Berechnungen nutzen nur Arb
 - `Kraftindex(w)` = Mittelwert der enthaltenen `I_e(w)` × 100 %. N = Anzahl enthaltener Übungen in w.
 
 ### 7.6 Volumen
-Σ (Gewicht × Wdh) über Arbeitssätze von `weight_reps`-Übungen. Pro Training und pro ISO-Woche.
+Σ (Gewicht × Wdh) über Arbeitssätze von `weight_reps`-Übungen. Pro Training (bis 1.3.0 in der Statistik pro ISO-Woche).
 
 ### 7.7 Rekorde
 - `weight_reps`: höchstes e1RM, höchstes Gewicht.

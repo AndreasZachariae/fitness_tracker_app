@@ -236,12 +236,12 @@ void main() {
       await settle(tester);
       await expectInfo(tester, S.strengthIndex, 'komplett neu berechnet');
       await tester.dragUntilVisible(
-        find.text(S.weeklyVolume),
+        find.text(S.trainingVolume),
         find.byType(ListView).last,
         const Offset(0, -300),
       );
       await tester.pumpAndSettle();
-      await expectInfo(tester, S.weeklyVolume, 'Kalenderwoche');
+      await expectInfo(tester, S.trainingVolume, 'ohne Zeitachse');
       await tester.tap(find.text(S.statsTabRecords));
       await settle(tester);
       await expectInfo(tester, S.statsTabRecords, 'übertrifft');

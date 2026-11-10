@@ -39,6 +39,10 @@ BADGING="$("$BUILD_TOOLS/aapt2" dump badging "$APK")"
   fail "Paket/Version der APK passen nicht: $(head -1 <<<"$BADGING")"
 [ "$(grep '^native-code:' <<<"$BADGING")" = "native-code: 'arm64-v8a'" ] ||
   fail "Unerwartete Prozessor-Architekturen: $(grep '^native-code:' <<<"$BADGING")"
+# Ohne das Benachrichtigungs-Symbol lehnt Android jede Benachrichtigung ab (bis 1.3.0 hat die Ressourcen-Verkleinerung
+# es entfernt; jetzt hält es android/app/src/main/res/raw/keep.xml).
+"$BUILD_TOOLS/aapt2" dump resources "$APK" | grep -q 'drawable/ic_notification' ||
+  fail "Das Benachrichtigungs-Symbol ic_notification fehlt in der APK (android/app/src/main/res/raw/keep.xml prüfen)."
 SIGNER="$("$BUILD_TOOLS/apksigner" verify --print-certs "$APK" 2>/dev/null)" || fail "Signatur der APK ist ungültig."
 CERT="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' <<<"$SIGNER")"
 DN="$(sed -n 's/^Signer #1 certificate DN: //p' <<<"$SIGNER")"

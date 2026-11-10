@@ -402,14 +402,15 @@ void main() {
       }, minutes: 70),
     ]);
 
-    test('weekly volume (§7.6) with zero weeks', () {
-      final v = weeklyVolume(d, today);
-      expect(v.map((w) => w.monday), [
+    test('training volume (§7.6, 1.3.1): one value per training, without '
+        'trainings that have no volume', () {
+      final v = trainingVolumes(d);
+      expect(v.map((t) => t.day), [
         LocalDate(2026, 10, 19),
-        LocalDate(2026, 10, 26),
         LocalDate(2026, 11, 2),
       ]);
-      expect(v.map((w) => w.value), [1200, 0, 500]);
+      expect(v.map((t) => t.value), [1200, 500]);
+      expect(trainingVolumes(data(const [])), isEmpty);
     });
 
     test('heatmap: 26 weeks, sets per day, current week last', () {

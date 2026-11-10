@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' hide Block;
 
-import '../../../core/device.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/l10n/strings_de.dart';
 import '../../../core/router.dart';
@@ -91,13 +90,8 @@ class _SessionViewState extends ConsumerState<SessionView>
       _guard(() async {
         final repo = ref.read(sessionRepositoryProvider);
         final saved = await repo.saveSet(detail.sessionExercise.id, values);
-        final feedback = ref.read(deviceFeedbackProvider);
-        if (saved.records.isNotEmpty) {
-          _flash(detail.sessionExercise.id);
-          unawaited(feedback.record());
-        } else {
-          unawaited(feedback.setSaved());
-        }
+        // A record flashes red; GymLog only vibrates for timers (1.3.1).
+        if (saved.records.isNotEmpty) _flash(detail.sessionExercise.id);
       });
 
   @override

@@ -457,12 +457,13 @@ void main() {
         isFalse,
       );
 
-      expect(feedback.calls.last, 'record');
+      // Only timers vibrate (1.3.1).
+      expect(feedback.calls, isEmpty);
       expect(find.text(S.record), findsOneWidget);
 
       // Same values again: not strictly greater → no new record label.
       await tapSave(tester);
-      expect(feedback.calls.last, 'setSaved');
+      expect(feedback.calls, isEmpty);
       expect(find.text(S.record), findsOneWidget);
 
       final records = await dbWork(tester, () => r.sessions.sessionRecords(id));

@@ -190,8 +190,30 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         „lautlos“, öffentlich sichtbar); am Ende „Pause vorbei“ bzw. „Zeit um“ als Benachrichtigung
   - [x] Angetippte (oder automatisch nächste) Übung scrollt so, dass ihr Anfang sichtbar ist
   - [x] Tests, CHANGELOG, Testliste
+- [x] 1.3.1 Fehlerbehebungen (`docs/ROADMAP.md`, 1.3.1+19)
+  - [x] Benachrichtigungen der echten App: Ursache gefunden (Symbol `ic_notification` fehlte in der Release-APK, nicht
+        der Kanal) → `res/raw/keep.xml`, Test, Prüfung in `scripts/release-build.sh`
+  - [x] Vibration nur noch für Timer (nicht bei „Satz speichern“/Rekord), Pausenende 3 × 300 ms
+  - [x] Update-Seite öffnet sich nicht mehr von selbst; Benachrichtigung und blauer Punkt reichen
+  - [x] Verlauf: „+3 %“ gegenüber dem vorherigen Training des Plans, wie in der Zusammenfassung
+  - [x] Statistik: Trainingsvolumen (ein Balken pro Training, nebeneinander) statt Wochenvolumen
+  - [x] Tests, CHANGELOG, Testliste
 
 ## Annahmen
+- **1.3.1 Benachrichtigungen der echten App:** Nicht der Kanal: In der Release-APK (geprüft an `dist/gymlog-1.2.2.apk`)
+  fehlte das Symbol `ic_notification` ganz – die Ressourcen-Verkleinerung des Release-Builds entfernt alles, was der
+  native Code nicht nennt, und das Symbol wird nur aus Dart beim Namen genannt. Ohne gültiges Symbol lehnt Android jede
+  Benachrichtigung ab; GymLog fängt den Fehler ab, daher still. Betroffen waren alle Benachrichtigungen der echten App seit
+  1.2.1 (Erinnerungen, Update, Sperrbildschirm-Timer); die DEV-App wird nicht verkleinert und hatte das Symbol.
+  Abhilfe: `android/app/src/main/res/raw/keep.xml`; ein Test verlangt jedes aus Dart genannte `ic_…` dort, und
+  `scripts/release-build.sh` bricht ab, wenn das Symbol in der APK fehlt. Den DEV-Build genauso zu verkleinern, scheitert
+  daran, dass Flutter die Verkleinerung des Build-Typs `beta` auf die Plugin-Module überträgt (deren Klassen fehlen dann).
+- **1.3.1 Vibration:** Nur noch am Ende von Pause und Countdown einer Zeitübung (der Countdown zählt als Timer; ohne
+  Vibration wäre sein Ende bei gesperrtem Display nicht zu bemerken). 3 × 300 ms bei voller Stärke mit 250 ms Pause.
+- **1.3.1 Verlauf:** Das Etikett vergleicht wie die Zusammenfassung das Volumen mit dem vorherigen beendeten Training
+  desselben Plans; freie Trainings, das erste Training eines Plans und Trainings nach einem ohne Volumen haben keins.
+- **1.3.1 Trainingsvolumen:** Ein Balken pro Training im gewählten Zeitraum, gleich breit nebeneinander; Trainings ohne
+  Volumen (nur Körpergewicht/Zeit) fehlen, sonst stünden dort leere Lücken.
 - **1.3.0 Countdown für Zeitübungen:** Die Richtung (Pfeil ↑ Hochzählen / ↓ Countdown) gilt pro Übung und wird gemerkt
   (Schema 5, additiv: `exercises.timer_countdown`, Standard Hochzählen; Backup-Format 5, ältere Backups → Hochzählen); so
   ist sie für jeden Satz umschaltbar und beim nächsten Training schon richtig eingestellt. Während der Timer läuft, ist
@@ -720,6 +742,13 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.3.1 Fehlerbehebungen
+Nur, was live ausprobiert werden muss; Abläufe sind automatisch getestet.
+- [ ] DEV-App: „Satz speichern“ und ein Rekord vibrieren nicht mehr; das Pausenende vibriert 3 × kurz (300 ms) und ist gut spürbar.
+- [ ] DEV-App: Neues DEV-Update – nur Benachrichtigung und blauer Punkt, keine Update-Seite von selbst.
+- [ ] DEV-App: Verlauf zeigt bei Trainings eines Plans „+… %“ bzw. „−… %“; Statistik zeigt „Trainingsvolumen“ mit einem Balken pro Training.
+- [ ] **Echte App nach dem Release von 1.3.1:** Erinnerung „Abend vorher“ und „Vor dem Training“ kommen an (z. B. Trainingstag morgen bzw. in ~1 h einstellen), ebenso der Pausen-Countdown auf dem Sperrbildschirm.
 
 ### 1.3.0 Verbesserungen während des Trainings
 Nur, was live ausprobiert werden muss; Abläufe sind automatisch getestet.

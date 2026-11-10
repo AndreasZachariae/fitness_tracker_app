@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Release builds shrink resources and remove everything the native code does not reference. The notification icon
+     is named only from Dart (lib/core/notifications.dart), so without this rule it was missing from the real app and
+     Android rejected every notification of GymLog (found in 1.3.1). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_notification" />
