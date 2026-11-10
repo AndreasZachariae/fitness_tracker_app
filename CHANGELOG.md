@@ -6,26 +6,22 @@ Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code h
 
 ## [1.3.1] – unveröffentlicht
 
-### Behoben
-- **Benachrichtigungen der App kommen wieder an:** Erinnerungen am Abend vorher und vor dem Training, der Update-Hinweis und die Timer auf dem Sperrbildschirm erschienen in der veröffentlichten App nicht, weil beim Bauen das Benachrichtigungs-Symbol verloren ging.
-
-### Geändert
-- **Vibration nur noch für Timer:** „Satz speichern“ und Rekorde vibrieren nicht mehr. Das Pausenende vibriert etwas sanfter (3 × kurz).
-- **Kein Update-Bildschirm mehr von selbst:** Ein neues Update meldet sich per Benachrichtigung und mit dem blauen Punkt am Zahnrad; wann es installiert wird, entscheidest du.
-- **Verlauf mit Steigerung:** Jedes Training zeigt wie die Zusammenfassung „+3 %“ gegenüber dem letzten Training desselben Plans.
-- **Statistik: Trainingsvolumen statt Wochenvolumen:** ein Balken pro Training, nebeneinander.
-
-## [1.3.0] – unveröffentlicht
+Enthält die nie einzeln veröffentlichte Version 1.3.0.
 
 ### Neu
 - **Countdown für Zeitübungen:** Der Pfeil neben „Start“ schaltet zwischen Hochzählen und Countdown um. Der Countdown startet bei der eingestellten Dauer (wie bisher vom letzten Mal übernommen), vibriert bei 0 und übernimmt die Zeit. GymLog merkt sich die Einstellung pro Übung.
-- **„Pause vorbei“ und „Zeit um“** erscheinen am Ende auch als Benachrichtigung auf dem Sperrbildschirm.
+- **Timer auf dem Sperrbildschirm:** Pausen-Countdown und Zeitübungen stehen auf dem Sperrbildschirm, am Ende erscheint „Pause vorbei“ bzw. „Zeit um“. Der Schalter heißt „Timer auf dem Sperrbildschirm“.
+- **Verlauf mit Steigerung:** Jedes Training zeigt wie die Zusammenfassung „+3 %“ gegenüber dem letzten Training desselben Plans.
 
 ### Geändert
-- **Deutlich stärkere Vibration** am Ende der Pause, nach „Satz speichern“ und bei Rekorden.
-- **Timer auf dem Sperrbildschirm:** Pausen-Countdown und Zeitübungen sind jetzt wirklich auf dem Sperrbildschirm zu sehen. Der Schalter heißt „Timer auf dem Sperrbildschirm“.
+- **Vibration nur noch für Timer:** Am Ende der Pause und des Countdowns vibriert es deutlich spürbar (3 × kurz bei voller Stärke); „Satz speichern“ und Rekorde vibrieren nicht mehr.
+- **Statistik: Trainingsvolumen statt Wochenvolumen:** ein Balken pro Training, nebeneinander.
+- **Kein Update-Bildschirm von selbst:** Ein neues Update meldet sich per Benachrichtigung und mit dem blauen Punkt am Zahnrad; wann es installiert wird, entscheidest du.
 - Tippt man eine Übung an, scrollt die Liste, bis ihr Anfang oben sichtbar ist.
 - „Start“ bei einer Zeitübung beendet eine noch laufende Pause.
+
+### Behoben
+- **Benachrichtigungen kommen an:** Erinnerungen am Abend vorher und vor dem Training, der Update-Hinweis und die Timer auf dem Sperrbildschirm erschienen in der veröffentlichten App nicht, weil beim Bauen das Benachrichtigungs-Symbol verloren ging.
 
 ## [1.2.2] – 2026-11-09
 
