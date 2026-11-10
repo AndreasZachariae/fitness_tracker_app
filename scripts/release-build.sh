@@ -41,7 +41,9 @@ BADGING="$("$BUILD_TOOLS/aapt2" dump badging "$APK")"
   fail "Unerwartete Prozessor-Architekturen: $(grep '^native-code:' <<<"$BADGING")"
 # Ohne das Benachrichtigungs-Symbol lehnt Android jede Benachrichtigung ab (bis 1.3.0 hat die Ressourcen-Verkleinerung
 # es entfernt; jetzt hält es android/app/src/main/res/raw/keep.xml).
-"$BUILD_TOOLS/aapt2" dump resources "$APK" | grep -q 'drawable/ic_notification' ||
+# Erst in eine Variable: "aapt2 | grep -q" bricht mit pipefail ab, sobald grep fündig wird (SIGPIPE).
+RESOURCES="$("$BUILD_TOOLS/aapt2" dump resources "$APK")"
+grep -q 'drawable/ic_notification' <<<"$RESOURCES" ||
   fail "Das Benachrichtigungs-Symbol ic_notification fehlt in der APK (android/app/src/main/res/raw/keep.xml prüfen)."
 SIGNER="$("$BUILD_TOOLS/apksigner" verify --print-certs "$APK" 2>/dev/null)" || fail "Signatur der APK ist ungültig."
 CERT="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' <<<"$SIGNER")"
