@@ -88,7 +88,7 @@ void main() {
     expect(json['appVersion'], '0.9.0+9');
   });
 
-  test('CSV export is a zip with four UTF-8 files', () async {
+  test('CSV export is a zip with five UTF-8 files', () async {
     final export = await service.createCsvExport();
     expect(
       export.name,
@@ -100,6 +100,7 @@ void main() {
       'sessions.csv',
       'body_weight.csv',
       'exercises.csv',
+      'heart_rate.csv',
     });
     final sets = utf8.decode(archive.findFile('sets.csv')!.content);
     expect(sets, contains('Bankdrücken'));

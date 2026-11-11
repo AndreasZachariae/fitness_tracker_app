@@ -67,6 +67,9 @@ void main() {
       find.byType(ListView),
       const Offset(0, -250),
     );
+    // The last entries end at the screen edge (1.5.0: one more entry).
+    await tester.ensureVisible(find.text(title));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(title));
     await settle(tester);
   }
@@ -187,7 +190,7 @@ void main() {
     await settle(tester);
     expect(files.saved.single.$1, startsWith('gymlog-export-'));
     final zip = ZipDecoder().decodeBytes(files.saved.single.$2);
-    expect(zip.files, hasLength(4));
+    expect(zip.files, hasLength(5));
     expect((await settings(tester)).lastBackupAt, isNull);
     expect(
       find.byType(SnackBar),

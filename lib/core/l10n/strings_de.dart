@@ -157,6 +157,65 @@ abstract final class S {
   static const errorPlanNameTaken =
       'Es gibt schon einen Plan mit diesem Namen.';
 
+  // Heart rate (1.5.0)
+  static const sectionHeartRate = 'Pulsmesser';
+  static const settingsHeartRateNone =
+      'Garmin-Uhr oder Brustgurt per Bluetooth';
+  static const heartRateIntro =
+      'GymLog liest den Puls von einem Bluetooth-Pulsmesser: einem Brustgurt '
+      'oder einer Uhr, die ihre Herzfrequenz überträgt. Während eines '
+      'Trainings verbindet es sich automatisch, zeigt den Puls oben an und '
+      'speichert ihn alle 5 Sekunden.';
+  static const heartRateGarminHint =
+      'Garmin: Auf der Uhr in den Einstellungen unter „Sensoren & Zubehör“, '
+      '„Herzfrequenz am Handgelenk“ die Option „Herzfrequenz übertragen“ '
+      'einschalten (je nach Modell etwas anders benannt). Mit „Bei Aktivität '
+      'übertragen“ '
+      'sendet die Uhr automatisch, sobald du auf ihr ein Krafttraining '
+      'startest.';
+  static const heartRateWristHint =
+      'Tipp: Am Handgelenk misst eine Uhr beim Krafttraining oft ungenau, ein '
+      'Brustgurt ist zuverlässiger. Übertragen kostet Akku der Uhr.';
+  static const heartRateSearch = 'Pulsmesser suchen';
+  static const heartRateHowTo = 'So überträgt die Uhr ihren Puls';
+  static const heartRateStopSearch = 'Suche beenden';
+  static const heartRateSearching =
+      'Suche … Die Uhr muss gerade ihre Herzfrequenz übertragen.';
+  static const heartRateChooseHint = 'Zum Speichern antippen.';
+  static String heartRateSaved(String name) => 'Gespeichert: $name';
+  static const heartRateDevice = 'Gespeicherter Pulsmesser';
+  static const heartRateRemove = 'Entfernen';
+  static const heartRateTest = 'Testen';
+  static const heartRateStopTest = 'Test beenden';
+  static String heartRateNow(int bpm) => 'Aktuell: $bpm $unitBpm';
+  static const heartRateConnecting = 'Verbinde …';
+  static const heartRateLost =
+      'Nicht erreichbar – überträgt die Uhr gerade? GymLog versucht es weiter.';
+  static const heartRateDuringTraining =
+      'Während eines Trainings zeigt die Kopfzeile den Puls.';
+  static const heartRateUnsupported =
+      'Pulsmesser gehen erst ab Android 12 (vorher bräuchte Bluetooth die '
+      'Standort-Berechtigung).';
+  static const heartRateBluetoothOff =
+      'Bluetooth ist aus. Schalte es ein und versuch es noch einmal.';
+  static const heartRatePermission =
+      'GymLog braucht die Berechtigung „Geräte in der Nähe“, um den '
+      'Pulsmesser zu finden. Den Standort braucht es nicht.';
+  static const unitBpm = 'bpm';
+  static const heartRate = 'Puls';
+  static String heartRateSummary(int average, int max) =>
+      'Ø $average · max. $max $unitBpm';
+  static const heartRateAverage = 'Ø Puls';
+  static const heartRateMax = 'Max. Puls';
+  static const heartRateInfo =
+      'Puls während des Trainings vom Bluetooth-Pulsmesser, alle 5 Sekunden '
+      'gespeichert. Die Kurve zeigt Minuten seit Beginn des Trainings.';
+  static String heartRateLiveLabel(String status) => 'Puls: $status';
+  static const heartRateStatusConnecting = 'verbinde';
+  static const heartRateStatusLost = 'Verbindung verloren';
+  static const heartRateStatusUnavailable =
+      'Bluetooth aus oder keine Berechtigung';
+
   // FitNotes import (1.4.0)
   static const importFitNotes = 'Plan aus FitNotes importieren';
   static const importFitNotesTitle = 'Import aus FitNotes';

@@ -19,6 +19,7 @@ import '../../../domain/models/models.dart';
 import '../../../domain/weight_steps.dart';
 import '../../../widgets/name_dialog.dart';
 import '../../../widgets/snackbars.dart';
+import '../../heart_rate/heart_rate_widgets.dart';
 
 /// Data shown in the summary, loaded once.
 final class _SummaryData {
@@ -275,6 +276,9 @@ class _SummaryBody extends StatelessWidget {
             ),
           ],
         ),
+        // 1.5.0: only with a heart rate monitor.
+        const SizedBox(height: 8),
+        HeartRateSection(sessionId: s.id, start: s.startedAt),
         if (data.records.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text(S.newRecords, style: theme.textTheme.titleMedium),

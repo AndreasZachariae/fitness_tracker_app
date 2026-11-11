@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:gymlog/core/device.dart';
+import 'package:gymlog/core/heart_rate_monitor.dart';
 import 'package:gymlog/core/notifications.dart';
 import 'package:gymlog/data/notifications/update_checker.dart';
 
@@ -146,5 +149,54 @@ final class FakeReleases implements ReleaseSource {
             apkUrl: apkUrl,
             apkSize: 3,
           );
+  }
+}
+
+/// A heart rate monitor under the test's control (1.5.0).
+final class FakeHeartRateMonitor implements HeartRateMonitor {
+  HeartRateAvailability state = HeartRateAvailability.ready;
+  bool grantOnRequest = true;
+  final devices = <HeartRateDevice>[];
+  final connects = <String>[];
+  int permissionRequests = 0;
+  StreamController<int>? _current;
+
+  /// Whether a heart rate stream is open (connected).
+  bool get connected => _current != null && !_current!.isClosed;
+
+  /// Sends a value on the open connection.
+  void beat(int bpm) => _current?.add(bpm);
+
+  /// The connection drops.
+  void lose() {
+    _current?.addError(const HeartRateConnectionLost());
+    unawaited(_current?.close());
+    _current = null;
+  }
+
+  @override
+  Future<HeartRateAvailability> availability() async => state;
+
+  @override
+  Future<bool> requestPermission() async {
+    permissionRequests++;
+    if (grantOnRequest) state = HeartRateAvailability.ready;
+    return grantOnRequest;
+  }
+
+  @override
+  Stream<HeartRateDevice> scan() => Stream.fromIterable(devices);
+
+  @override
+  Stream<int> heartRate(String deviceId) {
+    connects.add(deviceId);
+    late final StreamController<int> controller;
+    controller = StreamController<int>(
+      onCancel: () {
+        if (_current == controller) _current = null;
+      },
+    );
+    _current = controller;
+    return controller.stream;
   }
 }

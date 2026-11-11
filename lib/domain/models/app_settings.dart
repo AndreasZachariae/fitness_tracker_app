@@ -30,6 +30,8 @@ final class AppSettings {
     this.lastUpdateCheckAt,
     this.latestVersion,
     this.notificationsAsked = false,
+    this.hrDeviceId,
+    this.hrDeviceName,
   });
 
   /// Booking page of the user's gym (1.2.0); changeable in the settings.
@@ -107,6 +109,13 @@ final class AppSettings {
   /// The Android notification permission was asked for once.
   final bool notificationsAsked;
 
+  /// The Bluetooth heart rate monitor (1.5.0): its address, null = none.
+  /// Device state like [notificationsAsked]: not part of backups.
+  final String? hrDeviceId;
+
+  /// Its name as advertised, e.g. "Forerunner 255".
+  final String? hrDeviceName;
+
   AppSettings copyWith({
     int? defaultSets,
     int? defaultRestSec,
@@ -133,6 +142,8 @@ final class AppSettings {
     Object? lastUpdateCheckAt = unset,
     Object? latestVersion = unset,
     bool? notificationsAsked,
+    Object? hrDeviceId = unset,
+    Object? hrDeviceName = unset,
   }) {
     return AppSettings(
       id: id,
@@ -167,6 +178,8 @@ final class AppSettings {
       ),
       latestVersion: pick<String?>(latestVersion, this.latestVersion),
       notificationsAsked: notificationsAsked ?? this.notificationsAsked,
+      hrDeviceId: pick<String?>(hrDeviceId, this.hrDeviceId),
+      hrDeviceName: pick<String?>(hrDeviceName, this.hrDeviceName),
     );
   }
 
@@ -198,7 +211,9 @@ final class AppSettings {
       other.bookingUrl == bookingUrl &&
       other.lastUpdateCheckAt == lastUpdateCheckAt &&
       other.latestVersion == latestVersion &&
-      other.notificationsAsked == notificationsAsked;
+      other.notificationsAsked == notificationsAsked &&
+      other.hrDeviceId == hrDeviceId &&
+      other.hrDeviceName == hrDeviceName;
 
   @override
   int get hashCode => Object.hashAll([
@@ -228,5 +243,7 @@ final class AppSettings {
     lastUpdateCheckAt,
     latestVersion,
     notificationsAsked,
+    hrDeviceId,
+    hrDeviceName,
   ]);
 }

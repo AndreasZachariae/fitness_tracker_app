@@ -221,6 +221,18 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
 - **Vergessene Session:** Ist die aktive Session beim Öffnen älter als 12 h, Dialog: „Das Training vom 3.11. läuft noch.“
   Optionen: „Beenden“ (Endzeit = letzter Satz + 5 min, ohne Sätze: Startzeit) · „Fortsetzen“ · „Verwerfen“ (mit Bestätigung).
 
+#### 6.2.0 Puls (ab 1.5.0)
+
+- Ein Bluetooth-Pulsmesser (Standard-Herzfrequenzdienst 0x180D: Brustgurt oder Uhr mit „Herzfrequenz übertragen“, z. B.
+  Garmin Forerunner 255, epix Pro Gen 2) wird unter Einstellungen → Pulsmesser gesucht, gespeichert, getestet, entfernt.
+  Nur ab Android 12 (Rechte „Geräte in der Nähe“ ohne Standort).
+- Läuft ein Training und ist ein Pulsmesser gespeichert, verbindet GymLog sich automatisch, zeigt „♥ 128“ in der
+  Kopfzeile (– beim Verbinden oder nach einem Abbruch; neuer Versuch alle 5 s) und speichert höchstens alle 5 s einen
+  Wert sofort in `heart_rate_samples` (gehört zur Session, wird mit ihr gelöscht). Nach dem Training wird getrennt.
+- Zusammenfassung (§6.3) und Verlauf-Detail (§6.4): Karte „Puls“ mit „Ø 118 · max. 162 bpm“ und Kurve (Minuten seit
+  Beginn); ohne Pulswerte keine Karte. Backup-Format 6 enthält die Werte, CSV-Export `heart_rate.csv`; der gespeicherte
+  Pulsmesser ist Gerätezustand und nicht im Backup.
+
 #### 6.2.1 Pausentimer
 
 - Leiste am unteren Rand über der NavigationBar: „Pause 1:12“, Fortschrittsbalken, Buttons „−15 s“, „+15 s“, „Überspringen“.

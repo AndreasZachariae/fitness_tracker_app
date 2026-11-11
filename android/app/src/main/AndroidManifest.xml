@@ -1,5 +1,6 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Permissions (SPEC §3, CLAUDE.md rule 6). No INTERNET here: the app works fully offline. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Permissions (SPEC §3, CLAUDE.md rule 6), each approved by the human. -->
     <uses-permission android:name="android.permission.VIBRATE"/>
     <!-- Exact alarm for the rest-over vibration in the background (1.0.1): granted at install on
          Android 13+ (USE_EXACT_ALARM), on Android 12 SCHEDULE_EXACT_ALARM. No notification. -->
@@ -10,6 +11,13 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 1.5.0 (approved by the human): Bluetooth heart rate monitor. Scanning never derives a location, so no
+         location permission; only Android 12+. The old Bluetooth permissions of the universal_ble plugin are removed
+         (they would only matter before Android 12, where GymLog does not offer the feature). -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <uses-permission android:name="android.permission.BLUETOOTH" tools:node="remove"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" tools:node="remove"/>
 
     <application
         android:label="@string/app_name"

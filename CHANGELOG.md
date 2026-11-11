@@ -4,6 +4,16 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
+## [1.5.0] – unveröffentlicht
+
+### Neu
+- **Puls während des Trainings:** GymLog verbindet sich per Bluetooth mit einem Pulsmesser – einer Garmin-Uhr mit „Herzfrequenz übertragen“ (z. B. Forerunner 255, epix Pro) oder einem Brustgurt – und zeigt den Puls oben im Training an.
+- Der Puls wird während des Trainings gespeichert; Zusammenfassung und Verlauf zeigen Durchschnitt, Maximum und eine Pulskurve.
+- Neuer Bereich **Einstellungen → Pulsmesser** zum Suchen, Testen und Entfernen; dort steht auch, wie man die Übertragung auf der Garmin-Uhr einschaltet.
+
+### Hinweis
+- Dafür fragt Android einmal nach der Berechtigung „Geräte in der Nähe“. Den Standort braucht GymLog nicht. Pulsmesser funktionieren ab Android 12.
+
 ## [1.4.0] – 2026-11-11
 
 ### Neu

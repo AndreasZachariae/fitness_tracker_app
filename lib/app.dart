@@ -7,6 +7,7 @@ import 'core/router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/providers.dart';
 import 'domain/models/enums.dart';
+import 'features/heart_rate/heart_rate_recorder.dart';
 import 'features/notifications/reminder_sync.dart';
 
 /// German (Germany) is the only supported locale.
@@ -34,7 +35,8 @@ class GymLogApp extends ConsumerWidget {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       routerConfig: ref.watch(routerProvider),
       // Reminders and the update check (1.2.0).
-      builder: (context, child) => ReminderSync(child: child!),
+      builder: (context, child) =>
+          ReminderSync(child: HeartRateRecorder(child: child!)),
     );
   }
 }

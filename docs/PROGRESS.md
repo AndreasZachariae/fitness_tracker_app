@@ -207,8 +207,36 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Einstellungen → Pläne: „Aus FitNotes importieren“ → Datei wählen → Vorschau (Planname, Zuordnung je Übung,
         Training übernehmen) → Import → Plan-Seite für Trainingstage
   - [x] Tests, CHANGELOG, Testliste
+- [x] 1.5.0 Herzfrequenz per Bluetooth (`docs/ROADMAP.md`, 1.5.0+21)
+  - [x] Paket `universal_ble` (BSD-3; `flutter_blue_plus` scheidet aus: Lizenz erlaubt Telemetrie beim Bauen),
+        Rechte `BLUETOOTH_SCAN` (neverForLocation) und `BLUETOOTH_CONNECT`, Plugin-Altrechte entfernt, nur Android 12+
+  - [x] Domain `heart_rate.dart`: Messwert (BLE 0x2A37) auslesen, Ø/Max, Kurve verdichten
+  - [x] Schema 6 (additiv): Tabelle `heart_rate_samples`, `app_settings.hr_device_id/name`; Backup-Format 6, CSV
+  - [x] Einstellungen → Pulsmesser: suchen, merken, Live-Test, entfernen
+  - [x] Während einer Session automatisch verbinden (mit Wiederverbinden), Puls in der Kopfzeile, alle 5 s speichern
+  - [x] Zusammenfassung und Verlauf: Ø/Max-Puls und Kurve
+  - [x] Tests, CHANGELOG, Testliste
 
 ## Annahmen
+- **1.5.0 Weg zum Puls:** Bluetooth-Übertragung der Uhr (Standard-Herzfrequenzdienst), entschieden vom Menschen nach dem
+  Test, dass seine Garmin als Pulsmesser erscheint. Live, offline, ohne Garmin-Konto; nur Herzfrequenz. Funktioniert
+  genauso mit Brustgurten. Health Connect und Connect IQ bleiben spätere Möglichkeiten.
+- **1.5.0 Android 12+:** Vorher bräuchte Bluetooth-Suche die Standort-Berechtigung; die will GymLog nicht. Auf älteren
+  Handys erklärt die Seite das, der Rest der App läuft wie bisher. Die Android-Version kommt über einen kleinen Kanal
+  aus `MainActivity` (`de.gymlog.app/device`).
+- **1.5.0 Aufzeichnung:** Nur während eines laufenden Trainings und nur mit gespeichertem Pulsmesser. Ein Wert wird sofort
+  gespeichert, danach höchstens alle 5 s (eine Stunde ≈ 720 Zeilen, das Backup bleibt klein). Werte mit „kein
+  Hautkontakt“ und außerhalb 20–255 werden verworfen. Verbindung verloren → neuer Versuch alle 5 s, solange das Training
+  läuft. Läuft GymLog im Hintergrund weiter (Display aus), wird weiter aufgezeichnet, solange Android den Prozess lässt;
+  einen Vordergrunddienst (weiteres Recht) gibt es dafür nicht. Während eines Trainings sind Suche und Test gesperrt,
+  damit nur eine Verbindung zur Uhr besteht.
+- **1.5.0 Gespeicherter Pulsmesser:** Bluetooth-Adresse und Name in den Einstellungen (Schema 6), wie „Berechtigung
+  gefragt“ Gerätezustand: nicht im Backup. Pulswerte sind Nutzerdaten: im Backup (Format 6) und im CSV-Export.
+- **1.5.0 Anzeige:** Ø/Max und Kurve auf eine Minute genau gemittelt (höchstens 150 Punkte); keine Auswertung pro Satz
+  (die Zeitfenster der Sätze sind nicht eindeutig) – das ginge später.
+- **1.5.0 Release-Build:** Das Plugin bringt keine eigenen R8-Regeln mit; es nutzt aber nur direkt referenzierten Code
+  (Pigeon, keine Reflexion). Die DEV-App wird nicht verkleinert und kann das nicht prüfen – daher steht der Puls in der
+  echten App auf der Testliste.
 - **1.4.0 Entscheidungen des Menschen:** Gruppen in Klammern sind frei benannt (FitNotes kennt nur Supersets und wurde
   für Wechsel „zweckentfremdet“): enthält der Name „Rotate“ → Wechsel (Rotation) mit allen Übungen derselben Gruppe,
   „Set“ → Superset, sonst keine Gruppe. Das Training wird zusätzlich als beendetes Training importiert, damit die Gewichte
@@ -770,11 +798,22 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 | `flutter_local_notifications` 22.x | Erinnerungen und Pausen-Countdown als Android-Benachrichtigungen | Verbreitetes, aktiv gepflegtes Paket; offline, keine Analytics; 22.x, weil 23.x compileSdk 37 verlangt | 1.2.0 |
 | `timezone` | Zeitpunkte für geplante Benachrichtigungen | Wird von flutter_local_notifications verlangt; genutzt nur als UTC | 1.2.0 |
 | `url_launcher` | Buchungsseite und Release-Seite im Browser öffnen | Offizielles Flutter-Paket; GymLog selbst lädt dabei nichts | 1.2.0 |
+| `universal_ble` | Bluetooth-Pulsmesser (Suche, Verbindung, Herzfrequenz-Werte) | BSD-3, aktiv gepflegt (Version vom 10.11.2026), Android über die offiziellen Bluetooth-Rechte ohne Standort; `flutter_blue_plus` scheidet aus, weil seine Lizenz Telemetrie beim Bauen erlaubt (CLAUDE.md: keine Analytics) | 1.5.0 |
 | `flutter_localizations` (SDK) | Deutsche Material-Texte (DatePicker, Tooltips wie „Zurück“) | Für Locale `de_DE` in `MaterialApp` nötig, Teil des Flutter-SDK | M0 |
 
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.5.0 Herzfrequenz per Bluetooth
+Nur, was live ausprobiert werden muss; Aufzeichnung, Speichern und Anzeige sind automatisch getestet.
+- [ ] Garmin-Uhr „Herzfrequenz übertragen“ einschalten; Einstellungen → Pulsmesser → „Pulsmesser suchen“: Android fragt einmal nach „Geräte in der Nähe“ (nicht nach dem Standort), die Uhr erscheint in der Liste, antippen speichert sie.
+- [ ] „Testen“ zeigt nach wenigen Sekunden „Aktuell: … bpm“, passend zur Uhr.
+- [ ] Training starten: Kopfzeile zeigt das Herz und den Puls; Uhr kurz weit weg bzw. Übertragen aus und wieder an – „–“, dann verbindet GymLog sich von selbst wieder.
+- [ ] Display für ein paar Minuten sperren: Danach ist die Kurve in dieser Zeit nicht leer.
+- [ ] Training beenden: Zusammenfassung zeigt „Puls“ mit Ø/max und Kurve; im Verlauf dasselbe. Die Uhr zeigt kein verbundenes Gerät mehr.
+- [ ] Mit „Bei Aktivität übertragen“ auf der Uhr: Krafttraining auf der Uhr starten, GymLog-Training starten – verbindet sich ohne weiteres Zutun.
+- [ ] **Echte App nach dem Release von 1.5.0:** dasselbe einmal kurz (der Release-Build wird anders verkleinert als die DEV-App).
 
 ### 1.4.0 Import aus FitNotes
 Nur, was live ausprobiert werden muss; Einlesen, Zuordnen und Speichern sind automatisch getestet.

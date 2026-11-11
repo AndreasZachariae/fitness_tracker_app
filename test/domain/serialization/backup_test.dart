@@ -27,7 +27,7 @@ void main() {
   test('header fields (SPEC §8.2)', () {
     final json = jsonDecode(encodeBackup(backup)) as Map<String, Object?>;
     expect(json['format'], 'gymlog-backup');
-    expect(json['formatVersion'], 5);
+    expect(json['formatVersion'], 6);
     expect(json['schemaVersion'], 1);
     expect(json['appVersion'], '1.0.0+12');
     expect(json['exportedAt'], isA<String>());
@@ -42,6 +42,7 @@ void main() {
       'sessionSupersets',
       'sets',
       'bodyWeights',
+      'heartRateSamples',
       'settings',
     ]);
   });
@@ -215,6 +216,72 @@ void main() {
     );
   });
 
+  test('heart rate: round trip, format 5 has none, validation (1.5.0)', () {
+    final session = demo.sessions.firstWhere((s) => !s.isActive);
+    final samples = [
+      HeartRateSample(
+        id: 1,
+        sessionId: session.id,
+        recordedAt: session.startedAt.add(const Duration(seconds: 5)),
+        bpm: 92,
+      ),
+      HeartRateSample(
+        id: 2,
+        sessionId: session.id,
+        recordedAt: session.startedAt.add(const Duration(seconds: 10)),
+        bpm: 131,
+      ),
+    ];
+    BackupData withSamples(List<HeartRateSample> list) => BackupData(
+      dataset: Dataset(
+        exercises: demo.exercises,
+        plans: demo.plans,
+        planExercises: demo.planExercises,
+        planGroups: demo.planGroups,
+        planSchedules: demo.planSchedules,
+        sessions: demo.sessions,
+        sessionExercises: demo.sessionExercises,
+        sessionSupersets: demo.sessionSupersets,
+        sets: demo.sets,
+        bodyWeights: demo.bodyWeights,
+        heartRateSamples: list,
+      ),
+      settings: settings,
+      schemaVersion: 6,
+      appVersion: '1.5.0+21',
+      exportedAt: testNow,
+    );
+    final text = encodeBackup(withSamples(samples));
+    expect(decodeBackup(text).dataset.heartRateSamples, samples);
+    final csv = buildCsvExport(withSamples(samples).dataset);
+    expect(csv['heart_rate.csv'], contains(',131'));
+
+    final j = jsonDecode(text) as Map<String, Object?>;
+    j['formatVersion'] = 5;
+    (j['data']! as Map<String, Object?>).remove('heartRateSamples');
+    expect(decodeBackup(jsonEncode(j)).dataset.heartRateSamples, isEmpty);
+
+    for (final broken in [
+      HeartRateSample(
+        id: 3,
+        sessionId: 99999,
+        recordedAt: session.startedAt,
+        bpm: 90,
+      ),
+      HeartRateSample(
+        id: 3,
+        sessionId: session.id,
+        recordedAt: session.startedAt,
+        bpm: 400,
+      ),
+    ]) {
+      expect(
+        () => decodeBackup(encodeBackup(withSamples([...samples, broken]))),
+        throwsA(isA<BackupFormatException>()),
+      );
+    }
+  });
+
   test('training days: round trip and validation (1.2.0)', () {
     final planId = demo.plans.first.id;
     final withDays = BackupData(
@@ -297,7 +364,7 @@ void main() {
       (
         'newer version',
         () {
-          final j = json()..['formatVersion'] = 6;
+          final j = json()..['formatVersion'] = 7;
           return jsonEncode(j);
         },
         BackupError.newerVersion,
@@ -455,13 +522,15 @@ void main() {
     final files = buildCsvExport(demo);
     List<String> lines(String name) => files[name]!.split('\r\n')..removeLast();
 
-    test('four files with the exact headers', () {
+    test('five files with the exact headers', () {
       expect(files.keys.toSet(), {
         'sets.csv',
         'sessions.csv',
         'body_weight.csv',
         'exercises.csv',
+        'heart_rate.csv',
       });
+      expect(lines('heart_rate.csv').first, 'session_id,recorded_at,bpm');
       expect(
         lines('sets.csv').first,
         'session_id,session_date,session_started_at,plan_name,exercise_id,'

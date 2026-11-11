@@ -254,6 +254,20 @@ class BodyWeightEntries extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
+/// Heart rate during a training (schema 6, 1.5.0); goes with its session.
+@UseRowClass(HeartRateSample, generateInsertable: true)
+@TableIndex(
+  name: 'heart_rate_samples_session',
+  columns: {#sessionId, #recordedAt},
+)
+class HeartRateSamples extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get sessionId =>
+      integer().references(Sessions, #id, onDelete: KeyAction.cascade)();
+  DateTimeColumn get recordedAt => dateTime()();
+  IntColumn get bpm => integer().check(bpm.isBetweenValues(20, 255))();
+}
+
 @UseRowClass(AppSettings, generateInsertable: true)
 class AppSettingsTable extends Table {
   @override
@@ -315,6 +329,9 @@ class AppSettingsTable extends Table {
   TextColumn get latestVersion => text().nullable()();
   BoolColumn get notificationsAsked =>
       boolean().withDefault(const Constant(false))();
+  // Schema 6 (1.5.0): the Bluetooth heart rate monitor.
+  TextColumn get hrDeviceId => text().nullable()();
+  TextColumn get hrDeviceName => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

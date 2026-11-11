@@ -86,10 +86,13 @@ Version 1.X.0 (Automatische Buchung)
 STATUS: PLANNED
     - Nutze die öffentliche website um eine Buchung durchzuführen.
     - In den einstellungen unter der Buchungswebsite ein Button zum hinterlegen der Buchungsdaten. Dort muss man Email, Anrede, Vornamen, Nachnamen Mobilnummer hinterlegen.
-Version 1.X.0 (Connect Garmin)
-STATUS: PLANNED
-    - Connect to garmin app during the training to track heart rate etc.
-    - How hard is it to connect a garmin fitness watch to get realtime datastreams form it?
+Version 1.5.0 (Herzfrequenz per Bluetooth)
+STATUS: FINISHED
+    - Live-Puls während des Trainings von einer Garmin-Uhr (Forerunner 255, epix Pro Gen 2; Venu 4 nur, falls sie per Bluetooth überträgt) über die Funktion „Herzfrequenz übertragen“ – Standard-Bluetooth-Pulsmesser, funktioniert auch mit Brustgurten.
+    - Pulsmesser einmal in den Einstellungen suchen und merken; während eines Trainings verbindet GymLog sich automatisch, zeigt den Puls an und speichert den Verlauf.
+    - Ø- und Max.-Puls und eine Pulskurve in der Zusammenfassung und im Verlauf.
+    - Neue Rechte (vom Menschen freigegeben): Bluetooth suchen (ohne Standort) und verbinden; nur ab Android 12.
+    - Später möglich: Daten von Garmin Connect über Health Connect nach dem Training, Connect-IQ-App auf der Uhr.
 Version 2.X.0 (Personality)
 STATUS: PLANNED
     - Give the app more individual personality like e.g. Duolingo. The theme should be a little robot.

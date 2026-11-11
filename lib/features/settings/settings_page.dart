@@ -61,6 +61,13 @@ class SettingsPage extends ConsumerWidget {
             AppRoutes.trainingSettings,
           ),
           entry(
+            Icons.monitor_heart_outlined,
+            S.sectionHeartRate,
+            ref.watch(settingsProvider).value?.hrDeviceName ??
+                S.settingsHeartRateNone,
+            AppRoutes.heartRateSettings,
+          ),
+          entry(
             Icons.notifications_outlined,
             S.sectionNotifications,
             S.settingsNotificationsSubtitle,

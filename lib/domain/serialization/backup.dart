@@ -11,8 +11,8 @@ const backupFormat = 'gymlog-backup';
 /// 2 (M9): `planGroups`, `sessionSupersets`, `planExercises[].groupId` and
 /// `sessionExercises[].supersetId`. Version 1 files are still read.
 /// 3 (1.1.0): weight steps. 4 (1.2.0): training days, notifications.
-/// 5 (1.3.0): `exercises[].timerCountdown`.
-const backupFormatVersion = 5;
+/// 5 (1.3.0): `exercises[].timerCountdown`. 6 (1.5.0): `heartRateSamples`.
+const backupFormatVersion = 6;
 
 final class BackupData {
   const BackupData({
@@ -224,6 +224,15 @@ String encodeBackup(BackupData b) {
             'createdAt': _t(w.createdAt),
           },
       ],
+      'heartRateSamples': [
+        for (final h in d.heartRateSamples)
+          {
+            'id': h.id,
+            'sessionId': h.sessionId,
+            'recordedAt': _t(h.recordedAt),
+            'bpm': h.bpm,
+          },
+      ],
       'settings': {
         'defaultSets': s.defaultSets,
         'defaultRestSec': s.defaultRestSec,
@@ -389,6 +398,7 @@ BackupData decodeBackup(String text) {
   final v3 = version >= 3;
   final v4 = version >= 4;
   final v5 = version >= 5;
+  final v6 = version >= 6;
   final dataset = Dataset(
     exercises: _list(
       data,
@@ -543,6 +553,18 @@ BackupData decodeBackup(String text) {
         createdAt: r.time('createdAt'),
       ),
     ),
+    heartRateSamples: !v6
+        ? const []
+        : _list(
+            data,
+            'heartRateSamples',
+            (r) => HeartRateSample(
+              id: r.integer('id'),
+              sessionId: r.integer('sessionId'),
+              recordedAt: r.time('recordedAt'),
+              bpm: r.integer('bpm'),
+            ),
+          ),
   );
 
   final rawSettings = data['settings'];
@@ -699,6 +721,16 @@ void validateDataset(Dataset d, AppSettings settings) {
   );
   for (final s in d.sets) {
     ref(sessionExercises, s.sessionExerciseId, 'set.sessionExerciseId');
+  }
+  ids(d.heartRateSamples, (h) => h.id, 'heartRateSample');
+  for (final h in d.heartRateSamples) {
+    ref(sessions, h.sessionId, 'heartRateSample.sessionId');
+    if (h.bpm < 20 || h.bpm > 255) {
+      throw BackupFormatException(
+        BackupError.invalidField,
+        'heartRateSample ${h.id}',
+      );
+    }
   }
   ref(plans, settings.lastSelectedPlanId, 'settings.lastSelectedPlanId');
   if (d.sessions.where((s) => s.isActive).length > 1) {

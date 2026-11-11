@@ -139,6 +139,8 @@ void main() {
     );
 
     await leavePage(tester);
+    await tester.ensureVisible(find.text(S.sectionAbout));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(S.sectionAbout));
     await settle(tester);
     expect(find.text(S.updateAvailable('1.3.0')), findsOneWidget);
@@ -216,6 +218,8 @@ void main() {
       find.byType(ListView),
       const Offset(0, -300),
     );
+    await tester.ensureVisible(find.text(S.sectionAbout));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(S.sectionAbout));
     await settle(tester);
     expect(find.text(S.checkForUpdatesHint), findsOneWidget);
@@ -268,6 +272,8 @@ void main() {
       find.byType(ListView),
       const Offset(0, -300),
     );
+    await tester.ensureVisible(find.text(S.sectionAbout));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(S.sectionAbout));
     await settle(tester);
     await tester.tap(find.text(S.checkForUpdates));

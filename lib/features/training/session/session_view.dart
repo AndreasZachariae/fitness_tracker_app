@@ -21,6 +21,7 @@ import '../../../widgets/dashed_add_button.dart';
 import '../../../widgets/group_frame.dart';
 import '../../../widgets/snackbars.dart';
 import '../../../widgets/ticker.dart';
+import '../../heart_rate/heart_rate_widgets.dart';
 import '../../settings/exercises/exercise_form_page.dart';
 import '../exercise_picker_sheet.dart';
 import 'rest_timer_bar.dart';
@@ -418,6 +419,9 @@ class _SessionViewState extends ConsumerState<SessionView>
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
+            // Live heart rate (1.5.0); empty without a monitor.
+            const HeartRateIndicator(),
             const SizedBox(width: 8),
             Flexible(
               child: FittedBox(

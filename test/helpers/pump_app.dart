@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/app.dart';
 import 'package:gymlog/core/clock.dart';
 import 'package:gymlog/core/device.dart';
+import 'package:gymlog/core/heart_rate_monitor.dart';
 import 'package:gymlog/core/notifications.dart';
 import 'package:gymlog/data/db/database.dart';
 import 'package:gymlog/data/providers.dart';
@@ -24,6 +25,7 @@ Future<AppDatabase> pumpApp(
   FakeFileGateway? files,
   FakeNotifications? notifications,
   FakeReleases? releases,
+  FakeHeartRateMonitor? heartRate,
   bool reminderSync = false,
 }) async {
   final database = db ?? newTestDatabase();
@@ -39,6 +41,9 @@ Future<AppDatabase> pumpApp(
           notifications ?? FakeNotifications(),
         ),
         releaseSourceProvider.overrideWithValue(releases ?? FakeReleases()),
+        heartRateMonitorProvider.overrideWithValue(
+          heartRate ?? FakeHeartRateMonitor(),
+        ),
         reminderSyncEnabledProvider.overrideWithValue(reminderSync),
         appInfoProvider.overrideWith(
           (ref) async => (version: '0.9.0', buildNumber: '9'),

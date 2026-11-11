@@ -30,6 +30,7 @@ part 'database.g.dart';
     SetEntries,
     BodyWeightEntries,
     AppSettingsTable,
+    HeartRateSamples,
   ],
   daos: [ExercisesDao, PlansDao, SessionsDao, BodyWeightDao, SettingsDao],
 )
@@ -47,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   final Clock? libraryClock;
 
   /// Current schema version. Changes only via migration (CLAUDE.md, rule 4).
-  static const currentSchemaVersion = 5;
+  static const currentSchemaVersion = 6;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -127,6 +128,13 @@ class AppDatabase extends _$AppDatabase {
       // 1.3.0: countdown for the set timer of timed exercises.
       from4To5: (m, schema) async {
         await m.addColumn(schema.exercises, schema.exercises.timerCountdown);
+      },
+      // 1.5.0: heart rate from a Bluetooth monitor.
+      from5To6: (m, schema) async {
+        await m.createTable(schema.heartRateSamples);
+        await m.createIndex(schema.heartRateSamplesSession);
+        await m.addColumn(schema.appSettings, schema.appSettings.hrDeviceId);
+        await m.addColumn(schema.appSettings, schema.appSettings.hrDeviceName);
       },
     ),
     beforeOpen: (details) async {

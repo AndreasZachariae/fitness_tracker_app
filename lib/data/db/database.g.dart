@@ -3805,6 +3805,28 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _hrDeviceIdMeta = const VerificationMeta(
+    'hrDeviceId',
+  );
+  @override
+  late final GeneratedColumn<String> hrDeviceId = GeneratedColumn<String>(
+    'hr_device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hrDeviceNameMeta = const VerificationMeta(
+    'hrDeviceName',
+  );
+  @override
+  late final GeneratedColumn<String> hrDeviceName = GeneratedColumn<String>(
+    'hr_device_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3833,6 +3855,8 @@ class $AppSettingsTableTable extends AppSettingsTable
     lastUpdateCheckAt,
     latestVersion,
     notificationsAsked,
+    hrDeviceId,
+    hrDeviceName,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4050,6 +4074,24 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('hr_device_id')) {
+      context.handle(
+        _hrDeviceIdMeta,
+        hrDeviceId.isAcceptableOrUnknown(
+          data['hr_device_id']!,
+          _hrDeviceIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('hr_device_name')) {
+      context.handle(
+        _hrDeviceNameMeta,
+        hrDeviceName.isAcceptableOrUnknown(
+          data['hr_device_name']!,
+          _hrDeviceNameMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4167,6 +4209,14 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.bool,
         data['${effectivePrefix}notifications_asked'],
       )!,
+      hrDeviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hr_device_id'],
+      ),
+      hrDeviceName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hr_device_name'],
+      ),
     );
   }
 
@@ -4208,6 +4258,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
   final Value<DateTime?> lastUpdateCheckAt;
   final Value<String?> latestVersion;
   final Value<bool> notificationsAsked;
+  final Value<String?> hrDeviceId;
+  final Value<String?> hrDeviceName;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
     this.defaultSets = const Value.absent(),
@@ -4235,6 +4287,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     this.lastUpdateCheckAt = const Value.absent(),
     this.latestVersion = const Value.absent(),
     this.notificationsAsked = const Value.absent(),
+    this.hrDeviceId = const Value.absent(),
+    this.hrDeviceName = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
     this.id = const Value.absent(),
@@ -4263,6 +4317,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     this.lastUpdateCheckAt = const Value.absent(),
     this.latestVersion = const Value.absent(),
     this.notificationsAsked = const Value.absent(),
+    this.hrDeviceId = const Value.absent(),
+    this.hrDeviceName = const Value.absent(),
   });
   static Insertable<AppSettings> custom({
     Expression<int>? id,
@@ -4291,6 +4347,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     Expression<DateTime>? lastUpdateCheckAt,
     Expression<String>? latestVersion,
     Expression<bool>? notificationsAsked,
+    Expression<String>? hrDeviceId,
+    Expression<String>? hrDeviceName,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -4321,6 +4379,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
       if (lastUpdateCheckAt != null) 'last_update_check_at': lastUpdateCheckAt,
       if (latestVersion != null) 'latest_version': latestVersion,
       if (notificationsAsked != null) 'notifications_asked': notificationsAsked,
+      if (hrDeviceId != null) 'hr_device_id': hrDeviceId,
+      if (hrDeviceName != null) 'hr_device_name': hrDeviceName,
     });
   }
 
@@ -4351,6 +4411,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     Value<DateTime?>? lastUpdateCheckAt,
     Value<String?>? latestVersion,
     Value<bool>? notificationsAsked,
+    Value<String?>? hrDeviceId,
+    Value<String?>? hrDeviceName,
   }) {
     return AppSettingsTableCompanion(
       id: id ?? this.id,
@@ -4379,6 +4441,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
       lastUpdateCheckAt: lastUpdateCheckAt ?? this.lastUpdateCheckAt,
       latestVersion: latestVersion ?? this.latestVersion,
       notificationsAsked: notificationsAsked ?? this.notificationsAsked,
+      hrDeviceId: hrDeviceId ?? this.hrDeviceId,
+      hrDeviceName: hrDeviceName ?? this.hrDeviceName,
     );
   }
 
@@ -4469,6 +4533,12 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     if (notificationsAsked.present) {
       map['notifications_asked'] = Variable<bool>(notificationsAsked.value);
     }
+    if (hrDeviceId.present) {
+      map['hr_device_id'] = Variable<String>(hrDeviceId.value);
+    }
+    if (hrDeviceName.present) {
+      map['hr_device_name'] = Variable<String>(hrDeviceName.value);
+    }
     return map;
   }
 
@@ -4500,7 +4570,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
           ..write('bookingUrl: $bookingUrl, ')
           ..write('lastUpdateCheckAt: $lastUpdateCheckAt, ')
           ..write('latestVersion: $latestVersion, ')
-          ..write('notificationsAsked: $notificationsAsked')
+          ..write('notificationsAsked: $notificationsAsked, ')
+          ..write('hrDeviceId: $hrDeviceId, ')
+          ..write('hrDeviceName: $hrDeviceName')
           ..write(')'))
         .toString();
   }
@@ -4538,6 +4610,8 @@ class _$AppSettingsInsertable implements Insertable<AppSettings> {
       lastUpdateCheckAt: Value(_object.lastUpdateCheckAt),
       latestVersion: Value(_object.latestVersion),
       notificationsAsked: Value(_object.notificationsAsked),
+      hrDeviceId: Value(_object.hrDeviceId),
+      hrDeviceName: Value(_object.hrDeviceName),
     ).toColumns(false);
   }
 }
@@ -4545,6 +4619,232 @@ class _$AppSettingsInsertable implements Insertable<AppSettings> {
 extension AppSettingsToInsertable on AppSettings {
   _$AppSettingsInsertable toInsertable() {
     return _$AppSettingsInsertable(this);
+  }
+}
+
+class $HeartRateSamplesTable extends HeartRateSamples
+    with TableInfo<$HeartRateSamplesTable, HeartRateSample> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HeartRateSamplesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<int> sessionId = GeneratedColumn<int>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES sessions (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _recordedAtMeta = const VerificationMeta(
+    'recordedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> recordedAt = GeneratedColumn<DateTime>(
+    'recorded_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bpmMeta = const VerificationMeta('bpm');
+  @override
+  late final GeneratedColumn<int> bpm = GeneratedColumn<int>(
+    'bpm',
+    aliasedName,
+    false,
+    check: () => ComparableExpr(bpm).isBetweenValues(20, 255),
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, sessionId, recordedAt, bpm];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'heart_rate_samples';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HeartRateSample> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('recorded_at')) {
+      context.handle(
+        _recordedAtMeta,
+        recordedAt.isAcceptableOrUnknown(data['recorded_at']!, _recordedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_recordedAtMeta);
+    }
+    if (data.containsKey('bpm')) {
+      context.handle(
+        _bpmMeta,
+        bpm.isAcceptableOrUnknown(data['bpm']!, _bpmMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bpmMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  HeartRateSample map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HeartRateSample(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}session_id'],
+      )!,
+      recordedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}recorded_at'],
+      )!,
+      bpm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}bpm'],
+      )!,
+    );
+  }
+
+  @override
+  $HeartRateSamplesTable createAlias(String alias) {
+    return $HeartRateSamplesTable(attachedDatabase, alias);
+  }
+}
+
+class HeartRateSamplesCompanion extends UpdateCompanion<HeartRateSample> {
+  final Value<int> id;
+  final Value<int> sessionId;
+  final Value<DateTime> recordedAt;
+  final Value<int> bpm;
+  const HeartRateSamplesCompanion({
+    this.id = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.recordedAt = const Value.absent(),
+    this.bpm = const Value.absent(),
+  });
+  HeartRateSamplesCompanion.insert({
+    this.id = const Value.absent(),
+    required int sessionId,
+    required DateTime recordedAt,
+    required int bpm,
+  }) : sessionId = Value(sessionId),
+       recordedAt = Value(recordedAt),
+       bpm = Value(bpm);
+  static Insertable<HeartRateSample> custom({
+    Expression<int>? id,
+    Expression<int>? sessionId,
+    Expression<DateTime>? recordedAt,
+    Expression<int>? bpm,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sessionId != null) 'session_id': sessionId,
+      if (recordedAt != null) 'recorded_at': recordedAt,
+      if (bpm != null) 'bpm': bpm,
+    });
+  }
+
+  HeartRateSamplesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? sessionId,
+    Value<DateTime>? recordedAt,
+    Value<int>? bpm,
+  }) {
+    return HeartRateSamplesCompanion(
+      id: id ?? this.id,
+      sessionId: sessionId ?? this.sessionId,
+      recordedAt: recordedAt ?? this.recordedAt,
+      bpm: bpm ?? this.bpm,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<int>(sessionId.value);
+    }
+    if (recordedAt.present) {
+      map['recorded_at'] = Variable<DateTime>(recordedAt.value);
+    }
+    if (bpm.present) {
+      map['bpm'] = Variable<int>(bpm.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HeartRateSamplesCompanion(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('recordedAt: $recordedAt, ')
+          ..write('bpm: $bpm')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class _$HeartRateSampleInsertable implements Insertable<HeartRateSample> {
+  HeartRateSample _object;
+  _$HeartRateSampleInsertable(this._object);
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    return HeartRateSamplesCompanion(
+      id: Value(_object.id),
+      sessionId: Value(_object.sessionId),
+      recordedAt: Value(_object.recordedAt),
+      bpm: Value(_object.bpm),
+    ).toColumns(false);
+  }
+}
+
+extension HeartRateSampleToInsertable on HeartRateSample {
+  _$HeartRateSampleInsertable toInsertable() {
+    return _$HeartRateSampleInsertable(this);
   }
 }
 
@@ -4567,6 +4867,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BodyWeightEntriesTable bodyWeightEntries =
       $BodyWeightEntriesTable(this);
   late final $AppSettingsTableTable appSettingsTable = $AppSettingsTableTable(
+    this,
+  );
+  late final $HeartRateSamplesTable heartRateSamples = $HeartRateSamplesTable(
     this,
   );
   late final Index exercisesNameUnique = Index(
@@ -4617,6 +4920,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'set_entries_session_exercise',
     'CREATE INDEX set_entries_session_exercise ON set_entries (session_exercise_id, set_index)',
   );
+  late final Index heartRateSamplesSession = Index(
+    'heart_rate_samples_session',
+    'CREATE INDEX heart_rate_samples_session ON heart_rate_samples (session_id, recorded_at)',
+  );
   late final ExercisesDao exercisesDao = ExercisesDao(this as AppDatabase);
   late final PlansDao plansDao = PlansDao(this as AppDatabase);
   late final SessionsDao sessionsDao = SessionsDao(this as AppDatabase);
@@ -4638,6 +4945,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     setEntries,
     bodyWeightEntries,
     appSettingsTable,
+    heartRateSamples,
     exercisesNameUnique,
     plansNameUnique,
     planExercisesPlan,
@@ -4650,6 +4958,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     sessionExercisesExercise,
     sessionSupersetsSession,
     setEntriesSessionExercise,
+    heartRateSamplesSession,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4722,6 +5031,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('app_settings', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'sessions',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('heart_rate_samples', kind: UpdateKind.delete)],
     ),
   ]);
   @override
@@ -7359,6 +7675,26 @@ final class $$SessionsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$HeartRateSamplesTable, List<HeartRateSample>>
+  _heartRateSamplesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.heartRateSamples,
+    aliasName: 'sessions__id__heart_rate_samples__session_id',
+  );
+
+  $$HeartRateSamplesTableProcessedTableManager get heartRateSamplesRefs {
+    final manager = $$HeartRateSamplesTableTableManager(
+      $_db,
+      $_db.heartRateSamples,
+    ).filter((f) => f.sessionId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _heartRateSamplesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$SessionsTableFilterComposer
@@ -7459,6 +7795,31 @@ class $$SessionsTableFilterComposer
           }) => $$SessionExercisesTableFilterComposer(
             $db: $db,
             $table: $db.sessionExercises,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> heartRateSamplesRefs(
+    Expression<bool> Function($$HeartRateSamplesTableFilterComposer f) f,
+  ) {
+    final $$HeartRateSamplesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.heartRateSamples,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HeartRateSamplesTableFilterComposer(
+            $db: $db,
+            $table: $db.heartRateSamples,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7625,6 +7986,31 @@ class $$SessionsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> heartRateSamplesRefs<T extends Object>(
+    Expression<T> Function($$HeartRateSamplesTableAnnotationComposer a) f,
+  ) {
+    final $$HeartRateSamplesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.heartRateSamples,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HeartRateSamplesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.heartRateSamples,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$SessionsTableTableManager
@@ -7644,6 +8030,7 @@ class $$SessionsTableTableManager
             bool planId,
             bool sessionSupersetsRefs,
             bool sessionExercisesRefs,
+            bool heartRateSamplesRefs,
           })
         > {
   $$SessionsTableTableManager(_$AppDatabase db, $SessionsTable table)
@@ -7702,12 +8089,14 @@ class $$SessionsTableTableManager
                 planId = false,
                 sessionSupersetsRefs = false,
                 sessionExercisesRefs = false,
+                heartRateSamplesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (sessionSupersetsRefs) db.sessionSupersets,
                     if (sessionExercisesRefs) db.sessionExercises,
+                    if (heartRateSamplesRefs) db.heartRateSamples,
                   ],
                   addJoins:
                       <
@@ -7781,6 +8170,26 @@ class $$SessionsTableTableManager
                           referencedColumn: 'session_id',
                           typedResults: items,
                         ),
+                      if (heartRateSamplesRefs)
+                        await $_getPrefetchedDataByColumns<
+                          Session,
+                          $SessionsTable,
+                          HeartRateSample,
+                          $HeartRateSamplesTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SessionsTableReferences
+                              ._heartRateSamplesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SessionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).heartRateSamplesRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'session_id',
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -7805,6 +8214,7 @@ typedef $$SessionsTableProcessedTableManager =
         bool planId,
         bool sessionSupersetsRefs,
         bool sessionExercisesRefs,
+        bool heartRateSamplesRefs,
       })
     >;
 typedef $$SessionSupersetsTableCreateCompanionBuilder =
@@ -9487,6 +9897,8 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<DateTime?> lastUpdateCheckAt,
       Value<String?> latestVersion,
       Value<bool> notificationsAsked,
+      Value<String?> hrDeviceId,
+      Value<String?> hrDeviceName,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
     AppSettingsTableCompanion Function({
@@ -9516,6 +9928,8 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<DateTime?> lastUpdateCheckAt,
       Value<String?> latestVersion,
       Value<bool> notificationsAsked,
+      Value<String?> hrDeviceId,
+      Value<String?> hrDeviceName,
     });
 
 final class $$AppSettingsTableTableReferences
@@ -9680,6 +10094,16 @@ class $$AppSettingsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get hrDeviceId => $composableBuilder(
+    column: $table.hrDeviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hrDeviceName => $composableBuilder(
+    column: $table.hrDeviceName,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$PlansTableFilterComposer get lastSelectedPlanId {
     final $$PlansTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -9838,6 +10262,16 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get hrDeviceId => $composableBuilder(
+    column: $table.hrDeviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get hrDeviceName => $composableBuilder(
+    column: $table.hrDeviceName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PlansTableOrderingComposer get lastSelectedPlanId {
     final $$PlansTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -9993,6 +10427,16 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get hrDeviceId => $composableBuilder(
+    column: $table.hrDeviceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get hrDeviceName => $composableBuilder(
+    column: $table.hrDeviceName,
+    builder: (column) => column,
+  );
+
   $$PlansTableAnnotationComposer get lastSelectedPlanId {
     final $$PlansTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -10073,6 +10517,8 @@ class $$AppSettingsTableTableTableManager
                 Value<DateTime?> lastUpdateCheckAt = const Value.absent(),
                 Value<String?> latestVersion = const Value.absent(),
                 Value<bool> notificationsAsked = const Value.absent(),
+                Value<String?> hrDeviceId = const Value.absent(),
+                Value<String?> hrDeviceName = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
                 defaultSets: defaultSets,
@@ -10100,6 +10546,8 @@ class $$AppSettingsTableTableTableManager
                 lastUpdateCheckAt: lastUpdateCheckAt,
                 latestVersion: latestVersion,
                 notificationsAsked: notificationsAsked,
+                hrDeviceId: hrDeviceId,
+                hrDeviceName: hrDeviceName,
               ),
           createCompanionCallback:
               ({
@@ -10129,6 +10577,8 @@ class $$AppSettingsTableTableTableManager
                 Value<DateTime?> lastUpdateCheckAt = const Value.absent(),
                 Value<String?> latestVersion = const Value.absent(),
                 Value<bool> notificationsAsked = const Value.absent(),
+                Value<String?> hrDeviceId = const Value.absent(),
+                Value<String?> hrDeviceName = const Value.absent(),
               }) => AppSettingsTableCompanion.insert(
                 id: id,
                 defaultSets: defaultSets,
@@ -10156,6 +10606,8 @@ class $$AppSettingsTableTableTableManager
                 lastUpdateCheckAt: lastUpdateCheckAt,
                 latestVersion: latestVersion,
                 notificationsAsked: notificationsAsked,
+                hrDeviceId: hrDeviceId,
+                hrDeviceName: hrDeviceName,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -10222,6 +10674,305 @@ typedef $$AppSettingsTableTableProcessedTableManager =
       AppSettings,
       PrefetchHooks Function({bool lastSelectedPlanId})
     >;
+typedef $$HeartRateSamplesTableCreateCompanionBuilder =
+    HeartRateSamplesCompanion Function({
+      Value<int> id,
+      required int sessionId,
+      required DateTime recordedAt,
+      required int bpm,
+    });
+typedef $$HeartRateSamplesTableUpdateCompanionBuilder =
+    HeartRateSamplesCompanion Function({
+      Value<int> id,
+      Value<int> sessionId,
+      Value<DateTime> recordedAt,
+      Value<int> bpm,
+    });
+
+final class $$HeartRateSamplesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $HeartRateSamplesTable, HeartRateSample> {
+  $$HeartRateSamplesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $SessionsTable _sessionIdTable(_$AppDatabase db) =>
+      db.sessions.createAlias('heart_rate_samples__session_id__sessions__id');
+
+  $$SessionsTableProcessedTableManager get sessionId {
+    final $_column = $_itemColumn<int>('session_id')!;
+
+    final manager = $$SessionsTableTableManager(
+      $_db,
+      $_db.sessions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$HeartRateSamplesTableFilterComposer
+    extends Composer<_$AppDatabase, $HeartRateSamplesTable> {
+  $$HeartRateSamplesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get recordedAt => $composableBuilder(
+    column: $table.recordedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get bpm => $composableBuilder(
+    column: $table.bpm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$SessionsTableFilterComposer get sessionId {
+    final $$SessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.sessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.sessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$HeartRateSamplesTableOrderingComposer
+    extends Composer<_$AppDatabase, $HeartRateSamplesTable> {
+  $$HeartRateSamplesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get recordedAt => $composableBuilder(
+    column: $table.recordedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get bpm => $composableBuilder(
+    column: $table.bpm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$SessionsTableOrderingComposer get sessionId {
+    final $$SessionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.sessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SessionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.sessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$HeartRateSamplesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HeartRateSamplesTable> {
+  $$HeartRateSamplesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get recordedAt => $composableBuilder(
+    column: $table.recordedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get bpm =>
+      $composableBuilder(column: $table.bpm, builder: (column) => column);
+
+  $$SessionsTableAnnotationComposer get sessionId {
+    final $$SessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.sessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.sessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$HeartRateSamplesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HeartRateSamplesTable,
+          HeartRateSample,
+          $$HeartRateSamplesTableFilterComposer,
+          $$HeartRateSamplesTableOrderingComposer,
+          $$HeartRateSamplesTableAnnotationComposer,
+          $$HeartRateSamplesTableCreateCompanionBuilder,
+          $$HeartRateSamplesTableUpdateCompanionBuilder,
+          (HeartRateSample, $$HeartRateSamplesTableReferences),
+          HeartRateSample,
+          PrefetchHooks Function({bool sessionId})
+        > {
+  $$HeartRateSamplesTableTableManager(
+    _$AppDatabase db,
+    $HeartRateSamplesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HeartRateSamplesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HeartRateSamplesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HeartRateSamplesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> sessionId = const Value.absent(),
+                Value<DateTime> recordedAt = const Value.absent(),
+                Value<int> bpm = const Value.absent(),
+              }) => HeartRateSamplesCompanion(
+                id: id,
+                sessionId: sessionId,
+                recordedAt: recordedAt,
+                bpm: bpm,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int sessionId,
+                required DateTime recordedAt,
+                required int bpm,
+              }) => HeartRateSamplesCompanion.insert(
+                id: id,
+                sessionId: sessionId,
+                recordedAt: recordedAt,
+                bpm: bpm,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$HeartRateSamplesTable, HeartRateSample>(table),
+                  $$HeartRateSamplesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({sessionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (sessionId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.sessionId,
+                        referencedTable: $$HeartRateSamplesTableReferences
+                            ._sessionIdTable(db),
+                        referencedColumn: $$HeartRateSamplesTableReferences
+                            ._sessionIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$HeartRateSamplesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HeartRateSamplesTable,
+      HeartRateSample,
+      $$HeartRateSamplesTableFilterComposer,
+      $$HeartRateSamplesTableOrderingComposer,
+      $$HeartRateSamplesTableAnnotationComposer,
+      $$HeartRateSamplesTableCreateCompanionBuilder,
+      $$HeartRateSamplesTableUpdateCompanionBuilder,
+      (HeartRateSample, $$HeartRateSamplesTableReferences),
+      HeartRateSample,
+      PrefetchHooks Function({bool sessionId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -10248,4 +10999,6 @@ class $AppDatabaseManager {
       $$BodyWeightEntriesTableTableManager(_db, _db.bodyWeightEntries);
   $$AppSettingsTableTableTableManager get appSettingsTable =>
       $$AppSettingsTableTableTableManager(_db, _db.appSettingsTable);
+  $$HeartRateSamplesTableTableManager get heartRateSamples =>
+      $$HeartRateSamplesTableTableManager(_db, _db.heartRateSamples);
 }

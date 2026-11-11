@@ -125,6 +125,17 @@ Map<String, String> buildCsvExport(Dataset data) {
       'volume_kg',
       'notes',
     ], sessionRows),
+    // 1.5.0: heart rate of finished trainings.
+    'heart_rate.csv': toCsv(
+      const ['session_id', 'recorded_at', 'bpm'],
+      [
+        for (final h in [
+          for (final h in data.heartRateSamples)
+            if (sessionIds.contains(h.sessionId)) h,
+        ]..sort((a, b) => a.recordedAt.compareTo(b.recordedAt)))
+          [h.sessionId, isoWithOffset(h.recordedAt), h.bpm],
+      ],
+    ),
     'body_weight.csv': toCsv(
       const ['date', 'weight_kg'],
       [

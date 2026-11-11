@@ -1,6 +1,7 @@
 import 'body_weight_entry.dart';
 import 'exercise.dart';
 import 'group.dart';
+import 'heart_rate_sample.dart';
 import 'plan.dart';
 import 'session.dart';
 
@@ -18,6 +19,7 @@ final class Dataset {
     this.sessionSupersets = const [],
     this.sets = const [],
     this.bodyWeights = const [],
+    this.heartRateSamples = const [],
   });
 
   final List<Exercise> exercises;
@@ -30,4 +32,7 @@ final class Dataset {
   final List<SessionSuperset> sessionSupersets;
   final List<SetEntry> sets;
   final List<BodyWeightEntry> bodyWeights;
+
+  /// Heart rate during trainings (1.5.0).
+  final List<HeartRateSample> heartRateSamples;
 }

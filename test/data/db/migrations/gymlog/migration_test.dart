@@ -10,6 +10,7 @@ import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v4.dart' as v4;
 import 'generated/schema_v5.dart' as v5;
+import 'generated/schema_v6.dart' as v6;
 
 /// Migrations must keep every user data row (CLAUDE.md, rule 4).
 void main() {
@@ -558,6 +559,64 @@ void main() {
               timerCountdown: 0,
             ),
         ]);
+      },
+    );
+  });
+
+  test('migration from v5 to v6: sessions and settings stay, no heart rate '
+      'yet (1.5.0)', () async {
+    const t = '2026-11-09T17:00:00.000Z';
+    const session = v5.SessionsData(
+      id: 1,
+      planNameSnapshot: 'Push',
+      startedAt: t,
+      endedAt: '2026-11-09T18:00:00.000Z',
+      notes: 'gut',
+    );
+    const oldSettings = v5.AppSettingsData(
+      id: 1,
+      defaultSets: 4,
+      defaultRestSec: 120,
+      restTimerEnabled: 1,
+      vibrationEnabled: 1,
+      keepScreenOn: 1,
+      autoActivateNext: 0,
+      themeMode: 'dark',
+      backupReminderDays: 30,
+      defaultStep: 2.5,
+      defaultStepUnit: 'kg',
+      notifyEvening: 0,
+      eveningMinute: 1140,
+      notifyBefore: 1,
+      beforeMinutes: 60,
+      notifyRest: 1,
+      notifyOpenSession: 1,
+      notifyBackup: 1,
+      notifyStreak: 0,
+      checkUpdates: 1,
+      bookingUrl: 'https://example.org',
+      notificationsAsked: 1,
+    );
+    await verifier.testWithDataIntegrity(
+      oldVersion: 5,
+      newVersion: 6,
+      createOld: v5.DatabaseAtV5.new,
+      createNew: v6.DatabaseAtV6.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insert(oldDb.sessions, session);
+        batch.insert(oldDb.appSettings, oldSettings);
+      },
+      validateItems: (newDb) async {
+        final sessions = await newDb.select(newDb.sessions).get();
+        expect(sessions.single.notes, 'gut');
+        expect(await newDb.select(newDb.heartRateSamples).get(), isEmpty);
+        final s = (await newDb.select(newDb.appSettings).get()).single;
+        expect(
+          (s.defaultSets, s.notifyStreak, s.bookingUrl),
+          (4, 0, 'https://example.org'),
+        );
+        expect((s.hrDeviceId, s.hrDeviceName), (null, null));
       },
     );
   });

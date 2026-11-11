@@ -7,6 +7,7 @@ export 'dataset.dart';
 export 'enums.dart';
 export 'exercise.dart';
 export 'group.dart';
+export 'heart_rate_sample.dart';
 export 'local_date.dart';
 export 'plan.dart';
 export 'session.dart';

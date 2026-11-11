@@ -37,15 +37,19 @@ void main() {
   test('main manifest: only the approved permissions', () {
     final manifest = File('android/app/src/main/AndroidManifest.xml')
         .readAsStringSync();
-    final permissions = RegExp(r'uses-permission\s+android:name="([^"]+)"')
-        .allMatches(manifest)
-        .map((m) => m.group(1))
-        .toList();
+    // Lines with tools:node="remove" take permissions of plugins out.
+    final permissions =
+        RegExp(r'<uses-permission\s+android:name="([^"]+)"([^>]*)/>')
+            .allMatches(manifest)
+            .where((m) => !m.group(2)!.contains('tools:node="remove"'))
+            .map((m) => m.group(1))
+            .toList();
     // Exact alarm for the rest-over vibration in the background (1.0.1).
     // 1.2.0 (approved): notifications, rescheduling after a reboot and the
     // update check on GitHub – the only network access. No
     // REQUEST_INSTALL_PACKAGES: an app that installs downloaded APKs itself
     // is blocked by Play Protect as harmful (1.2.2); the browser does it.
+    // 1.5.0 (approved): Bluetooth heart rate monitor, without location.
     expect(permissions, [
       'android.permission.VIBRATE',
       'android.permission.USE_EXACT_ALARM',
@@ -53,7 +57,24 @@ void main() {
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.RECEIVE_BOOT_COMPLETED',
       'android.permission.INTERNET',
+      'android.permission.BLUETOOTH_SCAN',
+      'android.permission.BLUETOOTH_CONNECT',
     ]);
+    expect(
+      manifest,
+      contains(
+        '"android.permission.BLUETOOTH_SCAN" '
+        'android:usesPermissionFlags="neverForLocation"',
+      ),
+    );
+    expect(manifest, isNot(contains('LOCATION')));
+    for (final legacy in ['BLUETOOTH', 'BLUETOOTH_ADMIN']) {
+      expect(
+        manifest,
+        contains('"android.permission.$legacy" tools:node="remove"'),
+        reason: 'the plugin adds it for Android ≤ 11',
+      );
+    }
     expect(
       manifest,
       contains(

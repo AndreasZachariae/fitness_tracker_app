@@ -53,6 +53,7 @@ class MaintenanceRepository {
       sessionSupersets: await _db.select(_db.sessionSupersets).get(),
       sets: await _db.select(_db.setEntries).get(),
       bodyWeights: await _db.select(_db.bodyWeightEntries).get(),
+      heartRateSamples: await _db.select(_db.heartRateSamples).get(),
     ),
   );
 
@@ -93,6 +94,9 @@ class MaintenanceRepository {
         b.insertAll(_db.bodyWeightEntries, [
           for (final w in data.bodyWeights) w.toInsertable(),
         ]);
+        b.insertAll(_db.heartRateSamples, [
+          for (final h in data.heartRateSamples) h.toInsertable(),
+        ]);
       });
       final planId = current.lastSelectedPlanId;
       final keepPlan = planId != null && data.plans.any((p) => p.id == planId);
@@ -120,6 +124,7 @@ class MaintenanceRepository {
 
   Future<void> _deleteAllRows() async {
     // Children first, so no foreign key is ever violated.
+    await _db.delete(_db.heartRateSamples).go();
     await _db.delete(_db.setEntries).go();
     await _db.delete(_db.sessionExercises).go();
     await _db.delete(_db.sessionSupersets).go();
@@ -161,6 +166,9 @@ class MaintenanceRepository {
     }
     for (final w in data.bodyWeights) {
       check(w.createdAt, 'bodyWeight.createdAt');
+    }
+    for (final h in data.heartRateSamples) {
+      check(h.recordedAt, 'heartRateSample.recordedAt');
     }
   }
 }

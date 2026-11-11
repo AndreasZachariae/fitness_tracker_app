@@ -20,6 +20,7 @@ import '../../domain/weight_steps.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/exercise_type_icon.dart';
 import '../../widgets/snackbars.dart';
+import '../heart_rate/heart_rate_widgets.dart';
 import '../training/session/session_tiles.dart' show RecordLabel;
 import '../training/session/set_edit_dialog.dart';
 
@@ -247,6 +248,11 @@ class _SessionDetailPageState extends ConsumerState<SessionDetailPage> {
                   onChanged: _onNotesChanged,
                 ),
                 const SizedBox(height: 12),
+                // 1.5.0: only with a heart rate monitor.
+                HeartRateSection(
+                  sessionId: session.id,
+                  start: session.startedAt,
+                ),
                 if (details.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),

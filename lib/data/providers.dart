@@ -18,6 +18,7 @@ import 'notifications/reminder_service.dart';
 import 'notifications/update_checker.dart';
 import 'repositories/body_weight_repository.dart';
 import 'repositories/exercise_repository.dart';
+import 'repositories/heart_rate_repository.dart';
 import 'repositories/maintenance_repository.dart';
 import 'repositories/plan_repository.dart';
 import 'repositories/session_repository.dart';
@@ -174,6 +175,17 @@ final appInfoProvider = FutureProvider<AppInfo>((ref) async {
 final fileGatewayProvider = Provider<FileGateway>(
   (ref) => const PlatformFileGateway(),
 );
+
+final heartRateRepositoryProvider = Provider<HeartRateRepository>(
+  (ref) => HeartRateRepository(ref.watch(databaseProvider)),
+);
+
+/// Heart rate of a training (1.5.0), updated live.
+final heartRateSamplesProvider =
+    StreamProvider.family<List<HeartRateSample>, int>(
+      (ref, sessionId) =>
+          ref.watch(heartRateRepositoryProvider).watchSamples(sessionId),
+    );
 
 /// Import of a FitNotes workout (1.4.0).
 final fitNotesImportProvider = Provider<FitNotesImportService>(
