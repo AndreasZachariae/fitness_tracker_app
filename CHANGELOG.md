@@ -4,13 +4,21 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.4.0] – unveröffentlicht
+## [1.4.0] – 2026-11-11
 
 ### Neu
 - **Plan aus FitNotes importieren:** Unter Einstellungen → Pläne ein in FitNotes geteiltes Training (Textdatei) auswählen. GymLog erkennt Übungen, Sätze, Wiederholungen, Gewichte und Zeiten und legt daraus einen Plan an.
 - In einer Vorschau lässt sich für jede Übung wählen, ob sie neu angelegt oder einer vorhandenen GymLog-Übung zugeordnet wird; bekannte Übungen wie Bankdrücken werden automatisch erkannt.
 - Gruppen mit „Rotate“ im Namen werden ein Wechsel, Gruppen mit „Set“ ein Superset.
 - Auf Wunsch kommt das Training selbst in den Verlauf – dann stehen die Gewichte beim nächsten Training schon vorbefüllt.
+
+<details>
+<summary>Commits seit v1.3.1 (für Entwickler)</summary>
+
+#### Features
+- import a plan from a FitNotes workout (1.4.0) (`f1bb408`)
+
+</details>
 
 ## [1.3.1] – 2026-11-10
 
