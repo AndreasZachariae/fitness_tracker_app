@@ -31,9 +31,10 @@ abstract interface class HeartRateMonitor {
   /// Monitors nearby until the subscription is cancelled.
   Stream<HeartRateDevice> scan();
 
-  /// Connects and emits beats per minute. Ends with an error when the
-  /// connection is lost; cancelling the subscription disconnects.
-  Stream<int> heartRate(String deviceId);
+  /// Connects and emits each value (beats per minute, RR intervals sent?).
+  /// Ends with an error when the connection is lost; cancelling the
+  /// subscription disconnects.
+  Stream<HeartRateReading> heartRate(String deviceId);
 }
 
 final class BluetoothHeartRateMonitor implements HeartRateMonitor {
@@ -120,11 +121,11 @@ final class BluetoothHeartRateMonitor implements HeartRateMonitor {
   }
 
   @override
-  Stream<int> heartRate(String deviceId) {
+  Stream<HeartRateReading> heartRate(String deviceId) {
     StreamSubscription<Uint8List>? values;
     StreamSubscription<bool>? connection;
-    late final StreamController<int> controller;
-    controller = StreamController<int>(
+    late final StreamController<HeartRateReading> controller;
+    controller = StreamController<HeartRateReading>(
       onListen: () async {
         try {
           await UniversalBle.connect(
@@ -144,8 +145,8 @@ final class BluetoothHeartRateMonitor implements HeartRateMonitor {
                 deviceId,
                 _measurement,
               ).listen((bytes) {
-                if (parseHeartRateMeasurement(bytes) case final bpm?) {
-                  controller.add(bpm);
+                if (parseHeartRateReading(bytes) case final reading?) {
+                  controller.add(reading);
                 }
               });
           await UniversalBle.subscribeNotifications(

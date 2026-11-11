@@ -208,6 +208,7 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
       sessions,
       exercises,
       attachedDatabase.bodyWeightEntries,
+      attachedDatabase.sessionHeartRates,
     },
   ).watch().map((_) {});
 

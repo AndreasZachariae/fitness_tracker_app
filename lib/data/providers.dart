@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../core/build_info.dart';
 import '../core/clock.dart';
 import '../core/notifications.dart';
+import '../domain/heart_rate.dart';
 import '../domain/history.dart';
 import '../domain/models/models.dart';
 import '../domain/records.dart';
@@ -180,7 +181,26 @@ final heartRateRepositoryProvider = Provider<HeartRateRepository>(
   (ref) => HeartRateRepository(ref.watch(databaseProvider)),
 );
 
-/// Heart rate of a training (1.5.0), updated live.
+/// What is kept of a finished training's heart rate (1.5.1).
+final sessionHeartRateProvider = StreamProvider.family<SessionHeartRate?, int>(
+  (ref, sessionId) =>
+      ref.watch(heartRateRepositoryProvider).watchSummary(sessionId),
+);
+
+/// The average distribution of earlier trainings of the same plan (or of
+/// all), for the violin plot (1.5.1).
+final earlierHeartRateProvider = FutureProvider.family<Map<int, double>, int>((
+  ref,
+  sessionId,
+) async {
+  ref.watch(sessionHeartRateProvider(sessionId));
+  final earlier = await ref
+      .read(heartRateRepositoryProvider)
+      .earlierSummaries(sessionId);
+  return averageDistribution([for (final e in earlier) e.distribution]);
+});
+
+/// Buffered heart rate of the running training (1.5.0), updated live.
 final heartRateSamplesProvider =
     StreamProvider.family<List<HeartRateSample>, int>(
       (ref, sessionId) =>

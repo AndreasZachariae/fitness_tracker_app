@@ -204,6 +204,10 @@ class SessionExercises extends Table {
     onDelete: KeyAction.setNull,
   )();
 
+  // Schema 7 (1.5.1): heart rate over the exercise.
+  IntColumn get hrAvg => integer().nullable()();
+  IntColumn get hrMax => integer().nullable()();
+
   @override
   List<Set<Column>> get uniqueKeys => [
     {sessionId, exerciseId},
@@ -241,6 +245,9 @@ class SetEntries extends Table {
       integer().nullable().check(durationSec.isBiggerOrEqualValue(1))();
   BoolColumn get isWarmup => boolean().withDefault(const Constant(false))();
   DateTimeColumn get completedAt => dateTime()();
+  // Schema 7 (1.5.1): heart rate of the set.
+  IntColumn get hrAvg => integer().nullable()();
+  IntColumn get hrPeak => integer().nullable()();
 }
 
 @UseRowClass(BodyWeightEntry, generateInsertable: true)
@@ -254,7 +261,24 @@ class BodyWeightEntries extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
-/// Heart rate during a training (schema 6, 1.5.0); goes with its session.
+/// What is kept of a training's heart rate (schema 7, 1.5.1).
+@UseRowClass(SessionHeartRate, generateInsertable: true)
+class SessionHeartRates extends Table {
+  IntColumn get sessionId =>
+      integer().references(Sessions, #id, onDelete: KeyAction.cascade)();
+  IntColumn get avgBpm => integer()();
+  IntColumn get maxBpm => integer()();
+  IntColumn get minBpm => integer()();
+  IntColumn get seconds => integer()();
+  TextColumn get histogram => text()();
+  TextColumn get curve => text()();
+
+  @override
+  Set<Column> get primaryKey => {sessionId};
+}
+
+/// Heart rate during a training (schema 6, 1.5.0); since 1.5.1 only a buffer
+/// of the running training: summarized and emptied when it ends.
 @UseRowClass(HeartRateSample, generateInsertable: true)
 @TableIndex(
   name: 'heart_rate_samples_session',

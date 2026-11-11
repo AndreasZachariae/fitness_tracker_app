@@ -9,6 +9,7 @@ import '../../domain/session_rules.dart';
 import '../../domain/set_validation.dart';
 import '../db/database.dart';
 import '../db/storage_time.dart';
+import '../heart_rate/heart_rate_summarizer.dart';
 import 'repository_exceptions.dart';
 
 /// A record set in a session, for the summary (SPEC §6.3, §7.7).
@@ -457,6 +458,8 @@ class SessionRepository {
             endedAt: end.isBefore(session.startedAt) ? session.startedAt : end,
           ),
         );
+        // Only summaries of the heart rate are kept (1.5.1).
+        await summarizeSessionHeartRate(_db, sessionId);
         if (session.planId case final planId?) {
           await _advanceRotations(planId, sessionId);
         }

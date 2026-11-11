@@ -4,6 +4,7 @@ import 'group.dart';
 import 'heart_rate_sample.dart';
 import 'plan.dart';
 import 'session.dart';
+import 'session_heart_rate.dart';
 
 /// The complete user data except settings, with ids. Used to replace all
 /// data at once (demo data now, backup import later).
@@ -20,6 +21,7 @@ final class Dataset {
     this.sets = const [],
     this.bodyWeights = const [],
     this.heartRateSamples = const [],
+    this.sessionHeartRates = const [],
   });
 
   final List<Exercise> exercises;
@@ -33,6 +35,9 @@ final class Dataset {
   final List<SetEntry> sets;
   final List<BodyWeightEntry> bodyWeights;
 
-  /// Heart rate during trainings (1.5.0).
+  /// Heart rate of the running training (buffer, 1.5.0/1.5.1).
   final List<HeartRateSample> heartRateSamples;
+
+  /// What is kept of finished trainings' heart rate (1.5.1).
+  final List<SessionHeartRate> sessionHeartRates;
 }

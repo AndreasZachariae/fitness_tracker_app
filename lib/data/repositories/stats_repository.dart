@@ -21,6 +21,10 @@ class StatsRepository {
       ],
       bodyWeights: weights,
       exercises: await _db.exercisesDao.getAll(),
+      heartRates: {
+        for (final h in await _db.select(_db.sessionHeartRates).get())
+          h.sessionId: h,
+      },
     );
   }
 }

@@ -11,5 +11,6 @@ export 'heart_rate_sample.dart';
 export 'local_date.dart';
 export 'plan.dart';
 export 'session.dart';
+export 'session_heart_rate.dart';
 export 'set_values.dart';
 export 'targets.dart';

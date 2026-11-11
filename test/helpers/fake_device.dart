@@ -4,6 +4,7 @@ import 'package:gymlog/core/device.dart';
 import 'package:gymlog/core/heart_rate_monitor.dart';
 import 'package:gymlog/core/notifications.dart';
 import 'package:gymlog/data/notifications/update_checker.dart';
+import 'package:gymlog/domain/heart_rate.dart';
 
 /// Records calls instead of vibrating.
 final class FakeFeedback implements DeviceFeedback {
@@ -159,13 +160,13 @@ final class FakeHeartRateMonitor implements HeartRateMonitor {
   final devices = <HeartRateDevice>[];
   final connects = <String>[];
   int permissionRequests = 0;
-  StreamController<int>? _current;
+  StreamController<HeartRateReading>? _current;
 
   /// Whether a heart rate stream is open (connected).
   bool get connected => _current != null && !_current!.isClosed;
 
   /// Sends a value on the open connection.
-  void beat(int bpm) => _current?.add(bpm);
+  void beat(int bpm, {bool rr = false}) => _current?.add((bpm: bpm, hasRr: rr));
 
   /// The connection drops.
   void lose() {
@@ -188,10 +189,10 @@ final class FakeHeartRateMonitor implements HeartRateMonitor {
   Stream<HeartRateDevice> scan() => Stream.fromIterable(devices);
 
   @override
-  Stream<int> heartRate(String deviceId) {
+  Stream<HeartRateReading> heartRate(String deviceId) {
     connects.add(deviceId);
-    late final StreamController<int> controller;
-    controller = StreamController<int>(
+    late final StreamController<HeartRateReading> controller;
+    controller = StreamController<HeartRateReading>(
       onCancel: () {
         if (_current == controller) _current = null;
       },

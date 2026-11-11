@@ -4,6 +4,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 import '../../core/clock.dart';
 import '../../domain/legacy_steps.dart';
 import '../../domain/models/models.dart';
+import '../heart_rate/heart_rate_summarizer.dart';
 import 'converters.dart';
 import 'daos/body_weight_dao.dart';
 import 'daos/exercises_dao.dart';
@@ -31,6 +32,7 @@ part 'database.g.dart';
     BodyWeightEntries,
     AppSettingsTable,
     HeartRateSamples,
+    SessionHeartRates,
   ],
   daos: [ExercisesDao, PlansDao, SessionsDao, BodyWeightDao, SettingsDao],
 )
@@ -48,7 +50,7 @@ class AppDatabase extends _$AppDatabase {
   final Clock? libraryClock;
 
   /// Current schema version. Changes only via migration (CLAUDE.md, rule 4).
-  static const currentSchemaVersion = 6;
+  static const currentSchemaVersion = 7;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -135,6 +137,22 @@ class AppDatabase extends _$AppDatabase {
         await m.createIndex(schema.heartRateSamplesSession);
         await m.addColumn(schema.appSettings, schema.appSettings.hrDeviceId);
         await m.addColumn(schema.appSettings, schema.appSettings.hrDeviceName);
+      },
+      // 1.5.1: only summaries of the heart rate are kept.
+      from6To7: (m, schema) async {
+        await m.createTable(schema.sessionHeartRates);
+        await m.addColumn(schema.setEntries, schema.setEntries.hrAvg);
+        await m.addColumn(schema.setEntries, schema.setEntries.hrPeak);
+        await m.addColumn(
+          schema.sessionExercises,
+          schema.sessionExercises.hrAvg,
+        );
+        await m.addColumn(
+          schema.sessionExercises,
+          schema.sessionExercises.hrMax,
+        );
+        // The series of finished trainings (1.5.0) becomes summaries.
+        await summarizeFinishedHeartRates(this);
       },
     ),
     beforeOpen: (details) async {

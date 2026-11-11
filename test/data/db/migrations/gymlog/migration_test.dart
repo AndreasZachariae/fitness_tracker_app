@@ -11,6 +11,7 @@ import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v4.dart' as v4;
 import 'generated/schema_v5.dart' as v5;
 import 'generated/schema_v6.dart' as v6;
+import 'generated/schema_v7.dart' as v7;
 
 /// Migrations must keep every user data row (CLAUDE.md, rule 4).
 void main() {
@@ -617,6 +618,98 @@ void main() {
           (4, 0, 'https://example.org'),
         );
         expect((s.hrDeviceId, s.hrDeviceName), (null, null));
+      },
+    );
+  });
+
+  test('migration from v6 to v7: the 1.5.0 heart rate series of finished '
+      'trainings become summaries; a running one keeps its buffer', () async {
+    String t(int seconds) => DateTime.utc(
+      2026,
+      11,
+      9,
+      17,
+    ).add(Duration(seconds: seconds)).toIso8601String();
+    await verifier.testWithDataIntegrity(
+      oldVersion: 6,
+      newVersion: 7,
+      createOld: v6.DatabaseAtV6.new,
+      createNew: v7.DatabaseAtV7.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch
+          ..insert(
+            oldDb.exercises,
+            v6.ExercisesData(
+              id: 1,
+              name: 'Bankdrücken',
+              type: 'weight_reps',
+              incrementKg: 2.5,
+              includeInStrengthIndex: 1,
+              notes: '',
+              archived: 0,
+              createdAt: t(0),
+              stepMode: 'kg',
+              incrementLbs: 15,
+              timerCountdown: 0,
+            ),
+          )
+          ..insertAll(oldDb.sessions, [
+            v6.SessionsData(id: 1, startedAt: t(0), endedAt: t(600), notes: ''),
+            v6.SessionsData(id: 2, startedAt: t(3600), notes: ''),
+          ])
+          ..insert(
+            oldDb.sessionExercises,
+            v6.SessionExercisesData(
+              id: 1,
+              sessionId: 1,
+              exerciseId: 1,
+              position: 0,
+              targetSets: 1,
+              status: 'done',
+              completedAt: t(120),
+            ),
+          )
+          ..insert(
+            oldDb.setEntries,
+            v6.SetEntriesData(
+              id: 1,
+              sessionExerciseId: 1,
+              setIndex: 1,
+              weightKg: 60,
+              reps: 10,
+              isWarmup: 0,
+              completedAt: t(120),
+            ),
+          )
+          // 1.5.0 stored a value every 5 s.
+          ..insertAll(oldDb.heartRateSamples, [
+            for (var i = 0; i < 12; i++)
+              v6.HeartRateSamplesData(
+                id: i + 1,
+                sessionId: 1,
+                recordedAt: t(60 + i * 5),
+                bpm: 100 + i,
+              ),
+            v6.HeartRateSamplesData(
+              id: 100,
+              sessionId: 2,
+              recordedAt: t(3700),
+              bpm: 90,
+            ),
+          ]);
+      },
+      validateItems: (newDb) async {
+        final rest = await newDb.select(newDb.heartRateSamples).get();
+        expect(rest.map((h) => h.sessionId), [2], reason: 'running one');
+        final kept = (await newDb.select(newDb.sessionHeartRates).get()).single;
+        expect((kept.sessionId, kept.maxBpm, kept.minBpm), (1, 111, 100));
+        expect(kept.curve, ',106');
+        final set = (await newDb.select(newDb.setEntries).get()).single;
+        // 60–120 s: 100 … 111; the peak until 140 s.
+        expect((set.hrAvg, set.hrPeak), (106, 111));
+        final se = (await newDb.select(newDb.sessionExercises).get()).single;
+        expect(se.hrMax, 111);
       },
     );
   });

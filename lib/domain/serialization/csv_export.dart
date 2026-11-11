@@ -59,10 +59,14 @@ Map<String, String> buildCsvExport(Dataset data) {
         isoWithOffset(set.completedAt),
         // 1.1.0: "level" = weight_kg holds a level number (levels without kg).
         storesKg(e) ? 'kg' : 'level',
+        // 1.5.1: heart rate of the set (only the summary is kept).
+        set.hrAvg,
+        set.hrPeak,
       ]);
     }
   }
 
+  final heartRates = {for (final h in data.sessionHeartRates) h.sessionId: h};
   final sessionRows = [
     for (final s in finished)
       () {
@@ -85,6 +89,8 @@ Map<String, String> buildCsvExport(Dataset data) {
           details.fold<int>(0, (n, d) => n + workingSets(d.sets).length),
           sessionVolume(details),
           s.notes,
+          heartRates[s.id]?.avgBpm,
+          heartRates[s.id]?.maxBpm,
         ];
       }(),
   ];
@@ -113,6 +119,8 @@ Map<String, String> buildCsvExport(Dataset data) {
       'e1rm_kg',
       'completed_at',
       'weight_unit',
+      'hr_avg_bpm',
+      'hr_peak_bpm',
     ], setRows),
     'sessions.csv': toCsv(const [
       'session_id',
@@ -124,18 +132,9 @@ Map<String, String> buildCsvExport(Dataset data) {
       'n_sets',
       'volume_kg',
       'notes',
+      'hr_avg_bpm',
+      'hr_max_bpm',
     ], sessionRows),
-    // 1.5.0: heart rate of finished trainings.
-    'heart_rate.csv': toCsv(
-      const ['session_id', 'recorded_at', 'bpm'],
-      [
-        for (final h in [
-          for (final h in data.heartRateSamples)
-            if (sessionIds.contains(h.sessionId)) h,
-        ]..sort((a, b) => a.recordedAt.compareTo(b.recordedAt)))
-          [h.sessionId, isoWithOffset(h.recordedAt), h.bpm],
-      ],
-    ),
     'body_weight.csv': toCsv(
       const ['date', 'weight_kg'],
       [

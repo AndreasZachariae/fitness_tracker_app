@@ -38,8 +38,9 @@ final heartRateLiveProvider =
     );
 
 /// Records the heart rate during a training (1.5.0): connects to the chosen
-/// monitor while a training runs, reconnects after a loss, stores a value
-/// every 5 seconds at once and disconnects when the training ends.
+/// monitor while a training runs, reconnects after a loss and disconnects
+/// when the training ends. Since 1.5.1 every value goes into the buffer,
+/// written every [flushEvery]; the end of the training keeps only summaries.
 /// Invisible; wraps the whole app.
 class HeartRateRecorder extends ConsumerStatefulWidget {
   const HeartRateRecorder({required this.child, super.key});
@@ -47,6 +48,7 @@ class HeartRateRecorder extends ConsumerStatefulWidget {
   final Widget child;
 
   static const retryAfter = Duration(seconds: 5);
+  static const flushEvery = Duration(seconds: 10);
 
   @override
   ConsumerState<HeartRateRecorder> createState() => _HeartRateRecorderState();
@@ -57,9 +59,11 @@ typedef _Target = ({int sessionId, String deviceId});
 class _HeartRateRecorderState extends ConsumerState<HeartRateRecorder>
     with WidgetsBindingObserver {
   _Target? _target;
-  StreamSubscription<int>? _readings;
+  StreamSubscription<HeartRateReading>? _readings;
   Timer? _retry;
-  DateTime? _lastStoredAt;
+  Timer? _flushTimer;
+  final _pending = <({DateTime at, int bpm})>[];
+  int? _pendingSession;
 
   Clock get _clock => ref.read(clockProvider);
   HeartRateLiveNotifier get _live => ref.read(heartRateLiveProvider.notifier);
@@ -74,8 +78,27 @@ class _HeartRateRecorderState extends ConsumerState<HeartRateRecorder>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _retry?.cancel();
+    _flushTimer?.cancel();
     unawaited(_readings?.cancel());
     super.dispose();
+  }
+
+  /// Writes the collected values (a few seconds' worth at most).
+  void _flush() {
+    final session = _pendingSession;
+    if (_pending.isEmpty || session == null) return;
+    final values = [..._pending];
+    _pending.clear();
+    unawaited(
+      ref
+          .read(heartRateRepositoryProvider)
+          .addSamples(session, values)
+          .catchError((Object e) {
+            // The training was deleted in the meantime.
+            debugPrint('Heart rate not stored: $e');
+            return false;
+          }),
+    );
   }
 
   @override
@@ -91,6 +114,7 @@ class _HeartRateRecorderState extends ConsumerState<HeartRateRecorder>
   Future<void> _stop() async {
     _retry?.cancel();
     _retry = null;
+    _flush();
     final readings = _readings;
     _readings = null;
     await readings?.cancel();
@@ -98,7 +122,6 @@ class _HeartRateRecorderState extends ConsumerState<HeartRateRecorder>
 
   Future<void> _restart() async {
     await _stop();
-    _lastStoredAt = null;
     if (!mounted) return;
     if (_target == null) {
       _live.set(HeartRateStatus.off);
@@ -121,7 +144,7 @@ class _HeartRateRecorderState extends ConsumerState<HeartRateRecorder>
     _readings = monitor
         .heartRate(target.deviceId)
         .listen(
-          (bpm) => _onReading(target, bpm),
+          (reading) => _onReading(target, reading.bpm),
           onError: (Object _) => _lost(target),
           onDone: () => _lost(target),
           cancelOnError: true,
@@ -131,23 +154,14 @@ class _HeartRateRecorderState extends ConsumerState<HeartRateRecorder>
   void _onReading(_Target target, int bpm) {
     if (!mounted || _target != target) return;
     _live.set(HeartRateStatus.connected, bpm);
-    final now = _clock.now();
-    if (shouldStoreSample(
-      now: now,
-      lastReadingAt: now,
-      lastStoredAt: _lastStoredAt,
-    )) {
-      _lastStoredAt = now;
-      unawaited(
-        ref
-            .read(heartRateRepositoryProvider)
-            .addSample(target.sessionId, now, bpm)
-            .catchError((Object e) {
-              // The training was deleted in the meantime.
-              debugPrint('Heart rate not stored: $e');
-            }),
-      );
+    if (_pendingSession != target.sessionId) {
+      _flush();
+      _pendingSession = target.sessionId;
     }
+    _pending.add((at: _clock.now(), bpm: bpm));
+    _flushTimer ??= Timer.periodic(HeartRateRecorder.flushEvery, (_) {
+      if (mounted) _flush();
+    });
   }
 
   void _lost(_Target target) {
@@ -167,6 +181,10 @@ class _HeartRateRecorderState extends ConsumerState<HeartRateRecorder>
         : null;
     if (target != _target) {
       _target = target;
+      if (target == null) {
+        _flushTimer?.cancel();
+        _flushTimer = null;
+      }
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) unawaited(_restart());
       });

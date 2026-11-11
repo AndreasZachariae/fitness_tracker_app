@@ -54,6 +54,7 @@ class MaintenanceRepository {
       sets: await _db.select(_db.setEntries).get(),
       bodyWeights: await _db.select(_db.bodyWeightEntries).get(),
       heartRateSamples: await _db.select(_db.heartRateSamples).get(),
+      sessionHeartRates: await _db.select(_db.sessionHeartRates).get(),
     ),
   );
 
@@ -97,6 +98,9 @@ class MaintenanceRepository {
         b.insertAll(_db.heartRateSamples, [
           for (final h in data.heartRateSamples) h.toInsertable(),
         ]);
+        b.insertAll(_db.sessionHeartRates, [
+          for (final h in data.sessionHeartRates) h.toInsertable(),
+        ]);
       });
       final planId = current.lastSelectedPlanId;
       final keepPlan = planId != null && data.plans.any((p) => p.id == planId);
@@ -125,6 +129,7 @@ class MaintenanceRepository {
   Future<void> _deleteAllRows() async {
     // Children first, so no foreign key is ever violated.
     await _db.delete(_db.heartRateSamples).go();
+    await _db.delete(_db.sessionHeartRates).go();
     await _db.delete(_db.setEntries).go();
     await _db.delete(_db.sessionExercises).go();
     await _db.delete(_db.sessionSupersets).go();

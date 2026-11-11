@@ -37,7 +37,7 @@ class _StatsPageState extends ConsumerState<StatsPage>
 
   void _openExercise(int exerciseId) {
     setState(() => _exerciseId = exerciseId);
-    _tabs.animateTo(0);
+    _tabs.animateTo(1);
   }
 
   @override
@@ -67,9 +67,10 @@ class _StatsPageState extends ConsumerState<StatsPage>
                   maxScaleFactor: 1.5,
                   child: TabBar(
                     controller: _tabs,
+                    // 1.5.1: "Gesamt" first and the start page.
                     tabs: const [
-                      Tab(text: S.statsTabExercise),
                       Tab(text: S.statsTabOverall),
+                      Tab(text: S.statsTabExercise),
                       Tab(text: S.statsTabRecords),
                     ],
                   ),
@@ -78,6 +79,11 @@ class _StatsPageState extends ConsumerState<StatsPage>
                   child: TabBarView(
                     controller: _tabs,
                     children: [
+                      OverallStatsTab(
+                        data: data,
+                        period: _period,
+                        today: today,
+                      ),
                       ExerciseStatsTab(
                         data: data,
                         period: _period,
@@ -86,11 +92,6 @@ class _StatsPageState extends ConsumerState<StatsPage>
                         metrics: _metrics,
                         onExercise: (id) => setState(() => _exerciseId = id),
                         onMetric: (id, m) => setState(() => _metrics[id] = m),
-                      ),
-                      OverallStatsTab(
-                        data: data,
-                        period: _period,
-                        today: today,
                       ),
                       RecordsTab(data: data, onTap: _openExercise),
                     ],

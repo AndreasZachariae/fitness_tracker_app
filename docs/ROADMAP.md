@@ -92,7 +92,23 @@ STATUS: FINISHED
     - Pulsmesser einmal in den Einstellungen suchen und merken; während eines Trainings verbindet GymLog sich automatisch, zeigt den Puls an und speichert den Verlauf.
     - Ø- und Max.-Puls und eine Pulskurve in der Zusammenfassung und im Verlauf.
     - Neue Rechte (vom Menschen freigegeben): Bluetooth suchen (ohne Standort) und verbinden; nur ab Android 12.
-    - Später möglich: Daten von Garmin Connect über Health Connect nach dem Training, Connect-IQ-App auf der Uhr.
+Version 1.5.1 (Herzfrequenz Verbesserungen)
+STATUS: FINISHED
+    - Den Puls nicht oben neben Name und Dauer anzeigen, sondern in der aktiven Übung: rechtsbündig vor dem Drag-Handle, etwas größer; ohne gespeicherten Pulsmesser gar nicht, getrennt grau „–“.
+    - Puls je Satz (Ø und Spitze) und je Übung (Ø und Max) speichern und in den Satzzeilen anzeigen.
+    - Während des Trainings jeden Pulswert in voller Auflösung zwischenspeichern; am Ende nur Zusammenfassungen speichern (Ø/Max/Min, Verteilung, Kurve mit einem Wert pro Minute) und die Zeitreihe löschen.
+    - Zusammenfassung und Verlauf: Kurve, Violinplot des Trainings neben dem Durchschnitt der bisherigen Trainings desselben Plans, Spitzenpuls je Übung.
+    - Beim Testen des Pulsmessers anzeigen, ob RR-Intervalle kommen. HRV wird nicht weiter umgesetzt (Annahme: keine oder ungenaue RR-Intervalle).
+    - Statistik: Tabs Gesamt | Übung | Rekorde, Start auf Gesamt; Verlauf von Ø- und Max-Trainingspuls (Gesamt) und Spitzenpuls je Übung.
+    - CSV-Export nur mit den Zusammenfassungen, keine Zeitreihe.
+Version 1.6.0 (Pulszonen, Cardio und Auswertungen)
+STATUS: PLANNED
+    - Im Tab Körper einmalig Maximalpuls (mit Info-i, wo er in der Garmin-Connect-App steht), Alter und Geschlecht eintragen; daraus die Garmin-Zonen anzeigen. Pulsanzeige in Garmins Zonenfarben, Zeit in Zonen.
+    - Neuer Übungstyp Aufwärmen/Cardio: Ziel ist entweder ein Zielpulswert oder eine Zone, die für X Minuten gehalten werden soll.
+    - Pause nach Puls: optionaler Haken auf der Seite Übung erstellen/bearbeiten; die Pause ist vorbei, wenn der Puls unter einen Wert gefallen ist.
+    - Erholungspuls und Wochenbelastung (TRIMP) in der Statistik, jeweils mit Info-i, wie sie berechnet werden und was sie aussagen.
+    - Kalorien-Schätzung mit Info-i zu den Annahmen.
+    - Warnung bei hohem Puls; wo man sie einstellt (Körper oder Pulsmesser) ist noch offen – möglichst keine neue Einstellungs-Unterseite.
 Version 2.X.0 (Personality)
 STATUS: PLANNED
     - Give the app more individual personality like e.g. Duolingo. The theme should be a little robot.

@@ -34,6 +34,12 @@ void main() {
     await settle(tester);
   }
 
+  /// Since 1.5.1 the statistics start on "Gesamt".
+  Future<void> openExerciseTab(WidgetTester tester) async {
+    await tester.tap(find.text(S.statsTabExercise));
+    await settle(tester);
+  }
+
   /// Bench on 1.9. (60 × 10), 20.10. (62,5 × 10), 30.10. (65 × 8);
   /// plank on 30.10.
   Future<void> seed(WidgetTester tester) => dbWork(tester, () async {
@@ -88,6 +94,7 @@ void main() {
   ) async {
     await seed(tester);
     await openStats(tester);
+    await openExerciseTab(tester);
     // Most recently trained exercise first: bench and plank on 30.10. →
     // bench comes first in the session.
     expect(find.text('Bankdrücken'), findsWidgets);
@@ -115,6 +122,7 @@ void main() {
   testWidgets('choose another exercise; too few points → hint', (tester) async {
     await seed(tester);
     await openStats(tester);
+    await openExerciseTab(tester);
     await tester.tap(find.byIcon(Icons.expand_more));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Plank').last);
@@ -214,6 +222,7 @@ void main() {
     ) async {
       await seed(tester);
       await openStats(tester);
+      await openExerciseTab(tester);
       await expectInfo(
         tester,
         S.metric(ExerciseMetric.estimatedOneRepMax),

@@ -80,10 +80,17 @@ final class SessionExercise {
     required this.status,
     required this.completedAt,
     this.supersetId,
+    this.hrAvg,
+    this.hrMax,
   });
 
   /// Superset of the session this exercise belongs to (M9).
   final int? supersetId;
+
+  /// Heart rate over all sets of the exercise (1.5.1), kept after the
+  /// training; null without a monitor.
+  final int? hrAvg;
+  final int? hrMax;
 
   final int id;
   final int sessionId;
@@ -104,6 +111,8 @@ final class SessionExercise {
     SessionExerciseStatus? status,
     Object? completedAt = unset,
     Object? supersetId = unset,
+    Object? hrAvg = unset,
+    Object? hrMax = unset,
   }) {
     return SessionExercise(
       id: id,
@@ -117,6 +126,8 @@ final class SessionExercise {
       status: status ?? this.status,
       completedAt: pick<DateTime?>(completedAt, this.completedAt),
       supersetId: pick<int?>(supersetId, this.supersetId),
+      hrAvg: pick<int?>(hrAvg, this.hrAvg),
+      hrMax: pick<int?>(hrMax, this.hrMax),
     );
   }
 
@@ -133,7 +144,9 @@ final class SessionExercise {
       other.restSec == restSec &&
       other.status == status &&
       other.completedAt == completedAt &&
-      other.supersetId == supersetId;
+      other.supersetId == supersetId &&
+      other.hrAvg == hrAvg &&
+      other.hrMax == hrMax;
 
   @override
   int get hashCode => Object.hash(
@@ -148,6 +161,8 @@ final class SessionExercise {
     status,
     completedAt,
     supersetId,
+    hrAvg,
+    hrMax,
   );
 
   @override
@@ -167,10 +182,17 @@ final class SetEntry {
     required this.durationSec,
     required this.isWarmup,
     required this.completedAt,
+    this.hrAvg,
+    this.hrPeak,
   });
 
   final int id;
   final int sessionExerciseId;
+
+  /// Heart rate during the set and its peak until shortly after (1.5.1);
+  /// stored when the training ends, null without a monitor.
+  final int? hrAvg;
+  final int? hrPeak;
 
   /// Starts at 1.
   final int setIndex;
@@ -197,7 +219,9 @@ final class SetEntry {
       other.reps == reps &&
       other.durationSec == durationSec &&
       other.isWarmup == isWarmup &&
-      other.completedAt == completedAt;
+      other.completedAt == completedAt &&
+      other.hrAvg == hrAvg &&
+      other.hrPeak == hrPeak;
 
   @override
   int get hashCode => Object.hash(
@@ -209,6 +233,8 @@ final class SetEntry {
     durationSec,
     isWarmup,
     completedAt,
+    hrAvg,
+    hrPeak,
   );
 
   @override

@@ -190,7 +190,7 @@ void main() {
     await settle(tester);
     expect(files.saved.single.$1, startsWith('gymlog-export-'));
     final zip = ZipDecoder().decodeBytes(files.saved.single.$2);
-    expect(zip.files, hasLength(5));
+    expect(zip.files, hasLength(4));
     expect((await settings(tester)).lastBackupAt, isNull);
     expect(
       find.byType(SnackBar),

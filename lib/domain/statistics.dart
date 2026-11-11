@@ -25,7 +25,11 @@ final class StatsData {
     required this.trainings,
     required this.bodyWeights,
     required this.exercises,
+    this.heartRates = const {},
   });
+
+  /// Kept heart rate per session id (1.5.1).
+  final Map<int, SessionHeartRate> heartRates;
 
   /// Finished trainings, oldest first.
   final List<Training> trainings;
@@ -531,3 +535,31 @@ List<(Exercise, List<BestValue>)> recordsOverview(
   result.sort((a, b) => compareNames(a.$1.name, b.$1.name));
   return result;
 }
+
+// ---------------------------------------------------------------------------
+// Heart rate (1.5.1)
+
+/// Average and maximum heart rate of one training or exercise.
+typedef HeartRateTrendPoint = ({LocalDate day, int average, int max});
+
+/// Average and maximum heart rate of each training with a monitor, oldest
+/// first.
+List<HeartRateTrendPoint> trainingHeartRates(StatsData data) => [
+  for (final t in data.trainings)
+    if (data.heartRates[t.session.id] case final h?)
+      (day: t.day, average: h.avgBpm, max: h.maxBpm),
+];
+
+/// Average and peak heart rate of one exercise in each training, oldest
+/// first.
+List<HeartRateTrendPoint> exerciseHeartRates(StatsData data, int exerciseId) =>
+    [
+      for (final t in data.trainings)
+        for (final d in t.exercises)
+          if (d.exercise.id == exerciseId)
+            if ((d.sessionExercise.hrAvg, d.sessionExercise.hrMax) case (
+              final avg?,
+              final max?,
+            ))
+              (day: t.day, average: avg, max: max),
+    ];

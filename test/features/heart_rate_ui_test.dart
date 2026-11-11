@@ -8,6 +8,9 @@ import 'package:gymlog/data/repositories/heart_rate_repository.dart';
 import 'package:gymlog/data/repositories/session_repository.dart';
 import 'package:gymlog/data/repositories/settings_repository.dart';
 import 'package:gymlog/domain/models/models.dart';
+import 'package:gymlog/features/heart_rate/heart_rate_recorder.dart';
+import 'package:gymlog/features/heart_rate/heart_rate_widgets.dart';
+import 'package:gymlog/features/training/session/session_tiles.dart';
 
 import '../helpers/fake_device.dart';
 import '../helpers/pump_app.dart';
@@ -81,7 +84,13 @@ void main() {
     monitor.beat(92);
     await tester.pump();
     await tester.pump();
-    expect(find.text(S.heartRateNow(92)), findsOneWidget);
+    expect(find.textContaining(S.heartRateNow(92)), findsOneWidget);
+    // Whether RR intervals come (for HRV, 1.5.1).
+    expect(find.textContaining(S.heartRateRrNo), findsOneWidget);
+    monitor.beat(93, rr: true);
+    await tester.pump();
+    await tester.pump();
+    expect(find.textContaining(S.heartRateRrYes), findsOneWidget);
     monitor.lose();
     await tester.pump();
     await tester.pump();
@@ -143,19 +152,44 @@ void main() {
       findsOneWidget,
     );
 
-    // Stored at once, then at most every 5 seconds.
+    // Every value goes into the buffer, written every 10 seconds (1.5.1).
     clock.advance(const Duration(seconds: 2));
     monitor.beat(130);
     await tester.pump();
     clock.advance(const Duration(seconds: 4));
     monitor.beat(150);
     await tester.pump();
-    await settle(tester);
-    final samples = await dbWork(
+    var samples = await dbWork(
       tester,
       () => HeartRateRepository(db).getSamples(session),
     );
-    expect(samples.map((s) => s.bpm), [128, 150]);
+    expect(samples, isEmpty, reason: 'not yet written');
+    await tester.pump(HeartRateRecorder.flushEvery);
+    await settle(tester);
+    samples = await dbWork(
+      tester,
+      () => HeartRateRepository(db).getSamples(session),
+    );
+    expect(samples.map((s) => s.bpm), [128, 130, 150]);
+
+    // A set shows its peak, live from the buffer.
+    await dbWork(tester, () async {
+      final se = (await r.sessions.getDetails(session)).single.sessionExercise;
+      await SessionRepository(db, clock).addSet(se.id, weightKg: 60, reps: 10);
+    });
+    await settle(tester);
+    expect(
+      find.descendant(
+        of: find.byType(SetHeartRateLabel),
+        matching: find.text('150'),
+      ),
+      findsOneWidget,
+    );
+    // The indicator sits in the active exercise (1.5.1).
+    expect(
+      find.descendant(of: find.byType(ActiveExerciseCard), matching: indicator),
+      findsOneWidget,
+    );
 
     // Lost: "–", then a new attempt after 5 seconds.
     monitor.lose();
@@ -184,7 +218,14 @@ void main() {
     await settle(tester);
     await tester.tap(find.textContaining('Di, 3.11.'));
     await settle(tester);
-    expect(find.text(S.heartRateSummary(139, 150)), findsOneWidget);
+    // Time-weighted: 128 for 2 s, 130 for 4 s, 150 for 1 s.
+    expect(find.text(S.heartRateSummary(132, 150)), findsOneWidget);
+    expect(find.byKey(const ValueKey('heart-rate-violin')), findsOneWidget);
+    // Only the summary is kept, the series is gone.
+    expect(
+      await dbWork(tester, () => HeartRateRepository(db).getSamples(session)),
+      isEmpty,
+    );
     await disposeApp(tester, db);
   });
 

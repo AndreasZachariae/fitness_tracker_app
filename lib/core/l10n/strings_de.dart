@@ -189,6 +189,9 @@ abstract final class S {
   static const heartRateStopTest = 'Test beenden';
   static String heartRateNow(int bpm) => 'Aktuell: $bpm $unitBpm';
   static const heartRateConnecting = 'Verbinde …';
+  static const heartRateRrYes =
+      'RR-Intervalle: ja (Abstände der Herzschläge werden mitgesendet)';
+  static const heartRateRrNo = 'RR-Intervalle: nein';
   static const heartRateLost =
       'Nicht erreichbar – überträgt die Uhr gerade? GymLog versucht es weiter.';
   static const heartRateDuringTraining =
@@ -208,8 +211,33 @@ abstract final class S {
   static const heartRateAverage = 'Ø Puls';
   static const heartRateMax = 'Max. Puls';
   static const heartRateInfo =
-      'Puls während des Trainings vom Bluetooth-Pulsmesser, alle 5 Sekunden '
-      'gespeichert. Die Kurve zeigt Minuten seit Beginn des Trainings.';
+      'Puls während des Trainings vom Bluetooth-Pulsmesser, als Durchschnitt je '
+      'Minute seit Beginn. Gespeichert werden nur diese Zusammenfassungen, '
+      'nicht jeder einzelne Wert.';
+  static const heartRateThisTraining = 'Dieses Training';
+  static const heartRateEarlier = 'Ø bisher';
+  static const heartRateDistribution = 'Pulsverteilung';
+  static const heartRateDistributionInfo =
+      'Wie lange dein Puls in welcher Höhe war: Je breiter die Form, desto mehr '
+      'Zeit bei diesem Puls. Der Strich ist der Median, der Kasten die mittlere '
+      'Hälfte. Daneben der Durchschnitt deiner bisherigen Trainings desselben '
+      'Plans (ohne solche: aller Trainings).';
+  static const heartRatePerExercise = 'Spitzenpuls je Übung';
+  static const heartRateLegendAverage = 'Ø';
+  static const heartRateLegendMax = 'Max.';
+  static const heartRateLegendPeak = 'Spitze';
+  static const heartRateTrainingTrend = 'Trainingspuls';
+  static const heartRateTrainingTrendInfo =
+      'Durchschnitt (durchgezogen) und Maximum (gestrichelt) des Pulses je '
+      'Training, nur Trainings mit Pulsmesser. Ein sinkender Durchschnitt bei '
+      'gleichem Training kann auf bessere Ausdauer deuten – oder auf längere '
+      'Pausen.';
+  static const heartRateExerciseTrend = 'Puls bei dieser Übung';
+  static const heartRateExerciseTrendInfo =
+      'Durchschnitt (durchgezogen) und Spitze (gestrichelt) des Pulses über '
+      'alle Sätze der Übung, je Training. Gezählt wird ab einer Minute vor '
+      'jedem Satz bis 20 Sekunden danach.';
+  static String heartRateSetPeak(int bpm) => 'Spitzenpuls $bpm $unitBpm';
   static String heartRateLiveLabel(String status) => 'Puls: $status';
   static const heartRateStatusConnecting = 'verbinde';
   static const heartRateStatusLost = 'Verbindung verloren';

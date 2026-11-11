@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/heart_rate_monitor.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../data/providers.dart';
+import '../../domain/heart_rate.dart';
 import '../../widgets/settings_section.dart';
 import '../../widgets/snackbars.dart';
 
@@ -23,8 +24,9 @@ class _HeartRateSettingsPageState extends ConsumerState<HeartRateSettingsPage> {
   StreamSubscription<HeartRateDevice>? _scan;
   final _found = <String, HeartRateDevice>{};
 
-  StreamSubscription<int>? _test;
+  StreamSubscription<HeartRateReading>? _test;
   int? _testBpm;
+  bool? _testRr;
   bool _testLost = false;
 
   @override
@@ -107,13 +109,16 @@ class _HeartRateSettingsPageState extends ConsumerState<HeartRateSettingsPage> {
     if (!await _ready() || !mounted) return;
     setState(() {
       _testBpm = null;
+      _testRr = null;
       _testLost = false;
       _test = ref
           .read(heartRateMonitorProvider)
           .heartRate(deviceId)
           .listen(
-            (bpm) => setState(() {
-              _testBpm = bpm;
+            (reading) => setState(() {
+              _testBpm = reading.bpm;
+              // Once seen, RR intervals count as sent.
+              _testRr = (_testRr ?? false) || reading.hasRr;
               _testLost = false;
             }),
             onError: (Object _) => setState(() => _testLost = true),
@@ -142,7 +147,8 @@ class _HeartRateSettingsPageState extends ConsumerState<HeartRateSettingsPage> {
         ? S.heartRateLost
         : _testBpm == null
         ? S.heartRateConnecting
-        : S.heartRateNow(_testBpm!);
+        : '${S.heartRateNow(_testBpm!)}\n'
+              '${(_testRr ?? false) ? S.heartRateRrYes : S.heartRateRrNo}';
 
     return Scaffold(
       appBar: AppBar(title: const Text(S.sectionHeartRate)),

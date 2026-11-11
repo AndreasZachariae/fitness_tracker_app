@@ -249,10 +249,7 @@ class _SessionDetailPageState extends ConsumerState<SessionDetailPage> {
                 ),
                 const SizedBox(height: 12),
                 // 1.5.0: only with a heart rate monitor.
-                HeartRateSection(
-                  sessionId: session.id,
-                  start: session.startedAt,
-                ),
+                HeartRateSection(sessionId: session.id),
                 if (details.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
@@ -364,6 +361,10 @@ class _ExerciseCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (set.hrPeak case final peak?) ...[
+                        SetHeartRateLabel(peak: peak),
+                        const SizedBox(width: 8),
+                      ],
                       if (records.containsKey(set.id)) const RecordLabel(),
                       const SizedBox(width: 12),
                       Icon(Icons.edit_outlined, size: 18, color: muted),

@@ -221,17 +221,26 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
 - **Vergessene Session:** Ist die aktive Session beim Öffnen älter als 12 h, Dialog: „Das Training vom 3.11. läuft noch.“
   Optionen: „Beenden“ (Endzeit = letzter Satz + 5 min, ohne Sätze: Startzeit) · „Fortsetzen“ · „Verwerfen“ (mit Bestätigung).
 
-#### 6.2.0 Puls (ab 1.5.0)
+#### 6.2.0 Puls (ab 1.5.0, überarbeitet 1.5.1)
 
 - Ein Bluetooth-Pulsmesser (Standard-Herzfrequenzdienst 0x180D: Brustgurt oder Uhr mit „Herzfrequenz übertragen“, z. B.
-  Garmin Forerunner 255, epix Pro Gen 2) wird unter Einstellungen → Pulsmesser gesucht, gespeichert, getestet, entfernt.
-  Nur ab Android 12 (Rechte „Geräte in der Nähe“ ohne Standort).
-- Läuft ein Training und ist ein Pulsmesser gespeichert, verbindet GymLog sich automatisch, zeigt „♥ 128“ in der
-  Kopfzeile (– beim Verbinden oder nach einem Abbruch; neuer Versuch alle 5 s) und speichert höchstens alle 5 s einen
-  Wert sofort in `heart_rate_samples` (gehört zur Session, wird mit ihr gelöscht). Nach dem Training wird getrennt.
-- Zusammenfassung (§6.3) und Verlauf-Detail (§6.4): Karte „Puls“ mit „Ø 118 · max. 162 bpm“ und Kurve (Minuten seit
-  Beginn); ohne Pulswerte keine Karte. Backup-Format 6 enthält die Werte, CSV-Export `heart_rate.csv`; der gespeicherte
-  Pulsmesser ist Gerätezustand und nicht im Backup.
+  Garmin Forerunner 255, epix Pro Gen 2) wird unter Einstellungen → Pulsmesser gesucht, gespeichert, getestet (mit
+  Hinweis, ob RR-Intervalle kommen) und entfernt. Nur ab Android 12 (Rechte „Geräte in der Nähe“ ohne Standort).
+- Läuft ein Training und ist ein Pulsmesser gespeichert, verbindet GymLog sich automatisch und zeigt „♥ 128“ groß und
+  rechtsbündig in der aktiven Übung vor dem Griff („♥ –“ grau beim Verbinden oder nach einem Abbruch; neuer Versuch alle
+  5 s). Nach dem Training wird getrennt.
+- Während des Trainings landet jeder Wert im Puffer `heart_rate_samples` (alle 10 s gesammelt geschrieben). Beim
+  Beenden werden daraus die Zusammenfassungen berechnet und der Puffer gelöscht; eine Zeitreihe bleibt nicht.
+  Gespeichert werden: je Satz Ø (Satz) und Spitze (bis 20 s danach) – als Satz gilt bei Zeitübungen die Dauer, sonst die
+  Minute vor dem Speichern, nicht vor dem vorigen Satz der Übung; je Übung Ø und Max vom ersten Satzbeginn bis 20 s nach
+  dem letzten Satz; je Training Ø (zeitgewichtet), Max, Min, Verteilung (Sekunden je bpm) und eine Kurve mit einem Wert
+  je Minute (`session_heart_rates`).
+- Satzzeilen zeigen „♥ 142“ (Spitze), während des Trainings live aus dem Puffer.
+- Zusammenfassung (§6.3) und Verlauf-Detail (§6.4): Kurve mit Ø/Max, Violinplot der Verteilung neben dem Durchschnitt der
+  bisherigen Trainings desselben Plans (ohne solche: aller), Spitzenpuls je Übung. Ohne Puls nichts davon.
+- Statistik (§6.5): Gesamt „Trainingspuls“ (Ø und Max je Training), Übung „Puls bei dieser Übung“ (Ø und Spitze).
+- Backup-Format 7 mit Zusammenfassungen (und dem Puffer eines laufenden Trainings); CSV: `hr_avg_bpm`/`hr_peak_bpm` in
+  `sets.csv`, `hr_avg_bpm`/`hr_max_bpm` in `sessions.csv`. Der gespeicherte Pulsmesser ist Gerätezustand, nicht im Backup.
 
 #### 6.2.1 Pausentimer
 
@@ -287,6 +296,7 @@ Der Zeitraum schneidet nur die Anzeige zu; Berechnungen nutzen immer die gesamte
   2. **Serie** (ab 1.0.1 eigene, hervorgehobene Karte): „N Wochen in Folge“ mit Training; ohne aktive Serie „Keine aktive
      Serie“; die längste Serie mit „nicht aktiv“, wenn sie länger ist als die aktuelle.
   3. **Körpergewicht** (ab 1.0.1 immer, ohne Schalter) mit gleicher Zeitachse wie der Kraftindex (keine Doppelachse).
+  Ab 1.5.1 sind die Tabs „Gesamt | Übung | Rekorde“, Start auf „Gesamt“.
   4. **Trainingsvolumen** (Balken, kg, §7.6; bis 1.3.0 Wochenvolumen): ein Balken pro Training, nebeneinander ohne
      Zeitachse, Tippen zeigt Datum und Plan; Trainings ohne Volumen fehlen.
   5. **Trainingskalender** als Heatmap: letzte 26 Wochen, Spalten = Wochen, Zeilen = Mo–So, Intensität = Anzahl Sätze.

@@ -2,23 +2,37 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/domain/heart_rate.dart';
 import 'package:gymlog/domain/models/models.dart';
 
-/// 1.5.0: Bluetooth heart rate measurement and key figures.
+/// 1.5.0/1.5.1: Bluetooth heart rate measurement and what is kept of it.
 void main() {
-  group('parseHeartRateMeasurement (0x2A37)', () {
+  group('parseHeartRateReading (0x2A37)', () {
     test('8 and 16 bit values', () {
       expect(parseHeartRateMeasurement([0x00, 72]), 72);
       expect(parseHeartRateMeasurement([0x01, 0x2C, 0x00]), 44);
       expect(parseHeartRateMeasurement([0x01, 0xC8, 0x00, 0x10, 0x03]), 200);
-      // RR intervals after the value do not matter.
-      expect(parseHeartRateMeasurement([0x10, 130, 0x20, 0x03]), 130);
+    });
+
+    test('RR intervals (flag 0x10, after an optional energy value)', () {
+      expect(parseHeartRateReading([0x00, 72]), (bpm: 72, hasRr: false));
+      expect(parseHeartRateReading([0x10, 130, 0x20, 0x03]), (
+        bpm: 130,
+        hasRr: true,
+      ));
+      // Flag set, but no bytes: none.
+      expect(parseHeartRateReading([0x10, 130])?.hasRr, isFalse);
+      // 16 bit value and energy expended before the RR intervals.
+      expect(
+        parseHeartRateReading([0x19, 0x80, 0x00, 0x01, 0x02, 0x20, 0x03]),
+        (bpm: 128, hasRr: true),
+      );
+      expect(parseHeartRateReading([0x19, 0x80, 0x00, 0x01, 0x02]), (
+        bpm: 128,
+        hasRr: false,
+      ));
     });
 
     test('skin contact', () {
-      // Contact supported (bit 2) and detected (bit 1).
       expect(parseHeartRateMeasurement([0x06, 95]), 95);
-      // Supported but not detected: no value.
       expect(parseHeartRateMeasurement([0x04, 95]), isNull);
-      // Not supported: the value counts.
       expect(parseHeartRateMeasurement([0x02, 95]), 95);
     });
 
@@ -33,71 +47,122 @@ void main() {
   });
 
   final start = DateTime.utc(2026, 11, 3, 17);
+  var nextId = 0;
   HeartRateSample at(int seconds, int bpm) => HeartRateSample(
-    id: seconds,
+    id: ++nextId,
     sessionId: 1,
     recordedAt: start.add(Duration(seconds: seconds)),
     bpm: bpm,
   );
 
-  test('stats', () {
+  test('stats (1.5.0)', () {
     expect(heartRateStats(const []), isNull);
     final s = heartRateStats([at(0, 90), at(5, 120), at(10, 151)])!;
     expect((s.average, s.max, s.min, s.count), (120, 151, 90, 3));
   });
 
-  test('curve: minutes since start, averaged down to maxPoints', () {
-    expect(heartRateCurve(const [], start), isEmpty);
-    final few = heartRateCurve([at(60, 100), at(0, 80)], start);
-    expect(few.map((p) => (p.minutes, p.bpm)), [(0.0, 80.0), (1.0, 100.0)]);
+  group('summary of a training (1.5.1)', () {
+    test('time-weighted, distribution, curve per minute', () {
+      final samples = [
+        // Minute 0: 100 for 10 s, then 120 for 5 s.
+        for (var s = 0; s < 10; s++) at(s, 100),
+        for (var s = 10; s < 15; s++) at(s, 120),
+        // A gap of a minute (monitor lost) counts 5 s at most.
+        at(130, 150),
+        at(131, 150),
+      ];
+      final sum = summarizeHeartRate(samples, start)!;
+      expect((sum.max, sum.min), (150, 100));
+      // 100 × 10 s + 120 × (4 + 5) s + 150 × 2 s.
+      expect(sum.histogram, {100: 10, 120: 9, 150: 2});
+      expect(sum.seconds, 21);
+      expect(sum.average, ((1000 + 1080 + 300) / 21).round());
+      expect(sum.curve, [107, null, 150]);
+      expect(summarizeHeartRate(const [], start), isNull);
+    });
 
-    // 1 hour every 5 s = 720 samples → at most 150 points.
-    final many = [for (var i = 0; i < 720; i++) at(i * 5, 100 + i % 10)];
-    final curve = heartRateCurve(many, start);
-    expect(curve.length, lessThanOrEqualTo(150));
-    expect(curve.first.minutes, lessThan(1));
-    expect(curve.last.minutes, greaterThan(58));
-    expect(
-      curve.every((p) => p.bpm >= 100 && p.bpm <= 109),
-      isTrue,
-      reason: 'averages stay in the range of the values',
-    );
-  });
+    test('set and exercise windows', () {
+      final completed = start.add(const Duration(minutes: 5));
+      // Other set: the minute before; a timed set: its duration.
+      final w = setWindow(completedAt: completed);
+      expect(w.start, completed.subtract(const Duration(seconds: 60)));
+      expect(w.end, completed.add(const Duration(seconds: 20)));
+      expect(
+        setWindow(completedAt: completed, durationSec: 30).start,
+        completed.subtract(const Duration(seconds: 30)),
+      );
+      // Not before the previous set.
+      expect(
+        setWindow(
+          completedAt: completed,
+          previousCompletedAt: completed.subtract(const Duration(seconds: 40)),
+        ).start,
+        completed.subtract(const Duration(seconds: 40)),
+      );
 
-  test('shouldStoreSample: fresh reading, at most every 5 s', () {
-    final now = start;
-    expect(
-      shouldStoreSample(now: now, lastReadingAt: now, lastStoredAt: null),
-      isTrue,
-    );
-    expect(
-      shouldStoreSample(
-        now: now,
-        lastReadingAt: now,
-        lastStoredAt: now.subtract(const Duration(seconds: 4)),
-      ),
-      isFalse,
-    );
-    expect(
-      shouldStoreSample(
-        now: now,
-        lastReadingAt: now,
-        lastStoredAt: now.subtract(const Duration(seconds: 5)),
-      ),
-      isTrue,
-    );
-    expect(
-      shouldStoreSample(
-        now: now,
-        lastReadingAt: now.subtract(const Duration(seconds: 6)),
-        lastStoredAt: null,
-      ),
-      isFalse,
-      reason: 'an old reading is not stored again',
-    );
-    expect(
-      shouldStoreSample(now: now, lastReadingAt: null, lastStoredAt: null),
-      isFalse,
-    );
+      final samples = [
+        at(230, 90), // before the window
+        at(250, 110),
+        at(290, 130),
+        at(300, 140), // the set ends at 300 s
+        at(315, 155), // peak after the set
+        at(330, 99), // after the window
+      ];
+      expect(setHeartRate(samples, w), (average: 127, peak: 155));
+      expect(setHeartRate(const [], w), isNull);
+
+      SetEntry set(int id, int seconds) => SetEntry(
+        id: id,
+        sessionExerciseId: 1,
+        setIndex: id,
+        weightKg: 60,
+        reps: 10,
+        durationSec: null,
+        isWarmup: false,
+        completedAt: start.add(Duration(seconds: seconds)),
+      );
+      expect(
+        exerciseHeartRate(samples, [set(1, 300), set(2, 200)]),
+        // From 140 s (first set's start) to 320 s.
+        (average: ((90 + 110 + 130 + 140 + 155) / 5).round(), max: 155),
+      );
+      expect(exerciseHeartRate(samples, const []), isNull);
+    });
+
+    test('compact forms round trip', () {
+      expect(encodeHistogram({120: 9, 100: 10}), '100:10,120:9');
+      expect(decodeHistogram('100:10,120:9,x'), {100: 10, 120: 9});
+      expect(encodeCurve([107, null, 150]), '107,,150');
+      expect(decodeCurve('107,,150'), [107, null, 150]);
+      expect(decodeCurve(''), isEmpty);
+    });
+
+    test('violin: average distribution, shape, quartiles', () {
+      final a = normalizeHistogram({100: 1, 120: 3});
+      expect(a, {100: 0.25, 120: 0.75});
+      // Each training counts the same, however long it was.
+      expect(
+        averageDistribution([
+          {100: 10},
+          {120: 1000},
+        ]),
+        {100: 0.5, 120: 0.5},
+      );
+      expect(averageDistribution(const []), isEmpty);
+
+      final shape = violinShape(a, from: 90, to: 130);
+      expect(shape.first.bpm, 90);
+      expect(shape.last.bpm, 130);
+      final widest = shape.reduce((x, y) => x.density > y.density ? x : y);
+      expect(widest.bpm, 120);
+      expect(widest.density, 1);
+
+      expect(quartilesOf({100: 0.25, 110: 0.25, 120: 0.25, 130: 0.25}), (
+        q1: 100,
+        median: 110,
+        q3: 120,
+      ));
+      expect(quartilesOf(const {}), isNull);
+    });
   });
 }

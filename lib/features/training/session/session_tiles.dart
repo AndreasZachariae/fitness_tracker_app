@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/format/exercise_format.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/l10n/strings_de.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/gym_colors.dart';
+import '../../../data/providers.dart';
+import '../../../domain/heart_rate.dart';
 import '../../../domain/metrics.dart';
 import '../../../domain/models/models.dart';
 import '../../../domain/prefill.dart';
@@ -14,6 +17,7 @@ import '../../../domain/progression.dart';
 import '../../../domain/records.dart';
 import '../../../domain/weight_steps.dart';
 import '../../../widgets/exercise_type_icon.dart';
+import '../../heart_rate/heart_rate_widgets.dart';
 import 'set_input.dart';
 
 /// Callbacks of the tiles, implemented by the session view.
@@ -96,8 +100,10 @@ Widget _dragHandle(int index) => ReorderableDragStartListener(
   ),
 );
 
-/// Rows of the recorded sets ("1   60 kg × 10"); tap → change/delete.
-class _SetRows extends StatelessWidget {
+/// Rows of the recorded sets ("1   60 kg × 10   ♥ 142"); tap →
+/// change/delete. The heart rate: stored with the set after the training,
+/// while it runs computed from the buffer (1.5.1).
+class _SetRows extends ConsumerWidget {
   const _SetRows({
     required this.detail,
     required this.actions,
@@ -109,9 +115,28 @@ class _SetRows extends StatelessWidget {
   final Map<int, List<RecordKind>> records;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
+    final needsLive = detail.sets.any((s) => s.hrPeak == null);
+    final samples = needsLive
+        ? ref
+                  .watch(
+                    heartRateSamplesProvider(detail.sessionExercise.sessionId),
+                  )
+                  .value ??
+              const <HeartRateSample>[]
+        : const <HeartRateSample>[];
+    final sorted = [...detail.sets]
+      ..sort((a, b) => a.completedAt.compareTo(b.completedAt));
+    final windows = samples.isEmpty ? const <SetWindow>[] : setWindows(sorted);
+    int? peakOf(SetEntry set) {
+      if (set.hrPeak != null) return set.hrPeak;
+      final i = sorted.indexOf(set);
+      if (i < 0 || i >= windows.length) return null;
+      return setHeartRate(samples, windows[i])?.peak;
+    }
+
     return Column(
       children: [
         for (final set in detail.sets)
@@ -147,6 +172,10 @@ class _SetRows extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (peakOf(set) case final peak?) ...[
+                    SetHeartRateLabel(peak: peak),
+                    const SizedBox(width: 8),
+                  ],
                   if (records.containsKey(set.id)) ...[
                     const RecordLabel(),
                     const SizedBox(width: 8),
@@ -366,6 +395,9 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                       ],
                     ),
                   ),
+                  // Live heart rate, right-aligned before the handle so it is
+                  // in the same place for every exercise (1.5.1).
+                  const HeartRateIndicator(large: true),
                   _dragHandle(widget.index),
                 ],
               ),

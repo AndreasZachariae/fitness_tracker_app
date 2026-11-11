@@ -12,7 +12,8 @@ const backupFormat = 'gymlog-backup';
 /// `sessionExercises[].supersetId`. Version 1 files are still read.
 /// 3 (1.1.0): weight steps. 4 (1.2.0): training days, notifications.
 /// 5 (1.3.0): `exercises[].timerCountdown`. 6 (1.5.0): `heartRateSamples`.
-const backupFormatVersion = 6;
+/// 7 (1.5.1): `sessionHeartRates`, heart rate of sets and session exercises.
+const backupFormatVersion = 7;
 
 final class BackupData {
   const BackupData({
@@ -196,6 +197,8 @@ String encodeBackup(BackupData b) {
             'status': x.status.code,
             'completedAt': _tn(x.completedAt),
             'supersetId': x.supersetId,
+            'hrAvg': x.hrAvg,
+            'hrMax': x.hrMax,
           },
       ],
       'sessionSupersets': [
@@ -212,6 +215,8 @@ String encodeBackup(BackupData b) {
             'reps': x.reps,
             'durationSec': x.durationSec,
             'isWarmup': x.isWarmup,
+            'hrAvg': x.hrAvg,
+            'hrPeak': x.hrPeak,
             'completedAt': _t(x.completedAt),
           },
       ],
@@ -222,6 +227,18 @@ String encodeBackup(BackupData b) {
             'date': w.date.toIsoString(),
             'weightKg': w.weightKg,
             'createdAt': _t(w.createdAt),
+          },
+      ],
+      'sessionHeartRates': [
+        for (final h in d.sessionHeartRates)
+          {
+            'sessionId': h.sessionId,
+            'avgBpm': h.avgBpm,
+            'maxBpm': h.maxBpm,
+            'minBpm': h.minBpm,
+            'seconds': h.seconds,
+            'histogram': h.histogram,
+            'curve': h.curve,
           },
       ],
       'heartRateSamples': [
@@ -399,6 +416,7 @@ BackupData decodeBackup(String text) {
   final v4 = version >= 4;
   final v5 = version >= 5;
   final v6 = version >= 6;
+  final v7 = version >= 7;
   final dataset = Dataset(
     exercises: _list(
       data,
@@ -516,6 +534,8 @@ BackupData decodeBackup(String text) {
         status: r.coded('status', SessionExerciseStatus.values),
         completedAt: r.timeOrNull('completedAt'),
         supersetId: v2 ? r.intOrNull('supersetId') : null,
+        hrAvg: v7 ? r.intOrNull('hrAvg') : null,
+        hrMax: v7 ? r.intOrNull('hrMax') : null,
       ),
     ),
     sessionSupersets: !v2
@@ -540,6 +560,8 @@ BackupData decodeBackup(String text) {
         reps: r.intOrNull('reps'),
         durationSec: r.intOrNull('durationSec'),
         isWarmup: r.boolean('isWarmup'),
+        hrAvg: v7 ? r.intOrNull('hrAvg') : null,
+        hrPeak: v7 ? r.intOrNull('hrPeak') : null,
         completedAt: r.time('completedAt'),
       ),
     ),
@@ -553,6 +575,21 @@ BackupData decodeBackup(String text) {
         createdAt: r.time('createdAt'),
       ),
     ),
+    sessionHeartRates: !v7
+        ? const []
+        : _list(
+            data,
+            'sessionHeartRates',
+            (r) => SessionHeartRate(
+              sessionId: r.integer('sessionId'),
+              avgBpm: r.integer('avgBpm'),
+              maxBpm: r.integer('maxBpm'),
+              minBpm: r.integer('minBpm'),
+              seconds: r.integer('seconds'),
+              histogram: r.string('histogram'),
+              curve: r.string('curve'),
+            ),
+          ),
     heartRateSamples: !v6
         ? const []
         : _list(
@@ -721,6 +758,10 @@ void validateDataset(Dataset d, AppSettings settings) {
   );
   for (final s in d.sets) {
     ref(sessionExercises, s.sessionExerciseId, 'set.sessionExerciseId');
+  }
+  unique(d.sessionHeartRates.map((h) => h.sessionId), 'session heart rate');
+  for (final h in d.sessionHeartRates) {
+    ref(sessions, h.sessionId, 'sessionHeartRate.sessionId');
   }
   ids(d.heartRateSamples, (h) => h.id, 'heartRateSample');
   for (final h in d.heartRateSamples) {

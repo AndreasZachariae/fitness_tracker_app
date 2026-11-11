@@ -12,6 +12,7 @@ import '../../domain/models/models.dart';
 import '../../domain/period.dart';
 import '../../domain/statistics.dart';
 import '../../widgets/charts.dart';
+import 'heart_rate_trend_chart.dart';
 
 /// Tab "Gesamt" (SPEC §6.5).
 class OverallStatsTab extends StatelessWidget {
@@ -70,6 +71,16 @@ class OverallStatsTab extends StatelessWidget {
           trainings: [
             for (final t in trainingVolumes(data))
               if (!t.day.isBefore(from)) t,
+          ],
+        ),
+        // 1.5.1: only with a heart rate monitor.
+        HeartRateTrendChart(
+          title: S.heartRateTrainingTrend,
+          info: S.heartRateTrainingTrendInfo,
+          maxLabel: S.heartRateLegendMax,
+          points: [
+            for (final p in trainingHeartRates(data))
+              if (!p.day.isBefore(from)) p,
           ],
         ),
         _Heatmap(

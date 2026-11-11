@@ -216,8 +216,36 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Während einer Session automatisch verbinden (mit Wiederverbinden), Puls in der Kopfzeile, alle 5 s speichern
   - [x] Zusammenfassung und Verlauf: Ø/Max-Puls und Kurve
   - [x] Tests, CHANGELOG, Testliste
+- [x] 1.5.1 Puls: Verbesserungen (`docs/ROADMAP.md`, 1.5.1+22)
+  - [x] Pulsanzeige in der aktiven Übung (rechtsbündig vor dem Griff), nicht mehr in der Kopfzeile
+  - [x] Volle Auflösung im Puffer (alle 10 s gesammelt geschrieben); beim Beenden Zusammenfassungen speichern
+        (Satz: Ø/Spitze; Übung: Ø/Max; Training: Ø/Max/Min, Verteilung, Kurve 1/min), Puffer löschen; Schema 7 mit
+        Umrechnung vorhandener Werte; Backup-Format 7; CSV nur Zusammenfassungen
+  - [x] Zusammenfassung/Verlauf: Kurve, Violinplot gegen den Durchschnitt des Plans, Spitze je Übung; ♥ in Satzzeilen
+  - [x] Pulsmesser testen: RR-Intervalle ja/nein
+  - [x] Statistik: Tabs Gesamt | Übung | Rekorde; Ø/Max-Trainingspuls, Spitzenpuls je Übung
+  - [x] Tests, CHANGELOG, Testliste
 
 ## Annahmen
+- **1.5.1 Entscheidungen des Menschen:** Puls rechtsbündig vor dem Griff der aktiven Übung; nur Zusammenfassungen
+  speichern, während des Trainings ein Puffer in der Datenbank, der am Ende gelöscht wird; kompakte Kurve (1 Wert/min)
+  bleibt; Violinplot gegen den Durchschnitt desselben Plans; HRV entfällt (Annahme: keine oder ungenaue RR-Intervalle),
+  nur der Hinweis beim Testen; Zonen, Maximalpuls, Cardio-Typ, Pause nach Puls, Erholungspuls, Wochenbelastung,
+  Kalorien und Warnung folgen in 1.6.0 (Roadmap). Statistik-Tabs „Gesamt | Übung | Rekorde“.
+- **1.5.1 Satzfenster:** Ein Satz hat keine Startzeit. Angenommen: bei Zeitübungen die Dauer, sonst die Minute vor
+  „Satz speichern“, aber nicht vor dem vorigen Satz derselben Übung. Ø über den Satz, Spitze bis 20 s danach (der Puls
+  steigt nach dem Satz noch). Je Übung vom Beginn des ersten bis 20 s nach dem letzten Satz.
+- **1.5.1 Zusammenfassung:** Zeitgewichtet: jeder Wert zählt bis zum nächsten, höchstens 5 s (längere Lücken =
+  Verbindung weg). Verteilung als Sekunden je bpm, Kurve als Mittel je Minute seit Trainingsbeginn; beide als kurzer
+  Text gespeichert (`"100:10,120:9"`, `"107,,150"`). Werte nach dem Trainingsende zählen nicht.
+- **1.5.1 Puffer:** Alle 10 s gesammelt geschrieben (höchstens 10 s gehen verloren, wenn die App hart beendet wird);
+  Werte, die nach dem Beenden eintreffen, werden verworfen. Ein laufendes Training behält seinen Puffer auch im Backup.
+- **1.5.1 Migration (Schema 7):** Die Zeitreihen der beendeten Trainings aus 1.5.0 werden beim Update in
+  Zusammenfassungen umgerechnet und gelöscht – ausdrücklich gewünscht, nur abgeleitete Werte; der Puffer eines laufenden
+  Trainings bleibt.
+- **1.5.1 Vergleich im Violinplot:** Jedes frühere Training zählt gleich viel (Verteilungen erst normiert, dann
+  gemittelt), egal wie lang es war.
+- **1.5.1 Changelog:** 1.5.0 wurde nie veröffentlicht; sein Abschnitt steht in [1.5.1].
 - **1.5.0 Weg zum Puls:** Bluetooth-Übertragung der Uhr (Standard-Herzfrequenzdienst), entschieden vom Menschen nach dem
   Test, dass seine Garmin als Pulsmesser erscheint. Live, offline, ohne Garmin-Konto; nur Herzfrequenz. Funktioniert
   genauso mit Brustgurten. Health Connect und Connect IQ bleiben spätere Möglichkeiten.
@@ -804,6 +832,15 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.5.1 Puls: Verbesserungen
+Nur, was live ausprobiert werden muss; Speichern, Zusammenfassen und Rechnen sind automatisch getestet.
+- [ ] Einstellungen → Pulsmesser → Testen: zeigt den Puls und „RR-Intervalle: ja/nein“ – bitte melden, was deine Garmin liefert.
+- [ ] Training: Der Puls steht groß rechts in der aktiven Übung vor dem Griff, auch bei langen Übungsnamen gut lesbar; oben in der Kopfzeile nicht mehr.
+- [ ] Nach einem Satz zeigt die Satzzeile „♥ …“ (Spitze), plausibel zur Uhr.
+- [ ] Training beenden: Zusammenfassung mit Kurve, Pulsverteilung (Violinplot, ab dem zweiten Training des Plans mit „Ø bisher“) und Spitzenpuls je Übung; im Verlauf dasselbe. Wirkt der Violinplot verständlich?
+- [ ] Statistik öffnet auf „Gesamt“ (Reihenfolge Gesamt | Übung | Rekorde) und zeigt „Trainingspuls“; unter Übung „Puls bei dieser Übung“.
+- [ ] Ein Training aus 1.5.0 mit Puls: nach dem Update weiter Kurve und Werte im Verlauf.
 
 ### 1.5.0 Herzfrequenz per Bluetooth
 Nur, was live ausprobiert werden muss; Aufzeichnung, Speichern und Anzeige sind automatisch getestet.

@@ -14,6 +14,7 @@ import '../../domain/weight_steps.dart';
 import '../../widgets/charts.dart';
 import '../../widgets/exercise_type_icon.dart';
 import '../../widgets/info_button.dart';
+import 'heart_rate_trend_chart.dart';
 import 'metric_format.dart';
 
 /// Tab "Übung": one exercise, one metric, one point per training.
@@ -165,6 +166,16 @@ class ExerciseStatsTab extends StatelessWidget {
               ],
             ),
           ),
+        ),
+        // 1.5.1: only with a heart rate monitor.
+        HeartRateTrendChart(
+          title: S.heartRateExerciseTrend,
+          info: S.heartRateExerciseTrendInfo,
+          maxLabel: S.heartRateLegendPeak,
+          points: [
+            for (final p in exerciseHeartRates(data, exercise.id))
+              if (period.contains(p.day, today)) p,
+          ],
         ),
         if (shown.isNotEmpty) ...[
           Padding(
