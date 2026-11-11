@@ -156,6 +156,49 @@ abstract final class S {
       'Es gibt schon eine Übung mit diesem Namen (auch im Archiv).';
   static const errorPlanNameTaken =
       'Es gibt schon einen Plan mit diesem Namen.';
+
+  // FitNotes import (1.4.0)
+  static const importFitNotes = 'Plan aus FitNotes importieren';
+  static const importFitNotesTitle = 'Import aus FitNotes';
+  static const importNotFitNotes =
+      'Das ist kein FitNotes-Training. In FitNotes ein Training öffnen, '
+      'teilen und als Textdatei speichern.';
+  static const importSeveralWorkouts =
+      'Die Datei enthält mehrere Trainings. Bitte ein einzelnes Training aus '
+      'FitNotes teilen.';
+  static const importPlanName = 'Name des Plans';
+  static String importSummary(int exercises, int sets) =>
+      '$exercises Übungen, $sets Sätze';
+  static String importTrainingFrom(String date) =>
+      'Als Training vom $date in den Verlauf übernehmen';
+  static const importTrainingToday =
+      'Als Training von heute in den Verlauf übernehmen';
+  static const importTrainingHint =
+      'Dann stehen die Gewichte beim nächsten Training unter „Letztes Mal“ und '
+      'zählen in Statistik und Rekorden.';
+  static const importTrainingBlocked =
+      'Nicht möglich, solange ein Training läuft.';
+  static const importExercisesSection = 'Übungen zuordnen';
+  static const importExercisesHint =
+      'Antippen, um statt einer neuen Übung eine vorhandene zu nehmen.';
+  static String importNewExercise(String name) => 'Neue Übung: $name';
+  static String importExisting(String name) => 'Vorhandene Übung: $name';
+  static const importChooseTitle = 'Übung in GymLog';
+  static String importCreateNew(String name) => '„$name“ neu anlegen';
+  static const importNoMatches = 'Keine passende vorhandene Übung.';
+  static String importRotation(String group) => 'Wechsel: $group';
+  static String importSuperset(String group) => 'Superset: $group';
+  static String importSkippedSets(int n) => n == 1
+      ? '1 Satz mit 0 Wiederholungen weggelassen.'
+      : '$n Sätze mit 0 Wiederholungen weggelassen.';
+  static String importUnreadLines(int n, String first) => n == 1
+      ? '1 Zeile nicht erkannt: $first'
+      : '$n Zeilen nicht erkannt, z. B. $first';
+  static const importStart = 'Importieren';
+  static String importDone(String plan, int newExercises) =>
+      'Plan „$plan“ importiert'
+      '${newExercises == 0 ? '' : ', ${newExercises == 1 ? '1 neue Übung' : '$newExercises neue Übungen'}'}'
+      '. Jetzt die Trainingstage festlegen.';
   static const errorIncrement = 'Gib eine Zahl größer als 0 ein, z. B. 2,5.';
   static const fieldStep = 'Gewichtsschritte';
   static const stepStandard = 'Standard';

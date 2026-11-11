@@ -13,6 +13,7 @@ import 'db/database.dart';
 import 'demo/dev_tools.dart';
 import 'io/data_transfer_service.dart';
 import 'io/file_gateway.dart';
+import 'io/fitnotes_import_service.dart';
 import 'notifications/reminder_service.dart';
 import 'notifications/update_checker.dart';
 import 'repositories/body_weight_repository.dart';
@@ -172,6 +173,14 @@ final appInfoProvider = FutureProvider<AppInfo>((ref) async {
 
 final fileGatewayProvider = Provider<FileGateway>(
   (ref) => const PlatformFileGateway(),
+);
+
+/// Import of a FitNotes workout (1.4.0).
+final fitNotesImportProvider = Provider<FitNotesImportService>(
+  (ref) => FitNotesImportService(
+    db: ref.watch(databaseProvider),
+    clock: ref.watch(clockProvider),
+  ),
 );
 
 final dataTransferProvider = Provider<DataTransferService>(

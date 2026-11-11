@@ -198,8 +198,41 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Verlauf: „+3 %“ gegenüber dem vorherigen Training des Plans, wie in der Zusammenfassung
   - [x] Statistik: Trainingsvolumen (ein Balken pro Training, nebeneinander) statt Wochenvolumen
   - [x] Tests, CHANGELOG, Testliste
+- [x] 1.4.0 Import aus FitNotes (`docs/ROADMAP.md`, 1.4.0+20)
+  - [x] Domain `fitnotes_import.dart`: Text-Export einlesen (Datum, Übungen, Gruppe in Klammern, Sätze kg/lbs × Wdh.,
+        nur Wdh., Zeit, Gewicht × Zeit), Typ erkennen, Sätze mit 0 Wdh. weglassen, Ziele (Sätze, häufigste Wdh./Zeit),
+        Gruppen („Rotate“ → Rotation, „Set“ → Superset), Vorschläge für vorhandene Übungen (gleicher Name, Alias-Tabelle)
+  - [x] Import-Service: in einer Transaktion neue Übungen, Plan mit Gruppen und – wenn gewählt – das Training als
+        beendete Session am Datum der Datei (Gewichte für „Letztes Mal“)
+  - [x] Einstellungen → Pläne: „Aus FitNotes importieren“ → Datei wählen → Vorschau (Planname, Zuordnung je Übung,
+        Training übernehmen) → Import → Plan-Seite für Trainingstage
+  - [x] Tests, CHANGELOG, Testliste
 
 ## Annahmen
+- **1.4.0 Entscheidungen des Menschen:** Gruppen in Klammern sind frei benannt (FitNotes kennt nur Supersets und wurde
+  für Wechsel „zweckentfremdet“): enthält der Name „Rotate“ → Wechsel (Rotation) mit allen Übungen derselben Gruppe,
+  „Set“ → Superset, sonst keine Gruppe. Das Training wird zusätzlich als beendetes Training importiert, damit die Gewichte
+  vorbefüllt sind. Vorschau mit Zuordnung je Übung. Sätze mit 0 Wiederholungen werden weggelassen.
+- **1.4.0 Datei:** Genau ein Training pro Datei (FitNotes „Training teilen“ als Text); mehrere oder keine Kopfzeile →
+  Hinweis statt Import. Datum aus der Kopfzeile (englische und deutsche Monatsnamen, „2nd“/„2.“); unlesbares Datum → das
+  Training wird heute importiert. Satzzeilen: „52.5 kgs x 12 reps“, „12 reps“, „00:30“ bzw. „1:02:03“, „20 kgs x 01:00“;
+  lbs → kg (auf 0,01 gerundet). Andere Zeilen werden gezählt und in der Vorschau genannt. Dieselbe Übung zweimal →
+  eine Übung mit allen Sätzen. Typ: Zeit → Zeitübung, Gewicht → Gewicht × Wdh, nur Wdh → Körpergewicht; Sätze, die nicht
+  zum Typ passen, fallen weg.
+- **1.4.0 Planziele:** Sätze = Anzahl der Sätze, Wdh./Zeit = häufigster Wert (bei Gleichstand der erste), z. B.
+  52,5 × 12, 12, 9 → 3 × 12. Pausen bleiben beim Standard. Gewichte stehen nicht im Plan, sondern kommen über das
+  importierte Training („Letztes Mal“, Vorbefüllung).
+- **1.4.0 Zuordnung:** Vorgeschlagen wird eine vorhandene Übung mit gleichem Namen, sonst über eine kleine Tabelle
+  bekannter FitNotes-Namen (z. B. „Flat Barbell Bench Press“ → „Bankdrücken“, „Cable Crunch“ → „Crunches am Kabel“) –
+  nur wenn die Sätze passen (gleicher Typ; Gewicht × Wdh auch als Zusatzgewicht einer Körpergewichtsübung; keine Stufen
+  ohne kg; nicht archiviert) und nie zweimal. Neue Übungen heißen wie in FitNotes; ist der Name in GymLog schon vergeben
+  (z. B. anderer Typ), mit „(FitNotes)“. Die Kategorie wird aus englischen/deutschen Wörtern im Namen geraten und lässt
+  sich in Einstellungen → Übungen ändern.
+- **1.4.0 Training:** Am Tag der Datei um 18:00 (lokal), alle 2 Minuten ein Satz (die Datei hat keine Uhrzeiten); liegt
+  das nach jetzt (Export von heute), endet es jetzt. Gehört zum neuen Plan; beim Beenden rücken Wechsel wie nach einem
+  echten Training weiter (wer z. B. Bankdrücken gemacht hat, hat beim nächsten Mal die nächste Übung des Wechsels).
+  Läuft gerade ein Training, lässt sich nur der Plan importieren. Alles in einer Transaktion: bei einem Fehler wird
+  nichts gespeichert. Der Plan steht danach ohne Trainingstage da; die Plan-Seite öffnet sich zum Eintragen.
 - **1.3.1 Benachrichtigungen der echten App:** Nicht der Kanal: In der Release-APK (geprüft an `dist/gymlog-1.2.2.apk`)
   fehlte das Symbol `ic_notification` ganz – die Ressourcen-Verkleinerung des Release-Builds entfernt alles, was der
   native Code nicht nennt, und das Symbol wird nur aus Dart beim Namen genannt. Ohne gültiges Symbol lehnt Android jede
@@ -742,6 +775,13 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.4.0 Import aus FitNotes
+Nur, was live ausprobiert werden muss; Einlesen, Zuordnen und Speichern sind automatisch getestet.
+- [ ] In FitNotes ein Training teilen und als Textdatei aufs Handy speichern; in GymLog DEV unter Einstellungen → Pläne „Plan aus FitNotes importieren“ → die Datei lässt sich im Dateiauswahl-Dialog finden und öffnen.
+- [ ] Vorschau: Übungen, Sätze, Wechsel/Superset und Zuordnungen stimmen mit FitNotes überein; eine Zuordnung per Antippen ändern.
+- [ ] Nach „Importieren“: Plan-Seite öffnet sich, Trainingstage eintragen; Plan im Training-Tab starten – Gewichte stehen unter „Letztes Mal“ vorbefüllt, Wechsel und Superset wirken wie erwartet.
+- [ ] Verlauf: das importierte Training steht am Datum der Datei.
 
 ### 1.3.1 Fehlerbehebungen
 Nur, was live ausprobiert werden muss; Abläufe sind automatisch getestet.

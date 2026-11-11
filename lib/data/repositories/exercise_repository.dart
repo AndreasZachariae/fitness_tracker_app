@@ -54,6 +54,9 @@ class ExerciseRepository {
 
   Future<Exercise?> findById(int id) => _db.exercisesDao.findById(id);
 
+  /// All exercises, archived ones included.
+  Future<List<Exercise>> getAll() => _db.exercisesDao.getAll();
+
   /// Number of plans that contain the exercise.
   Future<int> planCount(int id) => _db.exercisesDao.planCount(id);
 

@@ -75,9 +75,26 @@ STATUS: FINISHED
     - Bei neuem Update nicht sofort den ganzen zupdate Bildschirn anzeigen. DIe Benachrichtigung und der blaue Punkt am Zahnrad reicht aus. Dann kann man selber entscheiden wann man das update durchführt.
     - Im Verlauf der Trainings würde ich gerne genauso wie auf dem Zusammenfassungsbericht nach dem Training die Steigerung in Prozent zum letzten mal sehen. Einfach direkt auf dem chip der session +3 % oder so.
     - In der Statistik das Wochenvolumen sit nciht so aussagekräftig. Nehme stattdessen das Trainingsvolumen. Die TImeline muss auch nicht unbedingt stimmen. Setze die Balken einfach nebeneinander.
+Version 1.4.0 (Import von externer App)
+STATUS: FINISHED
+    - Import von einem erstellten trainingsplan aus einer anderen app
+    - Aktuell nur für "FitNotes Gym Workout Log" unterstützt
+    - Input ist eine .txt datei in dem format wie in ./docs/export.txt
+    - automatisch den typ der übung bestimmen und richtige default anzahl sätze und gewicht sowie bei zeitübungen zeiten eintragen
+    - Import in Einstellungen/Pläne einen extra button zum importieren. Dann auf dem handy die datei auswählen und der trainingsplan wird angelegt. Evtl muss dann noch die Tage und Uhrzeit manuell eingetragen werden.
 Version 1.X.0 (Automatische Buchung)
 STATUS: PLANNED
     - Nutze die öffentliche website um eine Buchung durchzuführen.
     - In den einstellungen unter der Buchungswebsite ein Button zum hinterlegen der Buchungsdaten. Dort muss man Email, Anrede, Vornamen, Nachnamen Mobilnummer hinterlegen.
-Version 1.X.0 (Robot Tamagochi)
+Version 1.X.0 (Connect Garmin)
+STATUS: PLANNED
+    - Connect to garmin app during the training to track heart rate etc.
+    - How hard is it to connect a garmin fitness watch to get realtime datastreams form it?
+Version 2.X.0 (Personality)
+STATUS: PLANNED
+    - Give the app more individual personality like e.g. Duolingo. The theme should be a little robot.
+    - New icon, changing icon based on your streak or danger of loosing the streak
+    - Notifications are already robot and ai themed.
+    - Small robot in the stats menu where the 
+Version 2.X.0 (Robot Tamagochi)
 STATUS: PLANNED

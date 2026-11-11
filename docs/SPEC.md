@@ -302,6 +302,12 @@ der Startseite (nur wenn es Trainings gibt).
 - **Übungen:** Liste mit Suche und Kategorie-Filter; anlegen, bearbeiten, archivieren bzw. löschen (§5); Archiv mit „Wiederherstellen“.
 - **Pläne:** Liste mit Reorder (= Reihenfolge der Chips) und Trainingstagen; Tippen öffnet die **Plan-Seite** (ab 1.2.1):
   Name ändern, Schalter „Aktiv“, Abschnitt „Trainingstage“ (Wochentag + Uhrzeit), „Duplizieren“, „Löschen“.
+  Unter der Liste (ab 1.4.0) „Plan aus FitNotes importieren“: Textdatei eines geteilten FitNotes-Trainings wählen →
+  Vorschau (Planname, vorbelegt mit dem Wochentag der Datei; je Übung erkannter Typ, Sätze × Wdh./Zeit, Gruppe und die
+  Zuordnung zu einer neuen oder vorhandenen passenden GymLog-Übung; Schalter „Als Training vom … in den Verlauf
+  übernehmen“) → „Importieren“ legt in einer Transaktion Übungen, Plan (Gruppen mit „Rotate“ → Wechsel, mit „Set“ →
+  Superset) und optional das beendete Training an und öffnet die Plan-Seite für die Trainingstage. Sätze mit
+  0 Wiederholungen werden weggelassen, lbs in kg umgerechnet.
 - **Training:** Standard-Satzanzahl, Standard-Pause (s), Pausentimer an/aus, Vibration an/aus, Display anlassen,
   Nächste Übung automatisch aktivieren.
 - **Darstellung:** System / Hell / Dunkel.

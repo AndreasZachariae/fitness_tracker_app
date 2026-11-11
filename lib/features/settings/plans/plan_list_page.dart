@@ -6,6 +6,7 @@ import '../../../data/providers.dart';
 import '../../../domain/models/models.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/snackbars.dart';
+import 'fitnotes_import_page.dart';
 import 'plan_actions.dart';
 import 'plan_page.dart';
 
@@ -44,6 +45,19 @@ class _PlanListPageState extends ConsumerState<PlanListPage> {
     final schedules =
         ref.watch(planSchedulesProvider).value ?? const <PlanScheduleEntry>[];
 
+    // Import from FitNotes (1.4.0), below the plans.
+    final importButton = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: OutlinedButton.icon(
+          icon: const Icon(Icons.file_open_outlined),
+          label: const Text(S.importFitNotes),
+          onPressed: () => importFitNotesPlan(context, ref),
+        ),
+      ),
+    );
+
     return Scaffold(
       appBar: AppBar(title: const Text(S.plansTitle)),
       floatingActionButton: FloatingActionButton.extended(
@@ -57,13 +71,23 @@ class _PlanListPageState extends ConsumerState<PlanListPage> {
       ),
       body: switch (plans) {
         null => const SizedBox.shrink(),
-        [] => const EmptyState(
-          icon: Icons.list_alt_outlined,
-          message: S.plansEmpty,
+        [] => ListView(
+          padding: const EdgeInsets.only(bottom: 96),
+          children: [
+            const SizedBox(
+              height: 280,
+              child: EmptyState(
+                icon: Icons.list_alt_outlined,
+                message: S.plansEmpty,
+              ),
+            ),
+            importButton,
+          ],
         ),
         final list => ReorderableListView.builder(
           buildDefaultDragHandles: false,
           padding: const EdgeInsets.only(bottom: 96),
+          footer: importButton,
           itemCount: list.length,
           onReorderItem: (a, b) => _reorder(list, a, b),
           itemBuilder: (context, i) {
