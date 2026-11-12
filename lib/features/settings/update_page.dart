@@ -161,8 +161,10 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
                 state: _downloadFailed ? null : _download,
                 failed: _downloadFailed,
                 onStart: () => _startDownload(apk),
-                onOpenDownloads: () =>
-                    ref.read(apkDownloaderProvider).openDownloads(),
+                onOpenFolder: () =>
+                    ref.read(apkDownloaderProvider).openFolder(),
+                onInstallSettings: () =>
+                    ref.read(apkDownloaderProvider).openInstallSettings(),
                 onBrowser: () => openInBrowser(apk),
               )
             else
@@ -210,14 +212,16 @@ class _DownloadBox extends StatelessWidget {
     required this.state,
     required this.failed,
     required this.onStart,
-    required this.onOpenDownloads,
+    required this.onOpenFolder,
+    required this.onInstallSettings,
     required this.onBrowser,
   });
 
   final ApkDownloadState? state;
   final bool failed;
   final VoidCallback onStart;
-  final VoidCallback onOpenDownloads;
+  final VoidCallback onOpenFolder;
+  final VoidCallback onInstallSettings;
   final VoidCallback onBrowser;
 
   @override
@@ -276,8 +280,14 @@ class _DownloadBox extends StatelessWidget {
           const SizedBox(height: 8),
           FilledButton.icon(
             icon: const Icon(Icons.folder_open),
-            label: const Text(S.updateOpenDownloads),
-            onPressed: onOpenDownloads,
+            label: const Text(S.updateOpenFolder),
+            onPressed: onOpenFolder,
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.verified_user_outlined),
+            label: const Text(S.updateInstallSettings),
+            onPressed: onInstallSettings,
           ),
         ],
       );

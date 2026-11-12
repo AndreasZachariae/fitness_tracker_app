@@ -123,6 +123,20 @@ abstract final class AppTheme {
 
     final text = base.textTheme;
     return base.copyWith(
+      // 1.6.2: the chosen segment in blue; the default secondary container
+      // was hardly distinguishable from grey.
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                states.contains(WidgetState.selected) ? scheme.primary : null,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                states.contains(WidgetState.selected) ? scheme.onPrimary : null,
+          ),
+        ),
+      ),
       textTheme: text.copyWith(
         headlineSmall: text.headlineSmall?.copyWith(
           fontWeight: FontWeight.w600,

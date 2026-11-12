@@ -217,10 +217,11 @@ abstract final class S {
   static const heartRateEarlier = 'Ø bisher';
   static const heartRateDistribution = 'Pulsverteilung';
   static const heartRateDistributionInfo =
-      'Je breiter, desto länger war dein Puls so hoch. Strich = Median, '
-      'Kasten = mittlere Hälfte, rote Linie = Maximum. Rechts: Ø der '
-      'früheren Trainings dieses Plans.';
-  static String heartRateViolinMax(int bpm) => 'max. $bpm';
+      'Boxplot: Kasten = mittlere Hälfte der Zeit (1. bis 3. Quartil), Strich = '
+      'Median, Linien bis Min. und Max.; Punkte = Ausreißer, mehr als 1,5 '
+      'Kastenlängen entfernt. Rechts: frühere Trainings dieses Plans.';
+  static String heartRateBoxMax(int bpm) => 'max. $bpm';
+  static String heartRateBoxMin(int bpm) => 'min. $bpm';
   static const heartRatePerExercise = 'Spitzenpuls je Übung';
   static const heartRateZones = 'Zeit in Pulszonen';
   static const heartRateBelowZones = 'Unter Zone 1';
@@ -910,9 +911,15 @@ abstract final class S {
   static String updateDownloaded(String file) =>
       'Gespeichert: Download/GymLog/$file';
   static const updateInstallHint =
-      'Zum Installieren die Benachrichtigung „Download abgeschlossen“ oder die '
-      'Datei in den Downloads antippen.';
-  static const updateOpenDownloads = 'Downloads öffnen';
+      'Zum Installieren im Ordner GymLog die Datei antippen. Beim ersten Mal '
+      'fragt Android, ob die Dateien-App Apps installieren darf: einmal '
+      'erlauben.';
+  static const updateOpenFolder = 'Ordner GymLog öffnen';
+  static const updateInstallSettings = 'Installieren erlauben (Einstellungen)';
+  static const updateDownloadedTitle = 'Update geladen';
+  static const updateDownloadedBody =
+      'Antippen öffnet den Ordner GymLog. Dort die Datei antippen und '
+      'installieren.';
   static const updateDownloadFailed = 'Der Download hat nicht geklappt.';
   static const updateDownloadInBrowser = 'Im Browser herunterladen';
   static const updateNoApk =

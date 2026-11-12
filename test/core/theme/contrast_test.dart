@@ -156,4 +156,20 @@ void main() {
     expect(GymColors.light.action, const Color(0xFF1F5FBF));
     expect(GymColors.dark.action, const Color(0xFF1F5FBF));
   });
+
+  test('1.6.2: the chosen segment is blue with readable text', () {
+    for (final (theme, scheme) in [
+      (AppTheme.light, AppColorSchemes.light),
+      (AppTheme.dark, AppColorSchemes.dark),
+    ]) {
+      final style = theme.segmentedButtonTheme.style!;
+      const selected = {WidgetState.selected};
+      final bg = style.backgroundColor!.resolve(selected)!;
+      final fg = style.foregroundColor!.resolve(selected)!;
+      expect(bg, scheme.primary);
+      expect(contrast(bg, fg), greaterThanOrEqualTo(text));
+      // Not chosen: the default (no fill).
+      expect(style.backgroundColor!.resolve(const {}), isNull);
+    }
+  });
 }

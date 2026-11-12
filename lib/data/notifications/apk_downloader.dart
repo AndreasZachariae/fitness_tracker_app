@@ -1,5 +1,9 @@
 import 'package:flutter/services.dart';
 
+import '../../core/l10n/strings_de.dart';
+import '../../core/notifications.dart';
+import '../../domain/reminders.dart';
+
 /// State of an update download (1.6.1).
 enum ApkDownloadStatus { pending, running, paused, done, failed }
 
@@ -15,8 +19,8 @@ typedef ApkDownloadState = ({
 });
 
 /// The update APK via Android's download manager (1.6.1): Android downloads
-/// into Download/GymLog and notifies when done; the user taps the file and
-/// Android installs it. GymLog never installs anything itself (no
+/// into Download/GymLog; at the end GymLog notifies (1.6.2) and opens the
+/// folder, where the user taps the file and Android installs it. GymLog never installs anything itself (no
 /// REQUEST_INSTALL_PACKAGES, Play Protect, 1.2.2). Only one APK is kept:
 /// earlier GymLog downloads are removed before a new one starts.
 abstract interface class ApkDownloader {
@@ -30,8 +34,12 @@ abstract interface class ApkDownloader {
   /// Removes all GymLog APK downloads with their files.
   Future<void> removeAll();
 
-  /// Opens Android's list of downloads.
-  Future<void> openDownloads();
+  /// Opens the folder Download/GymLog in the file manager (1.6.2).
+  Future<void> openFolder();
+
+  /// Opens Android's list "Unbekannte Apps installieren" (1.6.2): the file
+  /// manager must be allowed once to install the APK.
+  Future<void> openInstallSettings();
 }
 
 final class PlatformApkDownloader implements ApkDownloader {
@@ -41,7 +49,17 @@ final class PlatformApkDownloader implements ApkDownloader {
 
   @override
   Future<int> start(String url) async =>
-      (await _channel.invokeMethod<int>('start', {'url': url}))!;
+      (await _channel.invokeMethod<int>('start', {
+        'url': url,
+        // The native notification at the end; texts live in Dart.
+        'done': {
+          'title': S.updateDownloadedTitle,
+          'body': S.updateDownloadedBody,
+          'channelId': NotificationChannel.updates.id,
+          'channelName': NotificationChannel.updates.label,
+          'notificationId': '${ReminderIds.updateDownloaded}',
+        },
+      }))!;
 
   @override
   Future<ApkDownloadState?> query(int id) async {
@@ -62,5 +80,9 @@ final class PlatformApkDownloader implements ApkDownloader {
   Future<void> removeAll() => _channel.invokeMethod<void>('removeAll');
 
   @override
-  Future<void> openDownloads() => _channel.invokeMethod<void>('openDownloads');
+  Future<void> openFolder() => _channel.invokeMethod<void>('openFolder');
+
+  @override
+  Future<void> openInstallSettings() =>
+      _channel.invokeMethod<void>('openInstallSettings');
 }

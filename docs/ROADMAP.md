@@ -129,6 +129,13 @@ STATUS: FINISHED
     - Download der apk bleibt manchmal ganz am Ende hängen bei 25mb/25mb. Von releases Seite kein Problem aber aus der App bleibt hängen. Dann kann man icht auf öffnen klicken und installieren.
     - Download Fortschrittsanzeige direkt in der App wie in der vorherigen Zwischenversion nur ohne direktes installieren. Dafür muss die apk noch selber angeklickt werden. Ich möchte aber auch keinen Ordner angeben müssen. Entweder direkt in downloads oder in einem app internen Ordnern. Dabei aber sicherstellen, dass nicht alle alten apks den Speicher voll machen. Immer die alte APKs löschen. Eventuell kann das der selbe Default Backup Ordner sein. Dann muss man dort keinen Ordner mehr auswählen sondern klickt einfach nur auf backup ausführen und bekommt dann die Info wo es liegt oder die Option davor den Pfad zu ändern.
     - Download vond er app auslösen aber app installieren weiter manuell. Die app soll diese berechtigungen nicht haben damit der scan ohne probleme durchläuft.
+Version 1.6.2 (Boxplot, Geschlecht, APK installieren)
+STATUS: FINISHED
+    - Geschlecht auswählen auf der Körper tab Puls Profil seite würde man erwarten, dass die ausgewählte optioin in blau gehighlighted ist. Aktuell bnleibt beides grau. 
+    - Der violinen plot sieht komisch aus. weil die kurve alles annährt und teilweise noch kurve da ist obwohl der mx wert weit darunter leigt. Das liegt an der automatischen glättung. Ich glaube ich möchte lieber einfach einen ausführlichen box plot. Heißt mit median, quartilen und whiskers die das max und min anzeigen. Wie bisher dann den verlgiech mit den bisherigen trainings auch dargestellt als so ein boxplot. Gerne kurze i info zum boxplot zu quartilen und min max + ausreißer.
+    - Der Dateibrowser der sich öffnet um die apk zu laden lädt nicht direkt den richtigen unterordner GymLog. Das sollte direkt der richtige Ordner sein in dem die apk liegt.
+    - Problem: Wenn ich auf die apk klicke kann ich sie nciht installieren weil Files by Google nicht dazu berechtigt ist. Scheinbar ist die app von files by google abgespeichert worden? oder Nur weil ich sie von dort öffnen möchte? Das sollte so wie vorher durch klicken funktionieren.
+    - Auch bei der Benachrichtigung zum download der apk die dort kommt steht unbekannte quelle com.android.providers.media
 Version 2.X.0 (Personality)
 STATUS: PLANNED
     - Give the app more individual personality like e.g. Duolingo. The theme should be a little robot.

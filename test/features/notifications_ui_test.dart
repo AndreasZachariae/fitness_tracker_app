@@ -393,9 +393,13 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(find.text(S.updateDownloaded('gymlog.apk')), findsOneWidget);
     expect(find.text(S.updateInstallHint), findsOneWidget);
-    await tester.tap(find.text(S.updateOpenDownloads));
+    await tester.tap(find.text(S.updateOpenFolder));
     await tester.pump();
     expect(downloader.opened, 1);
+    // 1.6.2: the file manager must be allowed once to install.
+    await tester.tap(find.text(S.updateInstallSettings));
+    await tester.pump();
+    expect(downloader.settingsOpened, 1);
     // Polling ends with the download.
     await tester.pump(const Duration(seconds: 2));
     await disposeApp(tester, db);

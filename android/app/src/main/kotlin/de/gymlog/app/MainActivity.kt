@@ -43,7 +43,13 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 try {
                     when (call.method) {
-                        "start" -> result.success(ApkDownloads.start(applicationContext, call.argument<String>("url")!!))
+                        "start" -> result.success(
+                            ApkDownloads.start(
+                                applicationContext,
+                                call.argument<String>("url")!!,
+                                call.argument<Map<String, Any?>>("done") ?: emptyMap(),
+                            ),
+                        )
                         "query" -> result.success(
                             ApkDownloads.query(applicationContext, call.argument<Number>("id")!!.toLong()),
                         )
@@ -51,8 +57,12 @@ class MainActivity : FlutterActivity() {
                             ApkDownloads.removeAll(applicationContext)
                             result.success(null)
                         }
-                        "openDownloads" -> {
-                            ApkDownloads.openDownloads(this)
+                        "openFolder" -> {
+                            ApkDownloads.openFolder(this)
+                            result.success(null)
+                        }
+                        "openInstallSettings" -> {
+                            ApkDownloads.openInstallSettings(this)
                             result.success(null)
                         }
                         else -> result.notImplemented()

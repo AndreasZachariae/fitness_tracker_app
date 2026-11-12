@@ -1,17 +1,28 @@
 package de.gymlog.app
 
 import android.app.DownloadManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.ActivityNotFoundException
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.DocumentsContract
+import android.provider.Settings
 
 /**
- * Update APK via Android's download manager (1.6.1): the system downloads, shows the progress and a
- * "Download abgeschlossen" notification; the user taps the file and Android installs it. GymLog itself
- * never installs anything (no REQUEST_INSTALL_PACKAGES, Play Protect, 1.2.2).
+ * Update APK via Android's download manager (1.6.1): the system downloads and shows the progress; the user
+ * taps the file in the folder Download/GymLog and Android installs it. GymLog itself never installs anything
+ * (no REQUEST_INSTALL_PACKAGES, Play Protect, 1.2.2).
+ *
+ * 1.6.2: The system's "Download abgeschlossen" notification opened the installer with the media provider as
+ * source, which cannot be allowed to install apps. Instead [DownloadDoneReceiver] shows GymLog's own
+ * notification that opens the folder; the file manager there is the source (allowed once by the user).
  *
  * Only release files from github.com. At most one APK is kept: older GymLog downloads are removed
  * (with their files) before a new one starts.
@@ -24,8 +35,14 @@ object ApkDownloads {
     private fun manager(context: Context) =
         context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
-    /** Starts (or resumes showing) the download of [url]; returns its id. */
-    fun start(context: Context, url: String): Long {
+    private const val PREFS = "apk_downloads"
+
+    /** Starts (or resumes showing) the download of [url]; returns its id. [done] holds the texts of the
+     *  notification at the end (from Dart, where all texts live). */
+    fun start(context: Context, url: String, done: Map<String, Any?>): Long {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().apply {
+            for ((key, value) in done) putString(key, value?.toString())
+        }.apply()
         val uri = Uri.parse(url)
         require(uri.scheme == "https" && uri.host == "github.com") { "not a GitHub release file" }
         val name = uri.lastPathSegment?.takeIf { it.endsWith(".apk") } ?: "gymlog.apk"
@@ -36,7 +53,8 @@ object ApkDownloads {
         val request = DownloadManager.Request(uri)
             .setTitle(name)
             .setMimeType(APK_TYPE)
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            // Progress only; the end is announced by GymLog (see above).
+            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "$FOLDER/$name")
         } else {
@@ -104,14 +122,100 @@ object ApkDownloads {
         if (ids.isNotEmpty()) dm.remove(*ids.toLongArray())
     }
 
-    /** The system list of downloads, where the user taps the APK. */
-    fun openDownloads(context: Context) {
-        context.startActivity(
-            Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+    /** The folder Download/GymLog in the file manager, where the user taps the APK (1.6.2). */
+    fun folderIntent(): Intent {
+        val uri = DocumentsContract.buildDocumentUri(
+            "com.android.externalstorage.documents",
+            "primary:${Environment.DIRECTORY_DOWNLOADS}/$FOLDER",
         )
+        return Intent(Intent.ACTION_VIEW)
+            .setDataAndType(uri, DocumentsContract.Document.MIME_TYPE_DIR)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+
+    /** Opens the folder; without a file manager for it the system list of downloads. */
+    fun openFolder(context: Context) {
+        try {
+            context.startActivity(folderIntent())
+        } catch (_: ActivityNotFoundException) {
+            context.startActivity(
+                Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }
+    }
+
+    /** Android's list "Unbekannte Apps installieren", where the user allows the file manager once. */
+    fun openInstallSettings(context: Context) {
+        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+        } else {
+            Intent(Settings.ACTION_SECURITY_SETTINGS)
+        }
+        try {
+            context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (_: ActivityNotFoundException) {
+            context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
+    }
+
+    /** GymLog's notification "Update geladen" for download [id], if it is a finished APK. */
+    fun notifyDone(context: Context, id: Long) {
+        val dm = manager(context)
+        dm.query(DownloadManager.Query().setFilterById(id)).use { c ->
+            if (!c.moveToFirst()) return
+            if (c.int(DownloadManager.COLUMN_STATUS) != DownloadManager.STATUS_SUCCESSFUL) return
+            if (c.string(DownloadManager.COLUMN_MEDIA_TYPE) != APK_TYPE) return
+        }
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val title = prefs.getString("title", null) ?: return
+        val body = prefs.getString("body", null) ?: return
+        val channelId = prefs.getString("channelId", null) ?: return
+        val channelName = prefs.getString("channelName", null) ?: channelId
+        val notificationId = prefs.getString("notificationId", null)?.toIntOrNull() ?: return
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(channelId) == null) {
+            nm.createNotificationChannel(
+                NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT),
+            )
+        }
+        val open = PendingIntent.getActivity(
+            context,
+            0,
+            folderIntent(),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        @Suppress("DEPRECATION")
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            android.app.Notification.Builder(context, channelId)
+        } else {
+            android.app.Notification.Builder(context)
+        }
+        val notification = builder
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(android.app.Notification.BigTextStyle().bigText(body))
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        try {
+            nm.notify(notificationId, notification)
+        } catch (_: SecurityException) {
+            // Notifications not allowed: the update page shows the same.
+        }
     }
 
     private fun Cursor.string(column: String): String? = getString(getColumnIndexOrThrow(column))
     private fun Cursor.long(column: String): Long = getLong(getColumnIndexOrThrow(column))
     private fun Cursor.int(column: String): Int = getInt(getColumnIndexOrThrow(column))
+}
+
+/** The download manager's "download complete" (sent only to GymLog, guarded by the system permission in the
+ *  manifest): GymLog's own notification for a finished update APK (1.6.2). */
+class DownloadDoneReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action != DownloadManager.ACTION_DOWNLOAD_COMPLETE) return
+        val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+        if (id >= 0) ApkDownloads.notifyDone(context, id)
+    }
 }

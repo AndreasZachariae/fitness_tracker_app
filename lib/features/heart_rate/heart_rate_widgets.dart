@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -173,11 +175,7 @@ class HeartRateSection extends ConsumerWidget {
           calories: calories,
           caloriesMissing: settings?.birthYear == null || settings?.sex == null,
         ),
-        _ViolinCard(
-          current: summary.distribution,
-          earlier: earlier,
-          max: summary.maxBpm,
-        ),
+        _BoxPlotCard(current: summary.distribution, earlier: earlier),
         if (perExercise.isNotEmpty) _PeaksCard(peaks: perExercise),
       ],
     );
@@ -278,55 +276,49 @@ class _CurveCard extends StatelessWidget {
   }
 }
 
-/// This training's distribution next to the average of earlier ones.
-class _ViolinCard extends StatelessWidget {
-  const _ViolinCard({
-    required this.current,
-    required this.earlier,
-    required this.max,
-  });
+/// This training's distribution next to the average of earlier ones, as
+/// box plots (1.6.2; before a smoothed violin plot, which reached beyond the
+/// real maximum).
+class _BoxPlotCard extends StatelessWidget {
+  const _BoxPlotCard({required this.current, required this.earlier});
 
   final Map<int, int> current;
   final Map<int, double> earlier;
-
-  /// This training's highest heart rate, marked in its violin (1.6.1).
-  final int max;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final gym = GymColors.of(context);
-    final now = normalizeHistogram(current);
-    final keys = [...now.keys, ...earlier.keys];
-    if (keys.isEmpty) return const SizedBox.shrink();
-    final lo = (keys.reduce((a, b) => a < b ? a : b) - 8).clamp(minBpm, maxBpm);
-    final hi = (keys.reduce((a, b) => a > b ? a : b) + 8).clamp(minBpm, maxBpm);
-    final violins = [
-      (
-        label: S.heartRateThisTraining,
-        shape: violinShape(now, from: lo, to: hi),
-        quartiles: quartilesOf(now),
-        color: gym.record,
-        max: max,
-      ),
-      if (earlier.isNotEmpty)
+    final now = boxPlotOf(normalizeHistogram(current));
+    final before = boxPlotOf(earlier);
+    final plots = <_Box>[
+      if (now != null)
+        (label: S.heartRateThisTraining, plot: now, color: gym.record),
+      if (before != null)
         (
           label: S.heartRateEarlier,
-          shape: violinShape(earlier, from: lo, to: hi),
-          quartiles: quartilesOf(earlier),
+          plot: before,
           color: theme.colorScheme.onSurfaceVariant,
-          max: null,
         ),
     ];
+    if (plots.isEmpty) return const SizedBox.shrink();
+    final lo = (plots.map((b) => b.plot.min).reduce(math.min) - 8).clamp(
+      minBpm,
+      maxBpm,
+    );
+    final hi = (plots.map((b) => b.plot.max).reduce(math.max) + 8).clamp(
+      minBpm,
+      maxBpm,
+    );
     return ChartCard(
       title: S.heartRateDistribution,
       info: S.heartRateDistributionInfo,
       height: 220,
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: CustomPaint(
-        key: const ValueKey('heart-rate-violin'),
-        painter: _ViolinPainter(
-          violins: violins,
+        key: const ValueKey('heart-rate-boxplot'),
+        painter: _BoxPlotPainter(
+          plots: plots,
           from: lo,
           to: hi,
           textStyle:
@@ -344,17 +336,11 @@ class _ViolinCard extends StatelessWidget {
   }
 }
 
-typedef _Violin = ({
-  String label,
-  List<({int bpm, double density})> shape,
-  Quartiles? quartiles,
-  Color color,
-  int? max,
-});
+typedef _Box = ({String label, BoxPlot plot, Color color});
 
-class _ViolinPainter extends CustomPainter {
-  _ViolinPainter({
-    required this.violins,
+class _BoxPlotPainter extends CustomPainter {
+  _BoxPlotPainter({
+    required this.plots,
     required this.from,
     required this.to,
     required this.textStyle,
@@ -363,12 +349,14 @@ class _ViolinPainter extends CustomPainter {
     required this.maxColor,
   });
 
-  final List<_Violin> violins;
+  final List<_Box> plots;
   final int from;
   final int to;
   final TextStyle textStyle;
   final Color lineColor;
   final Color gridColor;
+
+  /// The maximum of this training (the first plot) in red (1.6.1).
   final Color maxColor;
 
   static const _left = 36.0;
@@ -404,65 +392,73 @@ class _ViolinPainter extends CustomPainter {
       canvas.drawLine(Offset(_left, y(bpm)), Offset(size.width, y(bpm)), grid);
       _text(canvas, '${bpm.round()}', Offset(0, y(bpm)));
     }
-    final slot = (size.width - _left) / violins.length;
-    for (final (i, v) in violins.indexed) {
+    final slot = (size.width - _left) / plots.length;
+    for (final (i, b) in plots.indexed) {
+      final p = b.plot;
       final cx = _left + slot * (i + 0.5);
-      final half = slot * 0.38;
-      final path = Path();
-      for (final (j, p) in v.shape.indexed) {
-        final point = Offset(cx + half * p.density, y(p.bpm));
-        j == 0
-            ? path.moveTo(point.dx, point.dy)
-            : path.lineTo(point.dx, point.dy);
-      }
-      for (final p in v.shape.reversed) {
-        path.lineTo(cx - half * p.density, y(p.bpm));
-      }
-      path.close();
+      final half = math.min(slot * 0.18, 28.0);
+      final line = Paint()
+        ..color = b.color
+        ..strokeWidth = 1.5;
+      // Whiskers with caps.
       canvas
-        ..drawPath(path, Paint()..color = v.color.withValues(alpha: 0.25))
-        ..drawPath(
-          path,
+        ..drawLine(Offset(cx, y(p.q3)), Offset(cx, y(p.highWhisker)), line)
+        ..drawLine(Offset(cx, y(p.q1)), Offset(cx, y(p.lowWhisker)), line)
+        ..drawLine(
+          Offset(cx - half / 2, y(p.highWhisker)),
+          Offset(cx + half / 2, y(p.highWhisker)),
+          line,
+        )
+        ..drawLine(
+          Offset(cx - half / 2, y(p.lowWhisker)),
+          Offset(cx + half / 2, y(p.lowWhisker)),
+          line,
+        );
+      // Box (middle half) and median.
+      final box = Rect.fromLTRB(cx - half, y(p.q3), cx + half, y(p.q1));
+      canvas
+        ..drawRect(box, Paint()..color = b.color.withValues(alpha: 0.25))
+        ..drawRect(
+          box,
           Paint()
-            ..color = v.color
+            ..color = b.color
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.5,
-        );
-      if (v.quartiles case final q?) {
-        final box = Paint()..color = lineColor.withValues(alpha: 0.7);
-        canvas
-          ..drawRect(Rect.fromLTRB(cx - 4, y(q.q3), cx + 4, y(q.q1)), box)
-          ..drawLine(
-            Offset(cx - 12, y(q.median)),
-            Offset(cx + 12, y(q.median)),
-            Paint()
-              ..color = lineColor
-              ..strokeWidth = 2,
-          );
-        _text(canvas, '${q.median}', Offset(cx + 16, y(q.median)));
-      }
-      if (v.max case final max?) {
-        canvas.drawLine(
-          Offset(cx - half, y(max)),
-          Offset(cx + half, y(max)),
+        )
+        ..drawLine(
+          Offset(cx - half, y(p.median)),
+          Offset(cx + half, y(p.median)),
           Paint()
-            ..color = maxColor
-            ..strokeWidth = 2,
+            ..color = lineColor
+            ..strokeWidth = 2.5,
         );
-        _text(
-          canvas,
-          S.heartRateViolinMax(max),
-          Offset(cx + half + 4, y(max)),
-          color: maxColor,
+      // Outliers as dots.
+      for (final o in p.outliers) {
+        canvas.drawCircle(
+          Offset(cx, y(o)),
+          2.5,
+          Paint()
+            ..color = b.color
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.2,
         );
       }
-      _text(canvas, v.label, Offset(cx, size.height - 8), center: true);
+      final labelX = cx + half + 6;
+      _text(canvas, '${p.median}', Offset(labelX, y(p.median)));
+      _text(
+        canvas,
+        S.heartRateBoxMax(p.max),
+        Offset(labelX, y(p.max)),
+        color: i == 0 ? maxColor : null,
+      );
+      _text(canvas, S.heartRateBoxMin(p.min), Offset(labelX, y(p.min)));
+      _text(canvas, b.label, Offset(cx, size.height - 8), center: true);
     }
   }
 
   @override
-  bool shouldRepaint(_ViolinPainter old) =>
-      old.violins != violins || old.from != from || old.to != to;
+  bool shouldRepaint(_BoxPlotPainter old) =>
+      old.plots != plots || old.from != from || old.to != to;
 }
 
 /// The highest heart rate of each exercise.

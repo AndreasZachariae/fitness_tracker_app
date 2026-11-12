@@ -47,6 +47,14 @@
             </intent-filter>
         </activity>
         <receiver android:name=".RestAlarmReceiver" android:exported="false"/>
+        <!-- 1.6.2: the download manager's "download complete" for the update APK; only the system's download
+             provider holds this permission. GymLog then shows its own notification that opens Download/GymLog. -->
+        <receiver android:name=".DownloadDoneReceiver" android:exported="true"
+            android:permission="android.permission.SEND_DOWNLOAD_COMPLETED_INTENTS">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE"/>
+            </intent-filter>
+        </receiver>
         <!-- flutter_local_notifications: scheduled reminders, rescheduling after reboot/update, buttons. -->
         <receiver android:exported="false"
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>

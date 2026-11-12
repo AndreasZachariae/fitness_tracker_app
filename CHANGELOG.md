@@ -4,9 +4,9 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.6.1] – unveröffentlicht
+## [1.6.2] – unveröffentlicht
 
-Enthält die nie einzeln veröffentlichten Versionen 1.5.0, 1.5.1 und 1.6.0.
+Enthält die nie einzeln veröffentlichten Versionen 1.5.0, 1.5.1, 1.6.0 und 1.6.1.
 
 ### Neu
 - **Puls während des Trainings:** GymLog verbindet sich per Bluetooth mit einem Pulsmesser – einer Garmin-Uhr mit „Herzfrequenz übertragen“ (z. B. Forerunner 255, epix Pro) oder einem Brustgurt – und zeigt den Puls groß in der aktiven Übung an, in den Farben der Pulszonen.
@@ -15,16 +15,17 @@ Enthält die nie einzeln veröffentlichten Versionen 1.5.0, 1.5.1 und 1.6.0.
 - **Pause nach Puls:** Je Übung einstellbar – die Pause endet, sobald dein Puls unter einen Wert gefallen ist („Pause endet wenn Puls unter“), oder nach der Pausenzeit.
 - **Warnung bei hohem Puls:** Die Anzeige wird rot und das Handy vibriert, höchstens alle 2 Minuten.
 - **Puls je Satz:** Jede Satzzeile zeigt den Spitzenpuls des Satzes; dazu Durchschnitt und Maximum je Übung.
-- **Nach dem Training:** Pulskurve, Pulsverteilung mit Maximalpuls im Vergleich zu deinen bisherigen Trainings desselben Plans, Zeit in den Pulszonen, Erholungspuls, Kalorien und Spitzenpuls je Übung.
+- **Nach dem Training:** Pulskurve, Pulsverteilung als Boxplot (Median, Quartile, Min/Max, Ausreißer) im Vergleich zu deinen bisherigen Trainings desselben Plans, Zeit in den Pulszonen, Erholungspuls, Kalorien und Spitzenpuls je Übung.
 - **Statistik:** Trainingspuls, Puls je Übung, Erholungspuls, Wochenbelastung und Kalorien je Woche.
 - Neuer Bereich **Einstellungen → Pulsmesser** zum Suchen, Testen und Entfernen.
-- **Updates in der App laden:** „APK herunterladen“ zeigt den Fortschritt und legt die Datei in „Download/GymLog“; die vorige APK wird dabei gelöscht. Installieren wie gewohnt durch Antippen der Datei.
+- **Updates in der App laden:** „APK herunterladen“ zeigt den Fortschritt und legt die Datei in „Download/GymLog“; die vorige APK wird dabei gelöscht. Danach öffnet die Benachrichtigung „Update geladen“ oder der Knopf „Ordner GymLog öffnen“ den Ordner – dort die Datei antippen und installieren. Beim ersten Mal muss die Dateien-App das Installieren einmal erlauben; der Knopf „Installieren erlauben“ führt zur Einstellung.
 - Die Buchungsseite lässt sich in den Einstellungen mit einem Knopf direkt im Browser öffnen.
 
 ### Geändert
 - **Backup mit einem Tipp:** „Backup erstellen“ speichert ohne Ordnerwahl nach „Download/GymLog“ und sagt, wo die Datei liegt. Teilen oder ein anderer Ort gehen über „Backup teilen oder anderswo speichern“.
 - Körper: Die Gewichtseinträge stehen jetzt auf einer eigenen Seite („N Einträge“).
 - Alle Erklärungen hinter dem i sind kürzer.
+- Bei Auswahlknöpfen (z. B. Geschlecht, Zeitraum, Design) ist die gewählte Option jetzt deutlich blau hervorgehoben.
 - Die Statistik öffnet jetzt auf „Gesamt“; die Reihenfolge ist Gesamt, Übung, Rekorde.
 - Gespeichert werden nur Zusammenfassungen des Pulses, nicht jeder einzelne Wert – das hält Daten und Backup klein.
 

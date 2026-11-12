@@ -220,7 +220,7 @@ void main() {
     await settle(tester);
     // Time-weighted: 128 for 2 s, 130 for 4 s, 150 for 1 s.
     expect(find.text(S.heartRateSummary(132, 150)), findsOneWidget);
-    expect(find.byKey(const ValueKey('heart-rate-violin')), findsOneWidget);
+    expect(find.byKey(const ValueKey('heart-rate-boxplot')), findsOneWidget);
     // Only the summary is kept, the series is gone.
     expect(
       await dbWork(tester, () => HeartRateRepository(db).getSamples(session)),

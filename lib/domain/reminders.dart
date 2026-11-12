@@ -84,6 +84,10 @@ abstract final class ReminderIds {
   static const restDone = 400000004;
   static const setTimerDone = 400000005;
 
+  /// "Update geladen" after the APK download, shown by the native side
+  /// (1.6.2).
+  static const updateDownloaded = 400000006;
+
   static int evening(LocalDate day, int planId) =>
       _evening + _dayKey(day) * 1000 + planId % 1000;
 

@@ -137,7 +137,7 @@ void main() {
       expect(decodeCurve(''), isEmpty);
     });
 
-    test('violin: average distribution, shape, quartiles', () {
+    test('distribution: average, quartiles', () {
       final a = normalizeHistogram({100: 1, 120: 3});
       expect(a, {100: 0.25, 120: 0.75});
       // Each training counts the same, however long it was.
@@ -150,19 +150,38 @@ void main() {
       );
       expect(averageDistribution(const []), isEmpty);
 
-      final shape = violinShape(a, from: 90, to: 130);
-      expect(shape.first.bpm, 90);
-      expect(shape.last.bpm, 130);
-      final widest = shape.reduce((x, y) => x.density > y.density ? x : y);
-      expect(widest.bpm, 120);
-      expect(widest.density, 1);
-
       expect(quartilesOf({100: 0.25, 110: 0.25, 120: 0.25, 130: 0.25}), (
         q1: 100,
         median: 110,
         q3: 120,
       ));
       expect(quartilesOf(const {}), isNull);
+    });
+
+    test('1.6.2 box plot: whiskers within 1.5 box lengths, outliers', () {
+      // Seconds per bpm: most between 110 and 130, a few far out.
+      final plot = boxPlotOf(
+        normalizeHistogram({
+          70: 2,
+          105: 10,
+          110: 20,
+          120: 40,
+          130: 20,
+          140: 6,
+          175: 2,
+        }),
+      )!;
+      // Box 110–130 (length 20): fences at 80 and 160.
+      expect((plot.q1, plot.median, plot.q3), (110, 120, 130));
+      expect((plot.lowWhisker, plot.highWhisker), (105, 140));
+      expect(plot.outliers, [70, 175]);
+      expect((plot.min, plot.max), (70, 175));
+      // Without outliers the whiskers reach min and max.
+      final tight = boxPlotOf({100: 0.25, 110: 0.25, 120: 0.25, 130: 0.25})!;
+      expect((tight.lowWhisker, tight.highWhisker), (100, 130));
+      expect(tight.outliers, isEmpty);
+      expect(boxPlotOf(const {}), isNull);
+      expect(boxPlotOf({100: 0.0}), isNull);
     });
   });
 }

@@ -2,8 +2,6 @@
 /// measurement and key figures of a training. Pure Dart.
 library;
 
-import 'dart:math' as math;
-
 import 'models/models.dart';
 
 /// Lowest and highest value GymLog accepts (also the database check).
@@ -295,7 +293,7 @@ List<int?> decodeCurve(String text) => text.isEmpty
     ? const []
     : [for (final v in text.split(',')) int.tryParse(v)];
 
-// Violin plot (1.5.1).
+// Distribution plot (1.5.1 violin, 1.6.2 box plot).
 
 /// Shares per beats-per-minute value (sum 1).
 Map<int, double> normalizeHistogram(Map<int, int> histogram) {
@@ -322,32 +320,6 @@ Map<int, double> averageDistribution(Iterable<Map<int, int>> histograms) {
   return result;
 }
 
-/// Smoothed density (Gaussian kernel) of a distribution from [from] to [to]
-/// in steps of 1 bpm; the maximum is 1.
-List<({int bpm, double density})> violinShape(
-  Map<int, double> distribution, {
-  required int from,
-  required int to,
-  double bandwidth = 3,
-}) {
-  if (distribution.isEmpty) return const [];
-  final raw = <({int bpm, double density})>[];
-  var peak = 0.0;
-  for (var bpm = from; bpm <= to; bpm++) {
-    var d = 0.0;
-    for (final MapEntry(:key, :value) in distribution.entries) {
-      final z = (bpm - key) / bandwidth;
-      d += value * _exp(-0.5 * z * z);
-    }
-    if (d > peak) peak = d;
-    raw.add((bpm: bpm, density: d));
-  }
-  return [
-    for (final r in raw)
-      (bpm: r.bpm, density: peak == 0 ? 0 : r.density / peak),
-  ];
-}
-
 /// Quartiles and median of a distribution.
 typedef Quartiles = ({int q1, int median, int q3});
 
@@ -367,4 +339,45 @@ Quartiles? quartilesOf(Map<int, double> distribution) {
   return (q1: at(0.25), median: at(0.5), q3: at(0.75));
 }
 
-double _exp(double x) => math.exp(x);
+/// A box plot of a heart rate distribution (1.6.2): quartiles, whiskers
+/// to the last value within 1.5 box lengths, the values beyond as
+/// outliers, and the lowest/highest value.
+typedef BoxPlot = ({
+  int min,
+  int lowWhisker,
+  int q1,
+  int median,
+  int q3,
+  int highWhisker,
+  int max,
+  List<int> outliers,
+});
+
+BoxPlot? boxPlotOf(Map<int, double> distribution) {
+  final keys = [
+    for (final MapEntry(:key, :value) in distribution.entries)
+      if (value > 0) key,
+  ]..sort();
+  final q = quartilesOf({for (final k in keys) k: distribution[k]!});
+  if (q == null) return null;
+  final box = q.q3 - q.q1;
+  final low = q.q1 - 1.5 * box;
+  final high = q.q3 + 1.5 * box;
+  final inside = [
+    for (final k in keys)
+      if (k >= low && k <= high) k,
+  ];
+  return (
+    min: keys.first,
+    lowWhisker: inside.first,
+    q1: q.q1,
+    median: q.median,
+    q3: q.q3,
+    highWhisker: inside.last,
+    max: keys.last,
+    outliers: [
+      for (final k in keys)
+        if (k < low || k > high) k,
+    ],
+  );
+}

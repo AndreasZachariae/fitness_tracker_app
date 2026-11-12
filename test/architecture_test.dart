@@ -127,11 +127,26 @@ void main() {
       for (final forbidden in [
         'PackageInstaller',
         'ACTION_INSTALL_PACKAGE',
-        'setDataAndType',
         'HttpURLConnection',
       ]) {
         expect(kotlin, isNot(contains(forbidden)), reason: forbidden);
       }
+      // GymLog opens only the folder (1.6.2), never an APK itself.
+      final views = RegExp(r'setDataAndType\([^)]*\)').allMatches(kotlin);
+      expect(views, isNotEmpty);
+      for (final v in views) {
+        expect(v.group(0), contains('MIME_TYPE_DIR'));
+      }
+      // "Download complete" only from the system's download provider.
+      final manifest = File('android/app/src/main/AndroidManifest.xml')
+          .readAsStringSync();
+      expect(
+        manifest,
+        contains(
+          'android:permission='
+          '"android.permission.SEND_DOWNLOAD_COMPLETED_INTENTS"',
+        ),
+      );
     },
   );
 

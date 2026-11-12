@@ -246,8 +246,29 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Update-APK: Download in der App mit Fortschritt in „Downloads“ (Android-Download-Manager), alte APKs löschen,
         Installieren weiter von Hand; Backup ohne Ordnerwahl direkt in „Downloads“ (Ort ändern bleibt möglich)
   - [x] Tests, CHANGELOG, Testliste
+- [x] 1.6.2 Boxplot, Geschlecht, APK installieren (`docs/ROADMAP.md`, 1.6.2+25)
+  - [x] Puls-Profil: gewähltes Geschlecht blau hervorgehoben
+  - [x] Pulsverteilung als Boxplot (Median, Quartile, Whisker 1,5 × Kasten, Ausreißer, Min/Max) statt Violinplot,
+        Vergleich mit früheren Trainings ebenso; kurzes i
+  - [x] Update-APK (Entscheidung des Menschen: Empfehlung): „Ordner öffnen“ direkt in Download/GymLog; Hinweis mit Knopf
+        zur Einstellung „Unbekannte Apps installieren“; Download-Benachrichtigung nur während des Ladens, danach eine
+        eigene „Update geladen“-Benachrichtigung, die den Ordner öffnet (nicht mehr den Installer über den Medienspeicher)
+  - [x] Tests, CHANGELOG, Testliste
 
 ## Annahmen
+- **1.6.2 Installieren der Update-APK (Entscheidung des Menschen):** Android fragt die App, die die Installation
+  startet. Die System-Benachrichtigung „Download abgeschlossen“ startete sie über den Medienspeicher
+  (`com.android.providers.media`), dem man das nicht erlauben kann. Deshalb zeigt der Download-Manager nur noch den
+  Fortschritt; am Ende zeigt GymLog eine eigene Benachrichtigung „Update geladen“ (Empfänger für
+  `DOWNLOAD_COMPLETE`, nur vom System-Download-Dienst zustellbar), die – wie „Ordner GymLog öffnen“ – den Ordner
+  `Download/GymLog` im Dateimanager öffnet. Der Dateimanager muss das Installieren einmal erlauben; „Installieren
+  erlauben“ öffnet die Liste „Unbekannte Apps installieren“. Ohne Dateimanager für den Ordner öffnet sich die
+  Download-Liste. Die Texte der Benachrichtigung kommen beim Start des Downloads aus Dart (`strings_de.dart`).
+- **1.6.2 Boxplot:** Kasten = 1. bis 3. Quartil der Zeit, Strich = Median, Whisker bis zum letzten Wert innerhalb von
+  1,5 Kastenlängen, Werte darüber hinaus als Ausreißer-Punkte; „min./max.“ beschriftet (max. des Trainings rot).
+  Rechts dasselbe für den Durchschnitt der früheren Trainings des Plans (Min/Max über alle zusammen).
+- **1.6.2 Auswahlknöpfe:** Die gewählte Option ist überall blau (Primärfarbe) statt im fast grauen Standard; im Thema
+  gesetzt, gilt also auch für Zeitraum, Design, Gewichtsschritte usw.
 - **1.6.1 Zonen nach Laktatschwelle (Entscheidung des Menschen):** Statt des Maximalpulses wird der
   Laktatschwellen-Puls (LSHF) eingetragen; Zonen wie Garmin „%LSHF“: Untergrenzen 57/67/79/90/101 %, Zone 5 bis 113 %,
   gerundet, Obergrenze = nächste Untergrenze − 1; überall „Zone“. Schema 9 fügt nur `app_settings.hr_threshold` hinzu;
@@ -907,6 +928,13 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.6.2 Boxplot, Geschlecht, APK installieren
+Nur, was live ausprobiert werden muss; Boxplot-Werte, Farben und die Download-Seite sind automatisch getestet.
+- [ ] Puls-Profil: Das gewählte Geschlecht ist blau hervorgehoben (ebenso Zeitraum in Körper/Statistik).
+- [ ] Zusammenfassung: Pulsverteilung als Boxplot – Kasten, Median, Whisker, evtl. Ausreißer-Punkte, „max.“ (rot) und „min.“ passend zu Kurve und Ø/Max; daneben „Ø bisher“. i-Text verständlich?
+- [ ] Update (nach dem nächsten DEV-Release): Download läuft mit Fortschritt; am Ende Benachrichtigung „Update geladen“ – Antippen öffnet den Ordner GymLog (nicht die Download-Liste); „Ordner GymLog öffnen“ in der App ebenso.
+- [ ] APK im Ordner antippen: Android fragt, ob die Dateien-App installieren darf → erlauben (oder vorher „Installieren erlauben“) → Installation klappt, Trainings bleiben erhalten. Keine Meldung „unbekannte Quelle com.android.providers.media“ mehr.
 
 ### 1.6.1 Bugfixes und Laktatschwellen-Zonen
 Nur, was live ausprobiert werden muss; Zonen, Vorschläge, Speichern, Backup-Ablauf und Download-Anzeige sind automatisch getestet.

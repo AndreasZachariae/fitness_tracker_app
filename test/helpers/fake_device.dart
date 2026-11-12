@@ -162,6 +162,7 @@ final class FakeApkDownloader implements ApkDownloader {
   final started = <String>[];
   int removed = 0;
   int opened = 0;
+  int settingsOpened = 0;
   bool fail = false;
   ApkDownloadState state = (
     status: ApkDownloadStatus.pending,
@@ -184,7 +185,10 @@ final class FakeApkDownloader implements ApkDownloader {
   Future<void> removeAll() async => removed++;
 
   @override
-  Future<void> openDownloads() async => opened++;
+  Future<void> openFolder() async => opened++;
+
+  @override
+  Future<void> openInstallSettings() async => settingsOpened++;
 }
 
 /// A heart rate monitor under the test's control (1.5.0).

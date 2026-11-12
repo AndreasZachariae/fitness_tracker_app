@@ -261,8 +261,9 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
   übernimmt die Gesamtdauer; ohne Pulsmesser Countdown der Minuten. Beim Beenden wird die Zeit im Ziel je Satz
   gespeichert (`set_entries.hr_target_sec`). Kein eigener Typ und keine eigene Kategorie (Regel 4: die Werte von Typ
   und Kategorie sind in der Tabelle festgelegt).
-- **Zusammenfassung/Verlauf:** Zeit in Pulszonen (Balken und Liste), Pulsverteilung mit roter Linie am Maximalpuls des
-  Trainings, Erholungspuls (Ø-Abfall 60 s nach dem Spitzenpuls harter Sätze ab Zone 3; Spitze bis 45 s nach dem Satz,
+- **Zusammenfassung/Verlauf:** Zeit in Pulszonen (Balken und Liste), Pulsverteilung als Boxplot (ab 1.6.2; vorher geglätteter
+  Violinplot): Median, Quartile, Whisker bis 1,5 Kastenlängen, Ausreißer als Punkte, „min./max.“ (max. rot), daneben
+  der Durchschnitt früherer Trainings des Plans, Erholungspuls (Ø-Abfall 60 s nach dem Spitzenpuls harter Sätze ab Zone 3; Spitze bis 45 s nach dem Satz,
   ohne Sätze, deren nächster Satz innerhalb der Minute beginnt, und ohne Anstieg), Kalorien (Keytel et al. 2005: Ø-Puls, Dauer, Körpergewicht am
   nächsten zum Trainingstag, Alter, Geschlecht; ohne Jahr/Geschlecht ein Hinweis), jeweils mit kurzem Info-i. Die
   Grafiken sind so breit wie die Kacheln darüber.
@@ -378,8 +379,9 @@ der Startseite (nur wenn es Trainings gibt).
   Benachrichtigung oder Einstellungen → Über („Update ansehen“). Die Seite
   zeigt Version, Neuerungen (aufgeklappt), „APK herunterladen“ und „Auf GitHub ansehen“. Ab 1.6.1 lädt Androids
   Download-Manager die APK nach `Download/GymLog` (vorher öffnete der Browser sie); die Seite zeigt den Fortschritt
-  („12,3 von 25,0 MB“), danach den Dateinamen und „Downloads öffnen“. Installiert wird durch Antippen der Datei
-  (Benachrichtigung oder Downloads). Frühere GymLog-APK-Downloads werden vor einem neuen Download und beim Start ohne
+  („12,3 von 25,0 MB“), danach den Dateinamen, „Ordner GymLog öffnen“ und „Installieren erlauben“ (Liste „Unbekannte
+  Apps installieren“, für den Dateimanager einmal nötig). Ab 1.6.2 zeigt der Download-Manager nur den Fortschritt; am
+  Ende meldet GymLog „Update geladen“, Antippen öffnet den Ordner. Installiert wird durch Antippen der Datei im Ordner. Frühere GymLog-APK-Downloads werden vor einem neuen Download und beim Start ohne
   neuere Version gelöscht. Fehlschlag → „Erneut versuchen“ oder „Im Browser herunterladen“.
 - **Automatische Buchung:** Adresse der Buchungsseite, ab 1.6.1 mit Knopf „Im Browser öffnen“ zum Testen.
 - **Nur im Dev-Build** (`de.gymlog.app.dev`): „Demo-Daten erzeugen“ und „Alle Daten löschen“ (mit Bestätigung).
