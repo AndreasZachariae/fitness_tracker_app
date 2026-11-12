@@ -171,9 +171,9 @@ final class FakeApkDownloader implements ApkDownloader {
   );
 
   @override
-  Future<int> start(String url) async {
+  Future<int> start(String url, String fileName) async {
     if (fail) throw StateError('no download');
-    started.add(url);
+    started.add('$url → $fileName');
     return started.length;
   }
 

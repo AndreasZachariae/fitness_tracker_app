@@ -47,6 +47,7 @@ class MainActivity : FlutterActivity() {
                             ApkDownloads.start(
                                 applicationContext,
                                 call.argument<String>("url")!!,
+                                call.argument<String>("name")!!,
                                 call.argument<Map<String, Any?>>("done") ?: emptyMap(),
                             ),
                         )

@@ -265,6 +265,10 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   nicht, vom Menschen getestet, daher weggelassen), ohne sie die Download-Liste. Dafür stehen beide Ansichten unter
   `<queries>` im Manifest (keine Berechtigung). Kachel- oder Listenansicht stellt der Nutzer in „Dateien“ ein. Der Dateimanager muss das Installieren einmal erlauben; ein Satz auf der Update-Seite sagt das (der
   eigene Einstellungs-Knopf entfiel auf Wunsch).
+- **1.6.2 Dateiname der Update-APK:** `gymlog-<Version>.apk` (z. B. `gymlog-1.6.2-dev.53.apk`). Ein vorhandener
+  Download zählt nur als „schon da“, wenn URL **und** Name passen – die DEV-Release hat immer dieselbe URL, deshalb
+  hielt GymLog die alte `gymlog-dev.apk` für die neue (Fund am Handy). Alte Downloads mit anderem Namen werden vor dem
+  neuen gelöscht.
 - **1.6.2 Info zum Boxplot:** Ausnahme von den kurzen Info-Texten – auf Wunsch ausführlicher (Kasten, Median,
   Whisker, Ausreißer, min./max., Vergleich). Die Texte der Benachrichtigung kommen beim Start des Downloads aus Dart (`strings_de.dart`).
 - **1.6.2 Boxplot:** Kasten = 1. bis 3. Quartil der Zeit, Strich = Median, Whisker bis zum letzten Wert innerhalb von
@@ -937,6 +941,7 @@ Nur, was live ausprobiert werden muss; Boxplot-Werte, Farben und die Download-Se
 - [ ] Puls-Profil: Das gewählte Geschlecht ist blau hervorgehoben (ebenso Zeitraum in Körper/Statistik).
 - [ ] Zusammenfassung: Pulsverteilung als Boxplot – Kasten, Median, Whisker, evtl. Ausreißer-Punkte, „max.“ (rot) und „min.“ passend zu Kurve und Ø/Max; daneben „Ø bisher“. Ausführlicher i-Text verständlich?
 - [ ] Update (nach dem nächsten DEV-Release): Download läuft mit Fortschritt; am Ende Benachrichtigung „Update geladen“ – Antippen öffnet den Ordner GymLog in „Dateien“; „Ordner GymLog öffnen“ in der App ebenso. Kein großer Einstellungs-Knopf mehr, nur der Hinweis.
+- [ ] Zwei DEV-Updates nacheinander: Jedes lädt neu herunter (Name mit Version, z. B. `gymlog-1.6.2-dev.54.apk`), im Ordner liegt danach nur die neueste APK.
 - [ ] APK antippen: Android fragt einmal, ob „Dateien“ installieren darf → erlauben → Installation klappt, Trainings bleiben erhalten. Keine Meldung „unbekannte Quelle com.android.providers.media“ mehr.
 
 ### 1.6.1 Bugfixes und Laktatschwellen-Zonen

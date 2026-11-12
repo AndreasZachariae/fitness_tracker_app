@@ -15,6 +15,12 @@ int? devBuildOf(String version) {
 /// `GymLog DEV 1.2.2-dev.31` → `1.2.2-dev.31`.
 String? devVersionIn(String text) => _dev.firstMatch(text)?.group(0);
 
+/// File name of the downloaded update APK (1.6.2): with the version, so a
+/// newer APK is never mistaken for the one already there (the DEV release
+/// always has the same URL), e.g. `gymlog-1.6.2-dev.53.apk`.
+String apkFileName(String version) =>
+    'gymlog-${version.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_')}.apk';
+
 /// Whether release [latest] is newer than the installed [current].
 ///
 /// Release app: `v1.3.0` against `1.2.0` (build numbers ignored).

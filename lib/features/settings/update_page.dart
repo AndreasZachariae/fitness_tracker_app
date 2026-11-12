@@ -9,6 +9,7 @@ import '../../core/l10n/strings_de.dart';
 import '../../data/notifications/apk_downloader.dart';
 import '../../data/notifications/update_checker.dart';
 import '../../data/providers.dart';
+import '../../domain/updates.dart';
 import '../notifications/reminder_sync.dart';
 import 'release_notes_view.dart';
 
@@ -45,7 +46,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
     super.dispose();
   }
 
-  Future<void> _startDownload(String url) async {
+  Future<void> _startDownload(String url, String version) async {
     final downloader = ref.read(apkDownloaderProvider);
     setState(() {
       _downloadFailed = false;
@@ -57,7 +58,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
       );
     });
     try {
-      _downloadId = await downloader.start(url);
+      _downloadId = await downloader.start(url, apkFileName(version));
     } on Object catch (e) {
       debugPrint('APK download failed: $e');
       if (mounted) setState(() => _downloadFailed = true);
@@ -160,7 +161,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
               _DownloadBox(
                 state: _downloadFailed ? null : _download,
                 failed: _downloadFailed,
-                onStart: () => _startDownload(apk),
+                onStart: () => _startDownload(apk, release.version),
                 onOpenFolder: () =>
                     ref.read(apkDownloaderProvider).openFolder(),
                 onBrowser: () => openInBrowser(apk),

@@ -36,18 +36,19 @@ object ApkDownloads {
 
     private const val PREFS = "apk_downloads"
 
-    /** Starts (or resumes showing) the download of [url]; returns its id. [done] holds the texts of the
-     *  notification at the end (from Dart, where all texts live). */
-    fun start(context: Context, url: String, done: Map<String, Any?>): Long {
+    /** Starts (or resumes showing) the download of [url] as [name] (with the version, 1.6.2); returns its id.
+     *  [done] holds the texts of the notification at the end (from Dart, where all texts live). */
+    fun start(context: Context, url: String, name: String, done: Map<String, Any?>): Long {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().apply {
             for ((key, value) in done) putString(key, value?.toString())
         }.apply()
         val uri = Uri.parse(url)
         require(uri.scheme == "https" && uri.host == "github.com") { "not a GitHub release file" }
-        val name = uri.lastPathSegment?.takeIf { it.endsWith(".apk") } ?: "gymlog.apk"
+        require(Regex("^gymlog-[A-Za-z0-9._-]+\\.apk$").matches(name)) { "bad file name" }
         val dm = manager(context)
-        // The same file still running or already there: keep it.
-        sameUrl(dm, url)?.let { return it }
+        // The same version still running or already there: keep it. The URL alone is not enough: the DEV
+        // release always has the same one (1.6.2).
+        sameFile(dm, url, name)?.let { return it }
         removeAll(context)
         val request = DownloadManager.Request(uri)
             .setTitle(name)
@@ -62,10 +63,11 @@ object ApkDownloads {
         return dm.enqueue(request)
     }
 
-    private fun sameUrl(dm: DownloadManager, url: String): Long? {
+    private fun sameFile(dm: DownloadManager, url: String, name: String): Long? {
         dm.query(DownloadManager.Query()).use { c ->
             while (c.moveToNext()) {
                 if (c.string(DownloadManager.COLUMN_URI) != url) continue
+                if (c.string(DownloadManager.COLUMN_TITLE) != name) continue
                 val id = c.long(DownloadManager.COLUMN_ID)
                 when (c.int(DownloadManager.COLUMN_STATUS)) {
                     DownloadManager.STATUS_FAILED -> continue

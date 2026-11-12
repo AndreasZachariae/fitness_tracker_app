@@ -2,6 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/domain/updates.dart';
 
 void main() {
+  test('1.6.2: APK file name carries the version', () {
+    expect(apkFileName('1.6.2'), 'gymlog-1.6.2.apk');
+    expect(apkFileName('1.6.2-dev.53'), 'gymlog-1.6.2-dev.53.apk');
+    // Two DEV builds from the same URL get different names.
+    expect(apkFileName('1.6.2-dev.54'), isNot(apkFileName('1.6.2-dev.53')));
+    expect(apkFileName('1.6/2 x'), 'gymlog-1.6_2_x.apk');
+  });
+
   test('isNewerVersion: release app', () {
     expect(isNewerVersion('v1.3.0', '1.2.0'), isTrue);
     expect(isNewerVersion('v1.2.1', '1.2.0+15'), isTrue);

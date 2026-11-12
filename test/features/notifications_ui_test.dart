@@ -377,7 +377,8 @@ void main() {
     await tester.tap(find.text(S.updateRetry).last);
     await tester.pump();
     await tester.pump();
-    expect(downloader.started, [releases.apkUrl]);
+    // 1.6.2: the version in the name, so a newer APK is downloaded anew.
+    expect(downloader.started, ['${releases.apkUrl} → gymlog-1.3.0.apk']);
     expect(find.text(S.updateProgress('12,0', '24,0')), findsOneWidget);
     final bar = tester.widget<LinearProgressIndicator>(
       find.byType(LinearProgressIndicator),

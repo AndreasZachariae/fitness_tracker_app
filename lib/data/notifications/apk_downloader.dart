@@ -24,9 +24,10 @@ typedef ApkDownloadState = ({
 /// REQUEST_INSTALL_PACKAGES, Play Protect, 1.2.2). Only one APK is kept:
 /// earlier GymLog downloads are removed before a new one starts.
 abstract interface class ApkDownloader {
-  /// Starts the download of [url] (a GitHub release file) and returns its
-  /// id; the same file still running or already there is not started again.
-  Future<int> start(String url);
+  /// Starts the download of [url] (a GitHub release file) as [fileName]
+  /// (with the version, see `apkFileName`) and returns its id; the same
+  /// version still running or already there is not started again.
+  Future<int> start(String url, String fileName);
 
   /// Progress of download [id]; `null` if Android does not know it.
   Future<ApkDownloadState?> query(int id);
@@ -45,9 +46,10 @@ final class PlatformApkDownloader implements ApkDownloader {
   static const _channel = MethodChannel('de.gymlog.app/downloads');
 
   @override
-  Future<int> start(String url) async =>
+  Future<int> start(String url, String fileName) async =>
       (await _channel.invokeMethod<int>('start', {
         'url': url,
+        'name': fileName,
         // The native notification at the end; texts live in Dart.
         'done': {
           'title': S.updateDownloadedTitle,
