@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/clock.dart';
+import '../../core/device.dart';
 import '../../core/heart_rate_monitor.dart';
 import '../../data/providers.dart';
 import '../../domain/heart_rate.dart';
@@ -64,6 +65,10 @@ class _HeartRateRecorderState extends ConsumerState<HeartRateRecorder>
   Timer? _flushTimer;
   final _pending = <({DateTime at, int bpm})>[];
   int? _pendingSession;
+  DateTime? _lastWarning;
+
+  /// At most one warning vibration in this time (1.6.0).
+  static const warnEvery = Duration(minutes: 2);
 
   Clock get _clock => ref.read(clockProvider);
   HeartRateLiveNotifier get _live => ref.read(heartRateLiveProvider.notifier);
@@ -158,10 +163,26 @@ class _HeartRateRecorderState extends ConsumerState<HeartRateRecorder>
       _flush();
       _pendingSession = target.sessionId;
     }
-    _pending.add((at: _clock.now(), bpm: bpm));
+    final now = _clock.now();
+    _pending.add((at: now, bpm: bpm));
+    _warnIfHigh(bpm, now);
     _flushTimer ??= Timer.periodic(HeartRateRecorder.flushEvery, (_) {
       if (mounted) _flush();
     });
+  }
+
+  /// Vibrates above the warning limit of the heart rate profile, at most
+  /// every [warnEvery] (1.6.0). The display turns red by itself.
+  void _warnIfHigh(int bpm, DateTime now) {
+    final settings = ref.read(settingsProvider).value;
+    final limit = settings?.hrWarnBpm;
+    if (settings == null || limit == null || bpm < limit) return;
+    final last = _lastWarning;
+    if (last != null && now.difference(last) < warnEvery) return;
+    _lastWarning = now;
+    if (settings.vibrationEnabled) {
+      unawaited(ref.read(deviceFeedbackProvider).heartRateWarning());
+    }
   }
 
   void _lost(_Target target) {

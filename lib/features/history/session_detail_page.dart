@@ -361,6 +361,18 @@ class _ExerciseCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (set.hrTargetSec case final inTarget?) ...[
+                        Text(
+                          S.cardioTargetTime(
+                            formatMinSec(Duration(seconds: inTarget)),
+                          ),
+                          key: const ValueKey('set-target-time'),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: muted,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       if (set.hrPeak case final peak?) ...[
                         SetHeartRateLabel(peak: peak),
                         const SizedBox(width: 8),

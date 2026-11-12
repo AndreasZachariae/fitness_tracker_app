@@ -32,6 +32,11 @@ final class AppSettings {
     this.notificationsAsked = false,
     this.hrDeviceId,
     this.hrDeviceName,
+    this.hrMax,
+    this.birthYear,
+    this.sex,
+    this.hrWarnBpm,
+    this.hrPauseBpm,
   });
 
   /// Booking page of the user's gym (1.2.0); changeable in the settings.
@@ -116,6 +121,22 @@ final class AppSettings {
   /// Its name as advertised, e.g. "Forerunner 255".
   final String? hrDeviceName;
 
+  /// Heart rate profile (1.6.0, Körper tab): maximum heart rate (Garmin's
+  /// ranges are shares of it), birth year and sex (calories).
+  final int? hrMax;
+  final int? birthYear;
+  final Sex? sex;
+
+  /// Warn above this heart rate; null = no warning.
+  final int? hrWarnBpm;
+
+  /// "Pause nach Puls" ends below this; null = top of range 1.
+  final int? hrPauseBpm;
+
+  /// The pause limit in use: own value or 60 % of the maximum.
+  int? get pauseBpm =>
+      hrPauseBpm ?? (hrMax == null ? null : (hrMax! * 0.6).round());
+
   AppSettings copyWith({
     int? defaultSets,
     int? defaultRestSec,
@@ -144,6 +165,11 @@ final class AppSettings {
     bool? notificationsAsked,
     Object? hrDeviceId = unset,
     Object? hrDeviceName = unset,
+    Object? hrMax = unset,
+    Object? birthYear = unset,
+    Object? sex = unset,
+    Object? hrWarnBpm = unset,
+    Object? hrPauseBpm = unset,
   }) {
     return AppSettings(
       id: id,
@@ -180,6 +206,11 @@ final class AppSettings {
       notificationsAsked: notificationsAsked ?? this.notificationsAsked,
       hrDeviceId: pick<String?>(hrDeviceId, this.hrDeviceId),
       hrDeviceName: pick<String?>(hrDeviceName, this.hrDeviceName),
+      hrMax: pick<int?>(hrMax, this.hrMax),
+      birthYear: pick<int?>(birthYear, this.birthYear),
+      sex: pick<Sex?>(sex, this.sex),
+      hrWarnBpm: pick<int?>(hrWarnBpm, this.hrWarnBpm),
+      hrPauseBpm: pick<int?>(hrPauseBpm, this.hrPauseBpm),
     );
   }
 
@@ -213,7 +244,12 @@ final class AppSettings {
       other.latestVersion == latestVersion &&
       other.notificationsAsked == notificationsAsked &&
       other.hrDeviceId == hrDeviceId &&
-      other.hrDeviceName == hrDeviceName;
+      other.hrDeviceName == hrDeviceName &&
+      other.hrMax == hrMax &&
+      other.birthYear == birthYear &&
+      other.sex == sex &&
+      other.hrWarnBpm == hrWarnBpm &&
+      other.hrPauseBpm == hrPauseBpm;
 
   @override
   int get hashCode => Object.hashAll([
@@ -245,5 +281,10 @@ final class AppSettings {
     notificationsAsked,
     hrDeviceId,
     hrDeviceName,
+    hrMax,
+    birthYear,
+    sex,
+    hrWarnBpm,
+    hrPauseBpm,
   ]);
 }

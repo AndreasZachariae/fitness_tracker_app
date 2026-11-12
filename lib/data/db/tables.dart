@@ -67,6 +67,15 @@ class Exercises extends Table {
   // Schema 5 (1.3.0): the set timer of timed exercises counts down.
   BoolColumn get timerCountdown =>
       boolean().withDefault(const Constant(false))();
+  // Schema 8 (1.6.0): pause by heart rate, heart rate target (warm-up).
+  BoolColumn get restByHeartRate =>
+      boolean().withDefault(const Constant(false))();
+  IntColumn get hrTargetRange =>
+      integer().nullable().check(hrTargetRange.isBetweenValues(1, 5))();
+  IntColumn get hrTargetBpm =>
+      integer().nullable().check(hrTargetBpm.isBetweenValues(40, 250))();
+  IntColumn get hrTargetMinutes =>
+      integer().nullable().check(hrTargetMinutes.isBetweenValues(1, 180))();
 }
 
 @UseRowClass(Plan, generateInsertable: true)
@@ -248,6 +257,8 @@ class SetEntries extends Table {
   // Schema 7 (1.5.1): heart rate of the set.
   IntColumn get hrAvg => integer().nullable()();
   IntColumn get hrPeak => integer().nullable()();
+  // Schema 8 (1.6.0): seconds in the heart rate target (warm-up).
+  IntColumn get hrTargetSec => integer().nullable()();
 }
 
 @UseRowClass(BodyWeightEntry, generateInsertable: true)
@@ -272,6 +283,8 @@ class SessionHeartRates extends Table {
   IntColumn get seconds => integer()();
   TextColumn get histogram => text()();
   TextColumn get curve => text()();
+  // Schema 8 (1.6.0).
+  IntColumn get recoveryBpm => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {sessionId};
@@ -356,6 +369,19 @@ class AppSettingsTable extends Table {
   // Schema 6 (1.5.0): the Bluetooth heart rate monitor.
   TextColumn get hrDeviceId => text().nullable()();
   TextColumn get hrDeviceName => text().nullable()();
+  // Schema 8 (1.6.0): heart rate profile.
+  IntColumn get hrMax =>
+      integer().nullable().check(hrMax.isBetweenValues(100, 250))();
+  IntColumn get birthYear =>
+      integer().nullable().check(birthYear.isBetweenValues(1900, 2100))();
+  TextColumn get sex => text()
+      .nullable()
+      .check(sex.isIn(const ['male', 'female']))
+      .map(const SexConverter())();
+  IntColumn get hrWarnBpm =>
+      integer().nullable().check(hrWarnBpm.isBetweenValues(60, 250))();
+  IntColumn get hrPauseBpm =>
+      integer().nullable().check(hrPauseBpm.isBetweenValues(40, 220))();
 
   @override
   Set<Column> get primaryKey => {id};

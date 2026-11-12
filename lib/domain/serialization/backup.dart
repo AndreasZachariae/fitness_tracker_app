@@ -13,7 +13,9 @@ const backupFormat = 'gymlog-backup';
 /// 3 (1.1.0): weight steps. 4 (1.2.0): training days, notifications.
 /// 5 (1.3.0): `exercises[].timerCountdown`. 6 (1.5.0): `heartRateSamples`.
 /// 7 (1.5.1): `sessionHeartRates`, heart rate of sets and session exercises.
-const backupFormatVersion = 7;
+/// 8 (1.6.0): heart rate profile, pause by heart rate, warm-up targets,
+/// time in target, heart rate recovery.
+const backupFormatVersion = 8;
 
 final class BackupData {
   const BackupData({
@@ -125,6 +127,10 @@ String encodeBackup(BackupData b) {
             'incrementLbs': e.incrementLbs,
             'levelKg': e.levelKg,
             'timerCountdown': e.timerCountdown,
+            'restByHeartRate': e.restByHeartRate,
+            'hrTargetRange': e.hrTargetRange,
+            'hrTargetBpm': e.hrTargetBpm,
+            'hrTargetMinutes': e.hrTargetMinutes,
           },
       ],
       'plans': [
@@ -217,6 +223,7 @@ String encodeBackup(BackupData b) {
             'isWarmup': x.isWarmup,
             'hrAvg': x.hrAvg,
             'hrPeak': x.hrPeak,
+            'hrTargetSec': x.hrTargetSec,
             'completedAt': _t(x.completedAt),
           },
       ],
@@ -239,6 +246,7 @@ String encodeBackup(BackupData b) {
             'seconds': h.seconds,
             'histogram': h.histogram,
             'curve': h.curve,
+            'recoveryBpm': h.recoveryBpm,
           },
       ],
       'heartRateSamples': [
@@ -275,6 +283,13 @@ String encodeBackup(BackupData b) {
         'notifyStreak': s.notifyStreak,
         'checkUpdates': s.checkUpdates,
         'bookingUrl': s.bookingUrl,
+        // Format 8 (1.6.0): heart rate profile. The chosen monitor is device
+        // state and not part of a backup.
+        'hrMax': s.hrMax,
+        'birthYear': s.birthYear,
+        'sex': s.sex?.code,
+        'hrWarnBpm': s.hrWarnBpm,
+        'hrPauseBpm': s.hrPauseBpm,
       },
     },
   });
@@ -417,6 +432,7 @@ BackupData decodeBackup(String text) {
   final v5 = version >= 5;
   final v6 = version >= 6;
   final v7 = version >= 7;
+  final v8 = version >= 8;
   final dataset = Dataset(
     exercises: _list(
       data,
@@ -452,6 +468,10 @@ BackupData decodeBackup(String text) {
             ? v3LevelKg
             : null,
         timerCountdown: v5 && r.boolean('timerCountdown'),
+        restByHeartRate: v8 && r.boolean('restByHeartRate'),
+        hrTargetRange: v8 ? r.intOrNull('hrTargetRange') : null,
+        hrTargetBpm: v8 ? r.intOrNull('hrTargetBpm') : null,
+        hrTargetMinutes: v8 ? r.intOrNull('hrTargetMinutes') : null,
       ),
     ),
     plans: _list(
@@ -562,6 +582,7 @@ BackupData decodeBackup(String text) {
         isWarmup: r.boolean('isWarmup'),
         hrAvg: v7 ? r.intOrNull('hrAvg') : null,
         hrPeak: v7 ? r.intOrNull('hrPeak') : null,
+        hrTargetSec: v8 ? r.intOrNull('hrTargetSec') : null,
         completedAt: r.time('completedAt'),
       ),
     ),
@@ -588,6 +609,7 @@ BackupData decodeBackup(String text) {
               seconds: r.integer('seconds'),
               histogram: r.string('histogram'),
               curve: r.string('curve'),
+              recoveryBpm: v8 ? r.intOrNull('recoveryBpm') : null,
             ),
           ),
     heartRateSamples: !v6
@@ -639,7 +661,15 @@ BackupData decodeBackup(String text) {
           bookingUrl: r.string('bookingUrl'),
         )
       : base;
-  final settings = notifications;
+  final settings = v8
+      ? notifications.copyWith(
+          hrMax: r.intOrNull('hrMax'),
+          birthYear: r.intOrNull('birthYear'),
+          sex: r.codedOrNull('sex', Sex.values),
+          hrWarnBpm: r.intOrNull('hrWarnBpm'),
+          hrPauseBpm: r.intOrNull('hrPauseBpm'),
+        )
+      : notifications;
 
   validateDataset(dataset, settings);
   return BackupData(

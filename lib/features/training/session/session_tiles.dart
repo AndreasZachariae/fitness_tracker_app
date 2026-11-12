@@ -18,6 +18,7 @@ import '../../../domain/records.dart';
 import '../../../domain/weight_steps.dart';
 import '../../../widgets/exercise_type_icon.dart';
 import '../../heart_rate/heart_rate_widgets.dart';
+import 'cardio_timer.dart';
 import 'set_input.dart';
 
 /// Callbacks of the tiles, implemented by the session view.
@@ -499,6 +500,7 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                       onChanged: (v) => setState(() => _values = v),
                       countDown: d.exercise.timerCountdown,
                       exerciseName: d.exercise.name,
+                      heartRateTarget: heartRateTargetOf(d.exercise),
                       onToggleCountdown: () => widget.actions.setTimerCountdown(
                         d,
                         !d.exercise.timerCountdown,

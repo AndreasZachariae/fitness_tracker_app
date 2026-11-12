@@ -50,7 +50,7 @@ class AppDatabase extends _$AppDatabase {
   final Clock? libraryClock;
 
   /// Current schema version. Changes only via migration (CLAUDE.md, rule 4).
-  static const currentSchemaVersion = 7;
+  static const currentSchemaVersion = 8;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -152,7 +152,34 @@ class AppDatabase extends _$AppDatabase {
           schema.sessionExercises.hrMax,
         );
         // The series of finished trainings (1.5.0) becomes summaries.
-        await summarizeFinishedHeartRates(this);
+        await summarizeFinishedHeartRates(this, schema8: false);
+      },
+      // 1.6.0: heart rate profile, pause by heart rate, warm-up targets.
+      from7To8: (m, schema) async {
+        final s = schema.appSettings;
+        for (final c in [
+          s.hrMax,
+          s.birthYear,
+          s.sex,
+          s.hrWarnBpm,
+          s.hrPauseBpm,
+        ]) {
+          await m.addColumn(s, c);
+        }
+        final e = schema.exercises;
+        for (final c in [
+          e.restByHeartRate,
+          e.hrTargetRange,
+          e.hrTargetBpm,
+          e.hrTargetMinutes,
+        ]) {
+          await m.addColumn(e, c);
+        }
+        await m.addColumn(schema.setEntries, schema.setEntries.hrTargetSec);
+        await m.addColumn(
+          schema.sessionHeartRates,
+          schema.sessionHeartRates.recoveryBpm,
+        );
       },
     ),
     beforeOpen: (details) async {

@@ -111,7 +111,16 @@ class DataTransferService {
       throw const ImportBlockedException();
     }
     await _writeSafetyCopy();
-    await _maintenance.replaceAll(backup.dataset, settings: backup.settings);
+    // Device state stays with the device (1.6.0): the chosen heart rate
+    // monitor is not in a backup and must not get lost by a restore.
+    final current = await db.settingsDao.get();
+    await _maintenance.replaceAll(
+      backup.dataset,
+      settings: backup.settings.copyWith(
+        hrDeviceId: current.hrDeviceId,
+        hrDeviceName: current.hrDeviceName,
+      ),
+    );
   }
 
   Future<void> _writeSafetyCopy() async {

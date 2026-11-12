@@ -14,7 +14,11 @@ import '../../../domain/models/models.dart';
 import '../../../domain/reminders.dart';
 import '../../../domain/rest_timer.dart';
 import '../../../widgets/ticker.dart';
+import '../../heart_rate/heart_rate_recorder.dart';
 import 'background_timer.dart';
+
+/// "Pause nach Puls" ends a rest no earlier than this (1.6.0).
+const minRestByHeartRate = Duration(seconds: 30);
 
 /// In-memory changes of the rest timer: ±15 s per set, skipped sets and
 /// sets whose end was already signalled.
@@ -198,6 +202,12 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
       return const SizedBox.shrink();
     }
     final setId = last.set.id;
+    // 1.6.0: "Pause nach Puls" – the exercise of the set and the limit.
+    final byHr = details.any(
+      (d) => d.exercise.restByHeartRate && d.sets.any((x) => x.id == setId),
+    );
+    final hrLimit = byHr ? settings.pauseBpm : null;
+    final live = hrLimit == null ? null : ref.watch(heartRateLiveProvider);
 
     return ClockTicker(
       interval: const Duration(milliseconds: 250),
@@ -218,9 +228,24 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
         switch (state) {
           case RestHidden():
             return const SizedBox.shrink();
-          case RestRunning():
+          case RestRunning(:final remaining):
             _seenRunning.add(setId);
+            // Heart rate below the limit (and at least 30 s rest): the
+            // rest ends now – vibration and "Pause vorbei" as usual.
+            if (hrLimit != null &&
+                live?.status == HeartRateStatus.connected &&
+                live!.bpm != null &&
+                live.bpm! < hrLimit &&
+                now.difference(last.set.completedAt) >= minRestByHeartRate) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                ref
+                    .read(restTimerProvider.notifier)
+                    .adjust(setId, -(remaining.inSeconds + 1));
+              });
+            }
             return _RunningBar(
+              hrLimit: hrLimit,
               state: state,
               onMinus: () =>
                   ref.read(restTimerProvider.notifier).adjust(setId, -15),
@@ -245,8 +270,11 @@ class _RunningBar extends StatelessWidget {
     required this.onMinus,
     required this.onPlus,
     required this.onSkip,
+    this.hrLimit,
   });
 
+  /// "Pause nach Puls": ends below this heart rate too (1.6.0).
+  final int? hrLimit;
   final RestRunning state;
   final VoidCallback onMinus;
   final VoidCallback onPlus;
@@ -291,6 +319,16 @@ class _RunningBar extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(color: fg),
                         ),
+                        if (hrLimit != null) ...[
+                          const SizedBox(width: 8),
+                          Icon(Icons.favorite_border, size: 16, color: fg),
+                          Text(
+                            ' < $hrLimit',
+                            key: const ValueKey('rest-hr-limit'),
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(color: fg),
+                          ),
+                        ],
                         const SizedBox(width: 8),
                         Text(
                           formatMinSec(

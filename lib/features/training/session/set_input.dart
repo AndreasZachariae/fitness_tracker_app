@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/format/exercise_format.dart';
 import '../../../core/format/formatters.dart';
@@ -7,6 +8,8 @@ import '../../../domain/models/models.dart';
 import '../../../domain/weight_steps.dart';
 import '../../../widgets/big_stepper.dart';
 import '../../../widgets/number_input_dialog.dart';
+import '../../heart_rate/heart_rate_recorder.dart';
+import 'cardio_timer.dart';
 import 'stopwatch_button.dart';
 
 /// Limits of the set input.
@@ -91,6 +94,7 @@ class SetInput extends StatefulWidget {
     this.onToggleCountdown,
     this.onTimerStarted,
     this.exerciseName = '',
+    this.heartRateTarget,
     super.key,
   });
 
@@ -115,6 +119,10 @@ class SetInput extends StatefulWidget {
 
   /// For the timer on the lock screen.
   final String exerciseName;
+
+  /// Warm-up / cardio (1.6.0): with a heart rate monitor the timer counts
+  /// only the time in the target; without one it counts down the minutes.
+  final HeartRateTarget? heartRateTarget;
 
   @override
   State<SetInput> createState() => _SetInputState();
@@ -248,19 +256,40 @@ class _SetInputState extends State<SetInput> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (widget.showStopwatch) ...[
-            StopwatchButton(
-              countDown: widget.countDown,
-              targetSec: _v.durationSec,
-              label: widget.exerciseName,
-              onToggleDirection: widget.onToggleCountdown,
-              onStarted: () {
-                // The countdown needs a duration; shown in the stepper too.
-                if (widget.countDown && _v.durationSec == null) {
-                  _emit(_v.copyWith(durationSec: defaultCountdownSec));
+            Consumer(
+              builder: (context, ref, _) {
+                final target = widget.heartRateTarget;
+                final monitor =
+                    ref.watch(heartRateLiveProvider).status !=
+                    HeartRateStatus.off;
+                if (target != null && monitor) {
+                  return CardioTimer(
+                    target: target,
+                    onStarted: widget.onTimerStarted,
+                    onStopped: (s) => _emit(_v.copyWith(durationSec: s)),
+                  );
                 }
-                widget.onTimerStarted?.call();
+                return StopwatchButton(
+                  countDown: target != null || widget.countDown,
+                  targetSec: target != null
+                      ? target.minutes * 60
+                      : _v.durationSec,
+                  label: widget.exerciseName,
+                  onToggleDirection: target != null
+                      ? null
+                      : widget.onToggleCountdown,
+                  onStarted: () {
+                    // The countdown needs a duration; shown in the stepper.
+                    if (widget.countDown &&
+                        target == null &&
+                        _v.durationSec == null) {
+                      _emit(_v.copyWith(durationSec: defaultCountdownSec));
+                    }
+                    widget.onTimerStarted?.call();
+                  },
+                  onStopped: (s) => _emit(_v.copyWith(durationSec: s)),
+                );
               },
-              onStopped: (s) => _emit(_v.copyWith(durationSec: s)),
             ),
             gap,
           ],

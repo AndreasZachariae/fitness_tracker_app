@@ -189,6 +189,57 @@ class $ExercisesTable extends Exercises
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _restByHeartRateMeta = const VerificationMeta(
+    'restByHeartRate',
+  );
+  @override
+  late final GeneratedColumn<bool> restByHeartRate = GeneratedColumn<bool>(
+    'rest_by_heart_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("rest_by_heart_rate" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _hrTargetRangeMeta = const VerificationMeta(
+    'hrTargetRange',
+  );
+  @override
+  late final GeneratedColumn<int> hrTargetRange = GeneratedColumn<int>(
+    'hr_target_range',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(hrTargetRange).isBetweenValues(1, 5),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hrTargetBpmMeta = const VerificationMeta(
+    'hrTargetBpm',
+  );
+  @override
+  late final GeneratedColumn<int> hrTargetBpm = GeneratedColumn<int>(
+    'hr_target_bpm',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(hrTargetBpm).isBetweenValues(40, 250),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hrTargetMinutesMeta = const VerificationMeta(
+    'hrTargetMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> hrTargetMinutes = GeneratedColumn<int>(
+    'hr_target_minutes',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(hrTargetMinutes).isBetweenValues(1, 180),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -205,6 +256,10 @@ class $ExercisesTable extends Exercises
     incrementLbs,
     levelKg,
     timerCountdown,
+    restByHeartRate,
+    hrTargetRange,
+    hrTargetBpm,
+    hrTargetMinutes,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -299,6 +354,42 @@ class $ExercisesTable extends Exercises
         ),
       );
     }
+    if (data.containsKey('rest_by_heart_rate')) {
+      context.handle(
+        _restByHeartRateMeta,
+        restByHeartRate.isAcceptableOrUnknown(
+          data['rest_by_heart_rate']!,
+          _restByHeartRateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('hr_target_range')) {
+      context.handle(
+        _hrTargetRangeMeta,
+        hrTargetRange.isAcceptableOrUnknown(
+          data['hr_target_range']!,
+          _hrTargetRangeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('hr_target_bpm')) {
+      context.handle(
+        _hrTargetBpmMeta,
+        hrTargetBpm.isAcceptableOrUnknown(
+          data['hr_target_bpm']!,
+          _hrTargetBpmMeta,
+        ),
+      );
+    }
+    if (data.containsKey('hr_target_minutes')) {
+      context.handle(
+        _hrTargetMinutesMeta,
+        hrTargetMinutes.isAcceptableOrUnknown(
+          data['hr_target_minutes']!,
+          _hrTargetMinutesMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -370,6 +461,22 @@ class $ExercisesTable extends Exercises
         DriftSqlType.bool,
         data['${effectivePrefix}timer_countdown'],
       )!,
+      restByHeartRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}rest_by_heart_rate'],
+      )!,
+      hrTargetRange: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hr_target_range'],
+      ),
+      hrTargetBpm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hr_target_bpm'],
+      ),
+      hrTargetMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hr_target_minutes'],
+      ),
     );
   }
 
@@ -403,6 +510,10 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
   final Value<double> incrementLbs;
   final Value<double?> levelKg;
   final Value<bool> timerCountdown;
+  final Value<bool> restByHeartRate;
+  final Value<int?> hrTargetRange;
+  final Value<int?> hrTargetBpm;
+  final Value<int?> hrTargetMinutes;
   const ExercisesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -418,6 +529,10 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     this.incrementLbs = const Value.absent(),
     this.levelKg = const Value.absent(),
     this.timerCountdown = const Value.absent(),
+    this.restByHeartRate = const Value.absent(),
+    this.hrTargetRange = const Value.absent(),
+    this.hrTargetBpm = const Value.absent(),
+    this.hrTargetMinutes = const Value.absent(),
   });
   ExercisesCompanion.insert({
     this.id = const Value.absent(),
@@ -434,6 +549,10 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     this.incrementLbs = const Value.absent(),
     this.levelKg = const Value.absent(),
     this.timerCountdown = const Value.absent(),
+    this.restByHeartRate = const Value.absent(),
+    this.hrTargetRange = const Value.absent(),
+    this.hrTargetBpm = const Value.absent(),
+    this.hrTargetMinutes = const Value.absent(),
   }) : name = Value(name),
        type = Value(type),
        includeInStrengthIndex = Value(includeInStrengthIndex),
@@ -453,6 +572,10 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     Expression<double>? incrementLbs,
     Expression<double>? levelKg,
     Expression<bool>? timerCountdown,
+    Expression<bool>? restByHeartRate,
+    Expression<int>? hrTargetRange,
+    Expression<int>? hrTargetBpm,
+    Expression<int>? hrTargetMinutes,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -470,6 +593,10 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
       if (incrementLbs != null) 'increment_lbs': incrementLbs,
       if (levelKg != null) 'level_kg': levelKg,
       if (timerCountdown != null) 'timer_countdown': timerCountdown,
+      if (restByHeartRate != null) 'rest_by_heart_rate': restByHeartRate,
+      if (hrTargetRange != null) 'hr_target_range': hrTargetRange,
+      if (hrTargetBpm != null) 'hr_target_bpm': hrTargetBpm,
+      if (hrTargetMinutes != null) 'hr_target_minutes': hrTargetMinutes,
     });
   }
 
@@ -488,6 +615,10 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     Value<double>? incrementLbs,
     Value<double?>? levelKg,
     Value<bool>? timerCountdown,
+    Value<bool>? restByHeartRate,
+    Value<int?>? hrTargetRange,
+    Value<int?>? hrTargetBpm,
+    Value<int?>? hrTargetMinutes,
   }) {
     return ExercisesCompanion(
       id: id ?? this.id,
@@ -505,6 +636,10 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
       incrementLbs: incrementLbs ?? this.incrementLbs,
       levelKg: levelKg ?? this.levelKg,
       timerCountdown: timerCountdown ?? this.timerCountdown,
+      restByHeartRate: restByHeartRate ?? this.restByHeartRate,
+      hrTargetRange: hrTargetRange ?? this.hrTargetRange,
+      hrTargetBpm: hrTargetBpm ?? this.hrTargetBpm,
+      hrTargetMinutes: hrTargetMinutes ?? this.hrTargetMinutes,
     );
   }
 
@@ -561,6 +696,18 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     if (timerCountdown.present) {
       map['timer_countdown'] = Variable<bool>(timerCountdown.value);
     }
+    if (restByHeartRate.present) {
+      map['rest_by_heart_rate'] = Variable<bool>(restByHeartRate.value);
+    }
+    if (hrTargetRange.present) {
+      map['hr_target_range'] = Variable<int>(hrTargetRange.value);
+    }
+    if (hrTargetBpm.present) {
+      map['hr_target_bpm'] = Variable<int>(hrTargetBpm.value);
+    }
+    if (hrTargetMinutes.present) {
+      map['hr_target_minutes'] = Variable<int>(hrTargetMinutes.value);
+    }
     return map;
   }
 
@@ -580,7 +727,11 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
           ..write('stepMode: $stepMode, ')
           ..write('incrementLbs: $incrementLbs, ')
           ..write('levelKg: $levelKg, ')
-          ..write('timerCountdown: $timerCountdown')
+          ..write('timerCountdown: $timerCountdown, ')
+          ..write('restByHeartRate: $restByHeartRate, ')
+          ..write('hrTargetRange: $hrTargetRange, ')
+          ..write('hrTargetBpm: $hrTargetBpm, ')
+          ..write('hrTargetMinutes: $hrTargetMinutes')
           ..write(')'))
         .toString();
   }
@@ -606,6 +757,10 @@ class _$ExerciseInsertable implements Insertable<Exercise> {
       incrementLbs: Value(_object.incrementLbs),
       levelKg: Value(_object.levelKg),
       timerCountdown: Value(_object.timerCountdown),
+      restByHeartRate: Value(_object.restByHeartRate),
+      hrTargetRange: Value(_object.hrTargetRange),
+      hrTargetBpm: Value(_object.hrTargetBpm),
+      hrTargetMinutes: Value(_object.hrTargetMinutes),
     ).toColumns(false);
   }
 }
@@ -3032,6 +3187,17 @@ class $SetEntriesTable extends SetEntries
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _hrTargetSecMeta = const VerificationMeta(
+    'hrTargetSec',
+  );
+  @override
+  late final GeneratedColumn<int> hrTargetSec = GeneratedColumn<int>(
+    'hr_target_sec',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3044,6 +3210,7 @@ class $SetEntriesTable extends SetEntries
     completedAt,
     hrAvg,
     hrPeak,
+    hrTargetSec,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3129,6 +3296,15 @@ class $SetEntriesTable extends SetEntries
         hrPeak.isAcceptableOrUnknown(data['hr_peak']!, _hrPeakMeta),
       );
     }
+    if (data.containsKey('hr_target_sec')) {
+      context.handle(
+        _hrTargetSecMeta,
+        hrTargetSec.isAcceptableOrUnknown(
+          data['hr_target_sec']!,
+          _hrTargetSecMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3178,6 +3354,10 @@ class $SetEntriesTable extends SetEntries
         DriftSqlType.int,
         data['${effectivePrefix}hr_peak'],
       ),
+      hrTargetSec: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hr_target_sec'],
+      ),
     );
   }
 
@@ -3198,6 +3378,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
   final Value<DateTime> completedAt;
   final Value<int?> hrAvg;
   final Value<int?> hrPeak;
+  final Value<int?> hrTargetSec;
   const SetEntriesCompanion({
     this.id = const Value.absent(),
     this.sessionExerciseId = const Value.absent(),
@@ -3209,6 +3390,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
     this.completedAt = const Value.absent(),
     this.hrAvg = const Value.absent(),
     this.hrPeak = const Value.absent(),
+    this.hrTargetSec = const Value.absent(),
   });
   SetEntriesCompanion.insert({
     this.id = const Value.absent(),
@@ -3221,6 +3403,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
     required DateTime completedAt,
     this.hrAvg = const Value.absent(),
     this.hrPeak = const Value.absent(),
+    this.hrTargetSec = const Value.absent(),
   }) : sessionExerciseId = Value(sessionExerciseId),
        setIndex = Value(setIndex),
        completedAt = Value(completedAt);
@@ -3235,6 +3418,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
     Expression<DateTime>? completedAt,
     Expression<int>? hrAvg,
     Expression<int>? hrPeak,
+    Expression<int>? hrTargetSec,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3247,6 +3431,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
       if (completedAt != null) 'completed_at': completedAt,
       if (hrAvg != null) 'hr_avg': hrAvg,
       if (hrPeak != null) 'hr_peak': hrPeak,
+      if (hrTargetSec != null) 'hr_target_sec': hrTargetSec,
     });
   }
 
@@ -3261,6 +3446,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
     Value<DateTime>? completedAt,
     Value<int?>? hrAvg,
     Value<int?>? hrPeak,
+    Value<int?>? hrTargetSec,
   }) {
     return SetEntriesCompanion(
       id: id ?? this.id,
@@ -3273,6 +3459,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
       completedAt: completedAt ?? this.completedAt,
       hrAvg: hrAvg ?? this.hrAvg,
       hrPeak: hrPeak ?? this.hrPeak,
+      hrTargetSec: hrTargetSec ?? this.hrTargetSec,
     );
   }
 
@@ -3309,6 +3496,9 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
     if (hrPeak.present) {
       map['hr_peak'] = Variable<int>(hrPeak.value);
     }
+    if (hrTargetSec.present) {
+      map['hr_target_sec'] = Variable<int>(hrTargetSec.value);
+    }
     return map;
   }
 
@@ -3324,7 +3514,8 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
           ..write('isWarmup: $isWarmup, ')
           ..write('completedAt: $completedAt, ')
           ..write('hrAvg: $hrAvg, ')
-          ..write('hrPeak: $hrPeak')
+          ..write('hrPeak: $hrPeak, ')
+          ..write('hrTargetSec: $hrTargetSec')
           ..write(')'))
         .toString();
   }
@@ -3346,6 +3537,7 @@ class _$SetEntryInsertable implements Insertable<SetEntry> {
       completedAt: Value(_object.completedAt),
       hrAvg: Value(_object.hrAvg),
       hrPeak: Value(_object.hrPeak),
+      hrTargetSec: Value(_object.hrTargetSec),
     ).toColumns(false);
   }
 }
@@ -3955,6 +4147,62 @@ class $AppSettingsTableTable extends AppSettingsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _hrMaxMeta = const VerificationMeta('hrMax');
+  @override
+  late final GeneratedColumn<int> hrMax = GeneratedColumn<int>(
+    'hr_max',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(hrMax).isBetweenValues(100, 250),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _birthYearMeta = const VerificationMeta(
+    'birthYear',
+  );
+  @override
+  late final GeneratedColumn<int> birthYear = GeneratedColumn<int>(
+    'birth_year',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(birthYear).isBetweenValues(1900, 2100),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<Sex?, String> sex =
+      GeneratedColumn<String>(
+        'sex',
+        aliasedName,
+        true,
+        check: () => sex.isIn(const ['male', 'female']),
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<Sex?>($AppSettingsTableTable.$convertersexn);
+  static const VerificationMeta _hrWarnBpmMeta = const VerificationMeta(
+    'hrWarnBpm',
+  );
+  @override
+  late final GeneratedColumn<int> hrWarnBpm = GeneratedColumn<int>(
+    'hr_warn_bpm',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(hrWarnBpm).isBetweenValues(60, 250),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hrPauseBpmMeta = const VerificationMeta(
+    'hrPauseBpm',
+  );
+  @override
+  late final GeneratedColumn<int> hrPauseBpm = GeneratedColumn<int>(
+    'hr_pause_bpm',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(hrPauseBpm).isBetweenValues(40, 220),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3985,6 +4233,11 @@ class $AppSettingsTableTable extends AppSettingsTable
     notificationsAsked,
     hrDeviceId,
     hrDeviceName,
+    hrMax,
+    birthYear,
+    sex,
+    hrWarnBpm,
+    hrPauseBpm,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4220,6 +4473,33 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('hr_max')) {
+      context.handle(
+        _hrMaxMeta,
+        hrMax.isAcceptableOrUnknown(data['hr_max']!, _hrMaxMeta),
+      );
+    }
+    if (data.containsKey('birth_year')) {
+      context.handle(
+        _birthYearMeta,
+        birthYear.isAcceptableOrUnknown(data['birth_year']!, _birthYearMeta),
+      );
+    }
+    if (data.containsKey('hr_warn_bpm')) {
+      context.handle(
+        _hrWarnBpmMeta,
+        hrWarnBpm.isAcceptableOrUnknown(data['hr_warn_bpm']!, _hrWarnBpmMeta),
+      );
+    }
+    if (data.containsKey('hr_pause_bpm')) {
+      context.handle(
+        _hrPauseBpmMeta,
+        hrPauseBpm.isAcceptableOrUnknown(
+          data['hr_pause_bpm']!,
+          _hrPauseBpmMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4345,6 +4625,28 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.string,
         data['${effectivePrefix}hr_device_name'],
       ),
+      hrMax: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hr_max'],
+      ),
+      birthYear: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}birth_year'],
+      ),
+      sex: $AppSettingsTableTable.$convertersexn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}sex'],
+        ),
+      ),
+      hrWarnBpm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hr_warn_bpm'],
+      ),
+      hrPauseBpm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hr_pause_bpm'],
+      ),
     );
   }
 
@@ -4357,6 +4659,9 @@ class $AppSettingsTableTable extends AppSettingsTable
       const ThemePreferenceConverter();
   static TypeConverter<WeightUnit, String> $converterdefaultStepUnit =
       const WeightUnitConverter();
+  static TypeConverter<Sex, String> $convertersex = const SexConverter();
+  static TypeConverter<Sex?, String?> $convertersexn =
+      NullAwareTypeConverter.wrap($convertersex);
 }
 
 class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
@@ -4388,6 +4693,11 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
   final Value<bool> notificationsAsked;
   final Value<String?> hrDeviceId;
   final Value<String?> hrDeviceName;
+  final Value<int?> hrMax;
+  final Value<int?> birthYear;
+  final Value<Sex?> sex;
+  final Value<int?> hrWarnBpm;
+  final Value<int?> hrPauseBpm;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
     this.defaultSets = const Value.absent(),
@@ -4417,6 +4727,11 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     this.notificationsAsked = const Value.absent(),
     this.hrDeviceId = const Value.absent(),
     this.hrDeviceName = const Value.absent(),
+    this.hrMax = const Value.absent(),
+    this.birthYear = const Value.absent(),
+    this.sex = const Value.absent(),
+    this.hrWarnBpm = const Value.absent(),
+    this.hrPauseBpm = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
     this.id = const Value.absent(),
@@ -4447,6 +4762,11 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     this.notificationsAsked = const Value.absent(),
     this.hrDeviceId = const Value.absent(),
     this.hrDeviceName = const Value.absent(),
+    this.hrMax = const Value.absent(),
+    this.birthYear = const Value.absent(),
+    this.sex = const Value.absent(),
+    this.hrWarnBpm = const Value.absent(),
+    this.hrPauseBpm = const Value.absent(),
   });
   static Insertable<AppSettings> custom({
     Expression<int>? id,
@@ -4477,6 +4797,11 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     Expression<bool>? notificationsAsked,
     Expression<String>? hrDeviceId,
     Expression<String>? hrDeviceName,
+    Expression<int>? hrMax,
+    Expression<int>? birthYear,
+    Expression<String>? sex,
+    Expression<int>? hrWarnBpm,
+    Expression<int>? hrPauseBpm,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -4509,6 +4834,11 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
       if (notificationsAsked != null) 'notifications_asked': notificationsAsked,
       if (hrDeviceId != null) 'hr_device_id': hrDeviceId,
       if (hrDeviceName != null) 'hr_device_name': hrDeviceName,
+      if (hrMax != null) 'hr_max': hrMax,
+      if (birthYear != null) 'birth_year': birthYear,
+      if (sex != null) 'sex': sex,
+      if (hrWarnBpm != null) 'hr_warn_bpm': hrWarnBpm,
+      if (hrPauseBpm != null) 'hr_pause_bpm': hrPauseBpm,
     });
   }
 
@@ -4541,6 +4871,11 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     Value<bool>? notificationsAsked,
     Value<String?>? hrDeviceId,
     Value<String?>? hrDeviceName,
+    Value<int?>? hrMax,
+    Value<int?>? birthYear,
+    Value<Sex?>? sex,
+    Value<int?>? hrWarnBpm,
+    Value<int?>? hrPauseBpm,
   }) {
     return AppSettingsTableCompanion(
       id: id ?? this.id,
@@ -4571,6 +4906,11 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
       notificationsAsked: notificationsAsked ?? this.notificationsAsked,
       hrDeviceId: hrDeviceId ?? this.hrDeviceId,
       hrDeviceName: hrDeviceName ?? this.hrDeviceName,
+      hrMax: hrMax ?? this.hrMax,
+      birthYear: birthYear ?? this.birthYear,
+      sex: sex ?? this.sex,
+      hrWarnBpm: hrWarnBpm ?? this.hrWarnBpm,
+      hrPauseBpm: hrPauseBpm ?? this.hrPauseBpm,
     );
   }
 
@@ -4667,6 +5007,23 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     if (hrDeviceName.present) {
       map['hr_device_name'] = Variable<String>(hrDeviceName.value);
     }
+    if (hrMax.present) {
+      map['hr_max'] = Variable<int>(hrMax.value);
+    }
+    if (birthYear.present) {
+      map['birth_year'] = Variable<int>(birthYear.value);
+    }
+    if (sex.present) {
+      map['sex'] = Variable<String>(
+        $AppSettingsTableTable.$convertersexn.toSql(sex.value),
+      );
+    }
+    if (hrWarnBpm.present) {
+      map['hr_warn_bpm'] = Variable<int>(hrWarnBpm.value);
+    }
+    if (hrPauseBpm.present) {
+      map['hr_pause_bpm'] = Variable<int>(hrPauseBpm.value);
+    }
     return map;
   }
 
@@ -4700,7 +5057,12 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
           ..write('latestVersion: $latestVersion, ')
           ..write('notificationsAsked: $notificationsAsked, ')
           ..write('hrDeviceId: $hrDeviceId, ')
-          ..write('hrDeviceName: $hrDeviceName')
+          ..write('hrDeviceName: $hrDeviceName, ')
+          ..write('hrMax: $hrMax, ')
+          ..write('birthYear: $birthYear, ')
+          ..write('sex: $sex, ')
+          ..write('hrWarnBpm: $hrWarnBpm, ')
+          ..write('hrPauseBpm: $hrPauseBpm')
           ..write(')'))
         .toString();
   }
@@ -4740,6 +5102,11 @@ class _$AppSettingsInsertable implements Insertable<AppSettings> {
       notificationsAsked: Value(_object.notificationsAsked),
       hrDeviceId: Value(_object.hrDeviceId),
       hrDeviceName: Value(_object.hrDeviceName),
+      hrMax: Value(_object.hrMax),
+      birthYear: Value(_object.birthYear),
+      sex: Value(_object.sex),
+      hrWarnBpm: Value(_object.hrWarnBpm),
+      hrPauseBpm: Value(_object.hrPauseBpm),
     ).toColumns(false);
   }
 }
@@ -5054,6 +5421,17 @@ class $SessionHeartRatesTable extends SessionHeartRates
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _recoveryBpmMeta = const VerificationMeta(
+    'recoveryBpm',
+  );
+  @override
+  late final GeneratedColumn<int> recoveryBpm = GeneratedColumn<int>(
+    'recovery_bpm',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     sessionId,
@@ -5063,6 +5441,7 @@ class $SessionHeartRatesTable extends SessionHeartRates
     seconds,
     histogram,
     curve,
+    recoveryBpm,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5130,6 +5509,15 @@ class $SessionHeartRatesTable extends SessionHeartRates
     } else if (isInserting) {
       context.missing(_curveMeta);
     }
+    if (data.containsKey('recovery_bpm')) {
+      context.handle(
+        _recoveryBpmMeta,
+        recoveryBpm.isAcceptableOrUnknown(
+          data['recovery_bpm']!,
+          _recoveryBpmMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -5167,6 +5555,10 @@ class $SessionHeartRatesTable extends SessionHeartRates
         DriftSqlType.string,
         data['${effectivePrefix}curve'],
       )!,
+      recoveryBpm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}recovery_bpm'],
+      ),
     );
   }
 
@@ -5184,6 +5576,7 @@ class SessionHeartRatesCompanion extends UpdateCompanion<SessionHeartRate> {
   final Value<int> seconds;
   final Value<String> histogram;
   final Value<String> curve;
+  final Value<int?> recoveryBpm;
   const SessionHeartRatesCompanion({
     this.sessionId = const Value.absent(),
     this.avgBpm = const Value.absent(),
@@ -5192,6 +5585,7 @@ class SessionHeartRatesCompanion extends UpdateCompanion<SessionHeartRate> {
     this.seconds = const Value.absent(),
     this.histogram = const Value.absent(),
     this.curve = const Value.absent(),
+    this.recoveryBpm = const Value.absent(),
   });
   SessionHeartRatesCompanion.insert({
     this.sessionId = const Value.absent(),
@@ -5201,6 +5595,7 @@ class SessionHeartRatesCompanion extends UpdateCompanion<SessionHeartRate> {
     required int seconds,
     required String histogram,
     required String curve,
+    this.recoveryBpm = const Value.absent(),
   }) : avgBpm = Value(avgBpm),
        maxBpm = Value(maxBpm),
        minBpm = Value(minBpm),
@@ -5215,6 +5610,7 @@ class SessionHeartRatesCompanion extends UpdateCompanion<SessionHeartRate> {
     Expression<int>? seconds,
     Expression<String>? histogram,
     Expression<String>? curve,
+    Expression<int>? recoveryBpm,
   }) {
     return RawValuesInsertable({
       if (sessionId != null) 'session_id': sessionId,
@@ -5224,6 +5620,7 @@ class SessionHeartRatesCompanion extends UpdateCompanion<SessionHeartRate> {
       if (seconds != null) 'seconds': seconds,
       if (histogram != null) 'histogram': histogram,
       if (curve != null) 'curve': curve,
+      if (recoveryBpm != null) 'recovery_bpm': recoveryBpm,
     });
   }
 
@@ -5235,6 +5632,7 @@ class SessionHeartRatesCompanion extends UpdateCompanion<SessionHeartRate> {
     Value<int>? seconds,
     Value<String>? histogram,
     Value<String>? curve,
+    Value<int?>? recoveryBpm,
   }) {
     return SessionHeartRatesCompanion(
       sessionId: sessionId ?? this.sessionId,
@@ -5244,6 +5642,7 @@ class SessionHeartRatesCompanion extends UpdateCompanion<SessionHeartRate> {
       seconds: seconds ?? this.seconds,
       histogram: histogram ?? this.histogram,
       curve: curve ?? this.curve,
+      recoveryBpm: recoveryBpm ?? this.recoveryBpm,
     );
   }
 
@@ -5271,6 +5670,9 @@ class SessionHeartRatesCompanion extends UpdateCompanion<SessionHeartRate> {
     if (curve.present) {
       map['curve'] = Variable<String>(curve.value);
     }
+    if (recoveryBpm.present) {
+      map['recovery_bpm'] = Variable<int>(recoveryBpm.value);
+    }
     return map;
   }
 
@@ -5283,7 +5685,8 @@ class SessionHeartRatesCompanion extends UpdateCompanion<SessionHeartRate> {
           ..write('minBpm: $minBpm, ')
           ..write('seconds: $seconds, ')
           ..write('histogram: $histogram, ')
-          ..write('curve: $curve')
+          ..write('curve: $curve, ')
+          ..write('recoveryBpm: $recoveryBpm')
           ..write(')'))
         .toString();
   }
@@ -5302,6 +5705,7 @@ class _$SessionHeartRateInsertable implements Insertable<SessionHeartRate> {
       seconds: Value(_object.seconds),
       histogram: Value(_object.histogram),
       curve: Value(_object.curve),
+      recoveryBpm: Value(_object.recoveryBpm),
     ).toColumns(false);
   }
 }
@@ -5534,6 +5938,10 @@ typedef $$ExercisesTableCreateCompanionBuilder = ExercisesCompanion Function({
   Value<double> incrementLbs,
   Value<double?> levelKg,
   Value<bool> timerCountdown,
+  Value<bool> restByHeartRate,
+  Value<int?> hrTargetRange,
+  Value<int?> hrTargetBpm,
+  Value<int?> hrTargetMinutes,
 });
 typedef $$ExercisesTableUpdateCompanionBuilder = ExercisesCompanion Function({
   Value<int> id,
@@ -5550,6 +5958,10 @@ typedef $$ExercisesTableUpdateCompanionBuilder = ExercisesCompanion Function({
   Value<double> incrementLbs,
   Value<double?> levelKg,
   Value<bool> timerCountdown,
+  Value<bool> restByHeartRate,
+  Value<int?> hrTargetRange,
+  Value<int?> hrTargetBpm,
+  Value<int?> hrTargetMinutes,
 });
 
 final class $$ExercisesTableReferences
@@ -5674,6 +6086,26 @@ class $$ExercisesTableFilterComposer
 
   ColumnFilters<bool> get timerCountdown => $composableBuilder(
     column: $table.timerCountdown,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get restByHeartRate => $composableBuilder(
+    column: $table.restByHeartRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get hrTargetRange => $composableBuilder(
+    column: $table.hrTargetRange,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get hrTargetBpm => $composableBuilder(
+    column: $table.hrTargetBpm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get hrTargetMinutes => $composableBuilder(
+    column: $table.hrTargetMinutes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5806,6 +6238,26 @@ class $$ExercisesTableOrderingComposer
     column: $table.timerCountdown,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get restByHeartRate => $composableBuilder(
+    column: $table.restByHeartRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get hrTargetRange => $composableBuilder(
+    column: $table.hrTargetRange,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get hrTargetBpm => $composableBuilder(
+    column: $table.hrTargetBpm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get hrTargetMinutes => $composableBuilder(
+    column: $table.hrTargetMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ExercisesTableAnnotationComposer
@@ -5864,6 +6316,26 @@ class $$ExercisesTableAnnotationComposer
 
   GeneratedColumn<bool> get timerCountdown => $composableBuilder(
     column: $table.timerCountdown,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get restByHeartRate => $composableBuilder(
+    column: $table.restByHeartRate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get hrTargetRange => $composableBuilder(
+    column: $table.hrTargetRange,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get hrTargetBpm => $composableBuilder(
+    column: $table.hrTargetBpm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get hrTargetMinutes => $composableBuilder(
+    column: $table.hrTargetMinutes,
     builder: (column) => column,
   );
 
@@ -5963,6 +6435,10 @@ class $$ExercisesTableTableManager
                 Value<double> incrementLbs = const Value.absent(),
                 Value<double?> levelKg = const Value.absent(),
                 Value<bool> timerCountdown = const Value.absent(),
+                Value<bool> restByHeartRate = const Value.absent(),
+                Value<int?> hrTargetRange = const Value.absent(),
+                Value<int?> hrTargetBpm = const Value.absent(),
+                Value<int?> hrTargetMinutes = const Value.absent(),
               }) => ExercisesCompanion(
                 id: id,
                 name: name,
@@ -5978,6 +6454,10 @@ class $$ExercisesTableTableManager
                 incrementLbs: incrementLbs,
                 levelKg: levelKg,
                 timerCountdown: timerCountdown,
+                restByHeartRate: restByHeartRate,
+                hrTargetRange: hrTargetRange,
+                hrTargetBpm: hrTargetBpm,
+                hrTargetMinutes: hrTargetMinutes,
               ),
           createCompanionCallback:
               ({
@@ -5995,6 +6475,10 @@ class $$ExercisesTableTableManager
                 Value<double> incrementLbs = const Value.absent(),
                 Value<double?> levelKg = const Value.absent(),
                 Value<bool> timerCountdown = const Value.absent(),
+                Value<bool> restByHeartRate = const Value.absent(),
+                Value<int?> hrTargetRange = const Value.absent(),
+                Value<int?> hrTargetBpm = const Value.absent(),
+                Value<int?> hrTargetMinutes = const Value.absent(),
               }) => ExercisesCompanion.insert(
                 id: id,
                 name: name,
@@ -6010,6 +6494,10 @@ class $$ExercisesTableTableManager
                 incrementLbs: incrementLbs,
                 levelKg: levelKg,
                 timerCountdown: timerCountdown,
+                restByHeartRate: restByHeartRate,
+                hrTargetRange: hrTargetRange,
+                hrTargetBpm: hrTargetBpm,
+                hrTargetMinutes: hrTargetMinutes,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -9925,6 +10413,7 @@ typedef $$SetEntriesTableCreateCompanionBuilder = SetEntriesCompanion Function({
   required DateTime completedAt,
   Value<int?> hrAvg,
   Value<int?> hrPeak,
+  Value<int?> hrTargetSec,
 });
 typedef $$SetEntriesTableUpdateCompanionBuilder = SetEntriesCompanion Function({
   Value<int> id,
@@ -9937,6 +10426,7 @@ typedef $$SetEntriesTableUpdateCompanionBuilder = SetEntriesCompanion Function({
   Value<DateTime> completedAt,
   Value<int?> hrAvg,
   Value<int?> hrPeak,
+  Value<int?> hrTargetSec,
 });
 
 final class $$SetEntriesTableReferences
@@ -10013,6 +10503,11 @@ class $$SetEntriesTableFilterComposer
 
   ColumnFilters<int> get hrPeak => $composableBuilder(
     column: $table.hrPeak,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get hrTargetSec => $composableBuilder(
+    column: $table.hrTargetSec,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10094,6 +10589,11 @@ class $$SetEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get hrTargetSec => $composableBuilder(
+    column: $table.hrTargetSec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$SessionExercisesTableOrderingComposer get sessionExerciseId {
     final $$SessionExercisesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -10158,6 +10658,11 @@ class $$SetEntriesTableAnnotationComposer
   GeneratedColumn<int> get hrPeak =>
       $composableBuilder(column: $table.hrPeak, builder: (column) => column);
 
+  GeneratedColumn<int> get hrTargetSec => $composableBuilder(
+    column: $table.hrTargetSec,
+    builder: (column) => column,
+  );
+
   $$SessionExercisesTableAnnotationComposer get sessionExerciseId {
     final $$SessionExercisesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -10220,6 +10725,7 @@ class $$SetEntriesTableTableManager
                 Value<DateTime> completedAt = const Value.absent(),
                 Value<int?> hrAvg = const Value.absent(),
                 Value<int?> hrPeak = const Value.absent(),
+                Value<int?> hrTargetSec = const Value.absent(),
               }) => SetEntriesCompanion(
                 id: id,
                 sessionExerciseId: sessionExerciseId,
@@ -10231,6 +10737,7 @@ class $$SetEntriesTableTableManager
                 completedAt: completedAt,
                 hrAvg: hrAvg,
                 hrPeak: hrPeak,
+                hrTargetSec: hrTargetSec,
               ),
           createCompanionCallback:
               ({
@@ -10244,6 +10751,7 @@ class $$SetEntriesTableTableManager
                 required DateTime completedAt,
                 Value<int?> hrAvg = const Value.absent(),
                 Value<int?> hrPeak = const Value.absent(),
+                Value<int?> hrTargetSec = const Value.absent(),
               }) => SetEntriesCompanion.insert(
                 id: id,
                 sessionExerciseId: sessionExerciseId,
@@ -10255,6 +10763,7 @@ class $$SetEntriesTableTableManager
                 completedAt: completedAt,
                 hrAvg: hrAvg,
                 hrPeak: hrPeak,
+                hrTargetSec: hrTargetSec,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -10545,6 +11054,11 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<bool> notificationsAsked,
       Value<String?> hrDeviceId,
       Value<String?> hrDeviceName,
+      Value<int?> hrMax,
+      Value<int?> birthYear,
+      Value<Sex?> sex,
+      Value<int?> hrWarnBpm,
+      Value<int?> hrPauseBpm,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
     AppSettingsTableCompanion Function({
@@ -10576,6 +11090,11 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<bool> notificationsAsked,
       Value<String?> hrDeviceId,
       Value<String?> hrDeviceName,
+      Value<int?> hrMax,
+      Value<int?> birthYear,
+      Value<Sex?> sex,
+      Value<int?> hrWarnBpm,
+      Value<int?> hrPauseBpm,
     });
 
 final class $$AppSettingsTableTableReferences
@@ -10750,6 +11269,32 @@ class $$AppSettingsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get hrMax => $composableBuilder(
+    column: $table.hrMax,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get birthYear => $composableBuilder(
+    column: $table.birthYear,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<Sex?, Sex, String> get sex =>
+      $composableBuilder(
+        column: $table.sex,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get hrWarnBpm => $composableBuilder(
+    column: $table.hrWarnBpm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get hrPauseBpm => $composableBuilder(
+    column: $table.hrPauseBpm,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$PlansTableFilterComposer get lastSelectedPlanId {
     final $$PlansTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -10918,6 +11463,31 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get hrMax => $composableBuilder(
+    column: $table.hrMax,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get birthYear => $composableBuilder(
+    column: $table.birthYear,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sex => $composableBuilder(
+    column: $table.sex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get hrWarnBpm => $composableBuilder(
+    column: $table.hrWarnBpm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get hrPauseBpm => $composableBuilder(
+    column: $table.hrPauseBpm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PlansTableOrderingComposer get lastSelectedPlanId {
     final $$PlansTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -11083,6 +11653,23 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get hrMax =>
+      $composableBuilder(column: $table.hrMax, builder: (column) => column);
+
+  GeneratedColumn<int> get birthYear =>
+      $composableBuilder(column: $table.birthYear, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<Sex?, String> get sex =>
+      $composableBuilder(column: $table.sex, builder: (column) => column);
+
+  GeneratedColumn<int> get hrWarnBpm =>
+      $composableBuilder(column: $table.hrWarnBpm, builder: (column) => column);
+
+  GeneratedColumn<int> get hrPauseBpm => $composableBuilder(
+    column: $table.hrPauseBpm,
+    builder: (column) => column,
+  );
+
   $$PlansTableAnnotationComposer get lastSelectedPlanId {
     final $$PlansTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -11165,6 +11752,11 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> notificationsAsked = const Value.absent(),
                 Value<String?> hrDeviceId = const Value.absent(),
                 Value<String?> hrDeviceName = const Value.absent(),
+                Value<int?> hrMax = const Value.absent(),
+                Value<int?> birthYear = const Value.absent(),
+                Value<Sex?> sex = const Value.absent(),
+                Value<int?> hrWarnBpm = const Value.absent(),
+                Value<int?> hrPauseBpm = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
                 defaultSets: defaultSets,
@@ -11194,6 +11786,11 @@ class $$AppSettingsTableTableTableManager
                 notificationsAsked: notificationsAsked,
                 hrDeviceId: hrDeviceId,
                 hrDeviceName: hrDeviceName,
+                hrMax: hrMax,
+                birthYear: birthYear,
+                sex: sex,
+                hrWarnBpm: hrWarnBpm,
+                hrPauseBpm: hrPauseBpm,
               ),
           createCompanionCallback:
               ({
@@ -11225,6 +11822,11 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> notificationsAsked = const Value.absent(),
                 Value<String?> hrDeviceId = const Value.absent(),
                 Value<String?> hrDeviceName = const Value.absent(),
+                Value<int?> hrMax = const Value.absent(),
+                Value<int?> birthYear = const Value.absent(),
+                Value<Sex?> sex = const Value.absent(),
+                Value<int?> hrWarnBpm = const Value.absent(),
+                Value<int?> hrPauseBpm = const Value.absent(),
               }) => AppSettingsTableCompanion.insert(
                 id: id,
                 defaultSets: defaultSets,
@@ -11254,6 +11856,11 @@ class $$AppSettingsTableTableTableManager
                 notificationsAsked: notificationsAsked,
                 hrDeviceId: hrDeviceId,
                 hrDeviceName: hrDeviceName,
+                hrMax: hrMax,
+                birthYear: birthYear,
+                sex: sex,
+                hrWarnBpm: hrWarnBpm,
+                hrPauseBpm: hrPauseBpm,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -11628,6 +12235,7 @@ typedef $$SessionHeartRatesTableCreateCompanionBuilder =
       required int seconds,
       required String histogram,
       required String curve,
+      Value<int?> recoveryBpm,
     });
 typedef $$SessionHeartRatesTableUpdateCompanionBuilder =
     SessionHeartRatesCompanion Function({
@@ -11638,6 +12246,7 @@ typedef $$SessionHeartRatesTableUpdateCompanionBuilder =
       Value<int> seconds,
       Value<String> histogram,
       Value<String> curve,
+      Value<int?> recoveryBpm,
     });
 
 final class $$SessionHeartRatesTableReferences
@@ -11710,6 +12319,11 @@ class $$SessionHeartRatesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get recoveryBpm => $composableBuilder(
+    column: $table.recoveryBpm,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$SessionsTableFilterComposer get sessionId {
     final $$SessionsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -11773,6 +12387,11 @@ class $$SessionHeartRatesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get recoveryBpm => $composableBuilder(
+    column: $table.recoveryBpm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$SessionsTableOrderingComposer get sessionId {
     final $$SessionsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -11823,6 +12442,11 @@ class $$SessionHeartRatesTableAnnotationComposer
 
   GeneratedColumn<String> get curve =>
       $composableBuilder(column: $table.curve, builder: (column) => column);
+
+  GeneratedColumn<int> get recoveryBpm => $composableBuilder(
+    column: $table.recoveryBpm,
+    builder: (column) => column,
+  );
 
   $$SessionsTableAnnotationComposer get sessionId {
     final $$SessionsTableAnnotationComposer composer = $composerBuilder(
@@ -11888,6 +12512,7 @@ class $$SessionHeartRatesTableTableManager
                 Value<int> seconds = const Value.absent(),
                 Value<String> histogram = const Value.absent(),
                 Value<String> curve = const Value.absent(),
+                Value<int?> recoveryBpm = const Value.absent(),
               }) => SessionHeartRatesCompanion(
                 sessionId: sessionId,
                 avgBpm: avgBpm,
@@ -11896,6 +12521,7 @@ class $$SessionHeartRatesTableTableManager
                 seconds: seconds,
                 histogram: histogram,
                 curve: curve,
+                recoveryBpm: recoveryBpm,
               ),
           createCompanionCallback:
               ({
@@ -11906,6 +12532,7 @@ class $$SessionHeartRatesTableTableManager
                 required int seconds,
                 required String histogram,
                 required String curve,
+                Value<int?> recoveryBpm = const Value.absent(),
               }) => SessionHeartRatesCompanion.insert(
                 sessionId: sessionId,
                 avgBpm: avgBpm,
@@ -11914,6 +12541,7 @@ class $$SessionHeartRatesTableTableManager
                 seconds: seconds,
                 histogram: histogram,
                 curve: curve,
+                recoveryBpm: recoveryBpm,
               ),
           withReferenceMapper: (p0) => p0
               .map(

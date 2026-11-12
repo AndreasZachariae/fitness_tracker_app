@@ -69,6 +69,7 @@ class ExerciseRepository {
       incrementLbs: draft.incrementLbs,
       levelKg: draft.levelKg,
     );
+    _checkTarget(draft.hrTargetRange, draft.hrTargetBpm, draft.hrTargetMinutes);
     return _db.exercisesDao.insertExercise(
       ExercisesCompanion.insert(
         name: name,
@@ -82,6 +83,10 @@ class ExerciseRepository {
         stepMode: Value(draft.stepMode),
         incrementLbs: Value(draft.incrementLbs),
         levelKg: Value(draft.levelKg),
+        restByHeartRate: Value(draft.restByHeartRate),
+        hrTargetRange: Value(draft.hrTargetRange),
+        hrTargetBpm: Value(draft.hrTargetBpm),
+        hrTargetMinutes: Value(draft.hrTargetMinutes),
       ),
     );
   });
@@ -108,6 +113,11 @@ class ExerciseRepository {
       restSec: exercise.restSec,
       incrementLbs: exercise.incrementLbs,
       levelKg: exercise.levelKg,
+    );
+    _checkTarget(
+      exercise.hrTargetRange,
+      exercise.hrTargetBpm,
+      exercise.hrTargetMinutes,
     );
     final hasHistory = await _db.exercisesDao.hasSessionHistory(exercise.id);
     if (exercise.type != existing.type && hasHistory) {
@@ -204,6 +214,22 @@ class ExerciseRepository {
     }
     if (restSec != null && (restSec < 0 || restSec > 3600)) {
       throw InvalidValueException('restSec', restSec);
+    }
+  }
+
+  /// Warm-up target (1.6.0): a range 1–5 or a bpm value, not both.
+  static void _checkTarget(int? range, int? bpm, int? minutes) {
+    if (range != null && (range < 1 || range > 5)) {
+      throw InvalidValueException('hrTargetRange', range);
+    }
+    if (bpm != null && (bpm < 40 || bpm > 250)) {
+      throw InvalidValueException('hrTargetBpm', bpm);
+    }
+    if (range != null && bpm != null) {
+      throw InvalidValueException('hrTargetBpm', bpm);
+    }
+    if (minutes != null && (minutes < 1 || minutes > 180)) {
+      throw InvalidValueException('hrTargetMinutes', minutes);
     }
   }
 

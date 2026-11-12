@@ -223,6 +223,51 @@ abstract final class S {
       'Hälfte. Daneben der Durchschnitt deiner bisherigen Trainings desselben '
       'Plans (ohne solche: aller Trainings).';
   static const heartRatePerExercise = 'Spitzenpuls je Übung';
+  static const heartRateRanges = 'Zeit in Pulsbereichen';
+  static const heartRateBelowRanges = 'Unter Bereich 1';
+  static const heartRateRangesInfo =
+      'Wie lange dein Puls in welchem Garmin-Pulsbereich war (Prozent deines '
+      'Maximalpulses aus dem Puls-Profil): Bereich 1 = 50–60 %, 2 = 60–70 %, '
+      '3 = 70–80 %, 4 = 80–90 %, 5 = 90–100 %. Das sind Garmins Bereiche, '
+      'keine Laktat-Zonen: „Zone-2-Training“ im klassischen Sinn liegt unter '
+      'deiner ersten Laktatschwelle und nicht unbedingt in Bereich 2.';
+  static const heartRateRecovery = 'Erholungspuls';
+  static String heartRateRecoveryValue(int bpm) => '−$bpm $unitBpm';
+  static const heartRateRecoveryInfo =
+      'Wie stark der Puls in der Minute nach harten Sätzen fällt: Spitzenpuls '
+      'des Satzes minus Puls 60 Sekunden später, gemittelt über alle Sätze mit '
+      'mindestens 70 % des Maximalpulses (ohne Puls-Profil: alle Sätze).\n\n'
+      'Aussage: Je schneller der Puls fällt, desto besser erholt sich dein '
+      'Herz-Kreislauf-System. Ein steigender Wert über Wochen deutet auf '
+      'bessere Fitness, ein deutlich niedrigerer als sonst auf Müdigkeit. '
+      'Vergleiche nur ähnliche Trainings.';
+  static String weekOf(String date) => 'Woche ab $date';
+  static const weeklyLoad = 'Wochenbelastung';
+  static const weeklyLoadUnit = 'TRIMP';
+  static const weeklyLoadInfo =
+      'Edwards-TRIMP: Minuten in Bereich 1 × 1 + Bereich 2 × 2 + … + Bereich 5 '
+      '× 5, für alle Trainings einer Woche zusammengezählt. Braucht nur den '
+      'Maximalpuls aus dem Puls-Profil.\n\n'
+      'Aussage: wie stark dein Herz-Kreislauf-System in der Woche gefordert '
+      'war – lange lockere und kurze harte Einheiten werden vergleichbar. '
+      'Sinnvoll ist ein gleichmäßiger Verlauf mit langsamer Steigerung; '
+      'plötzliche Sprünge nach oben erhöhen das Risiko von Überlastung. Die '
+      'Belastung der Muskeln durch Gewichte erfasst der Wert nicht.';
+  static const weeklyCalories = 'Kalorien je Woche';
+  static const caloriesWeekInfo =
+      'Summe der geschätzten Kalorien aller Trainings mit Puls in der Woche. '
+      'Zur Berechnung siehe das i bei den Kalorien eines Trainings – ein grober '
+      'Richtwert.';
+  static const calories = 'Kalorien';
+  static String caloriesValue(int kcal) => 'ca. $kcal kcal';
+  static const caloriesNeedProfile = 'Profil fehlt';
+  static const caloriesInfo =
+      'Schätzung nach Keytel et al. (2005) aus Durchschnittspuls, Dauer mit '
+      'Puls, Körpergewicht (Eintrag am nächsten zum Trainingstag), Alter und '
+      'Geschlecht aus dem Puls-Profil.\n\n'
+      'Annahmen: Die Formel wurde für Ausdauerbelastung bei mittlerem bis '
+      'hohem Puls ermittelt. Beim Krafttraining mit vielen Pausen ist sie nur '
+      'ein grober Richtwert (oft ±20–30 %), wie bei jeder Pulsuhr.';
   static const heartRateLegendAverage = 'Ø';
   static const heartRateLegendMax = 'Max.';
   static const heartRateLegendPeak = 'Spitze';
@@ -243,6 +288,81 @@ abstract final class S {
   static const heartRateStatusLost = 'Verbindung verloren';
   static const heartRateStatusUnavailable =
       'Bluetooth aus oder keine Berechtigung';
+
+  // Heart rate profile and ranges (1.6.0)
+  static const hrProfile = 'Puls-Profil';
+  static const hrProfileEmpty =
+      'Trage deinen Maximalpuls ein, dann zeigt GymLog die Garmin-Pulsbereiche, '
+      'färbt die Pulsanzeige danach und rechnet Belastung und Kalorien.';
+  static const hrProfileEdit = 'Bearbeiten';
+  static const hrProfileSet = 'Eintragen';
+  static const hrMax = 'Maximalpuls';
+  static const hrMaxInfo =
+      'Den Maximalpuls findest du in der Garmin-Connect-App in den '
+      'Benutzereinstellungen unter „Herzfrequenz- und Leistungsbereiche“ (je '
+      'nach App-Version im Menü „Mehr“ unter „Einstellungen“ bzw. bei deiner '
+      'Uhr unter „Garmin-Geräte“, „Benutzereinstellungen“) als „Maximale HF“. Ohne '
+      'Messwert ist 208 − 0,7 × Alter eine grobe Schätzung.\n\n'
+      'GymLog nutzt Garmins Standard-Pulsbereiche: Bereich 1 = 50–60 %, 2 = '
+      '60–70 %, 3 = 70–80 %, 4 = 80–90 %, 5 = 90–100 % des Maximalpulses.\n\n'
+      'Bereich ist nicht Zone: Das klassische „Zone-2-Training“ meint die '
+      'Intensität knapp unter der ersten Laktatschwelle. Die liegt individuell '
+      'verschieden, oft bei 68–75 % des Maximalpulses, bei Trainierten auch '
+      'darüber. Kennst du deinen Puls an der Laktatschwelle, gib Cardio-Ziele '
+      'besser als bpm-Wert an.';
+  static const hrBirthYear = 'Geburtsjahr';
+  static const hrSex = 'Geschlecht';
+  static String hrSexLabel(Sex? sex) => switch (sex) {
+    Sex.male => 'männlich',
+    Sex.female => 'weiblich',
+    null => 'keine Angabe',
+  };
+  static const hrWarn = 'Warnung bei hohem Puls';
+  static String hrWarnAbove(int bpm) => 'ab $bpm $unitBpm';
+  static const hrWarnOff = 'aus';
+  static const hrPause = 'Pause nach Puls endet unter';
+  static String hrPauseHint(int bpm) =>
+      'Vorschlag: $bpm bpm (Ende Bereich 1); leer lassen für den Vorschlag';
+  static String hrWarnHint(int bpm) =>
+      'Vorschlag: $bpm bpm (95 %); leer lassen für keine Warnung';
+  static const hrProfileCaloriesHint =
+      'Geburtsjahr und Geschlecht braucht nur die Kalorien-Schätzung.';
+  static String hrRange(int n) => 'Bereich $n';
+  static String hrRangeBpm(int from, int to) => '$from–$to $unitBpm';
+  static String hrAge(int age) => '$age Jahre';
+  static const errorHrMax = 'Ein Wert zwischen 100 und 250.';
+  static const errorBirthYear = 'Ein Jahr wie 1990.';
+  static const errorBpm = 'Ein Puls zwischen 40 und 250.';
+  static String hrTargetAtLeast(int bpm) => 'mind. $bpm $unitBpm';
+  static String cardioGoal(String target, int minutes) =>
+      'Ziel: $target für $minutes min';
+  static const cardioInTarget = 'Im Ziel – die Zeit läuft.';
+  static String cardioTargetTime(String time) => 'im Ziel $time';
+  static const cardioOutsideTarget = 'Außerhalb des Ziels – die Zeit steht.';
+  static const cardioReached = 'Ziel erreicht! Jetzt „Satz speichern“.';
+  static const fieldRestByHr = 'Pause nach Puls';
+  static String fieldRestByHrHint(int bpm) =>
+      'Die Pause endet, sobald der Puls unter $bpm bpm fällt (frühestens nach '
+      '30 s) – oder nach der Pausenzeit, was zuerst kommt.';
+  static const fieldRestByHrNoProfile =
+      'Braucht den Maximalpuls im Puls-Profil (Tab Körper); bis dahin zählt '
+      'nur die Pausenzeit.';
+  static const fieldHrTarget = 'Pulsziel (Aufwärmen/Cardio)';
+  static const hrTargetNone = 'Keins';
+  static const hrTargetRangeKind = 'Bereich';
+  static const hrTargetBpmLabel = 'Mindestens';
+  static const hrTargetMinutesLabel = 'Für';
+  static const unitMinutes = 'min';
+  static const hrTargetRangeHint =
+      'Es zählt nur die Zeit innerhalb des Garmin-Bereichs. Der Timer läuft im '
+      'Training und meldet, wenn die Minuten erreicht sind.';
+  static const hrTargetBpmHint =
+      'Es zählt nur die Zeit mit mindestens diesem Puls. Der Timer läuft im '
+      'Training und meldet, wenn die Minuten erreicht sind.';
+  static const hrTargetNeedsProfile =
+      'Für Bereiche den Maximalpuls im Puls-Profil (Tab Körper) eintragen.';
+  static const errorHrTarget =
+      'Minuten zwischen 1 und 180 und ein Puls zwischen 40 und 250.';
 
   // FitNotes import (1.4.0)
   static const importFitNotes = 'Plan aus FitNotes importieren';

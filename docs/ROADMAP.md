@@ -101,14 +101,14 @@ STATUS: FINISHED
     - Beim Testen des Pulsmessers anzeigen, ob RR-Intervalle kommen. HRV wird nicht weiter umgesetzt (Annahme: keine oder ungenaue RR-Intervalle).
     - Statistik: Tabs Gesamt | Übung | Rekorde, Start auf Gesamt; Verlauf von Ø- und Max-Trainingspuls (Gesamt) und Spitzenpuls je Übung.
     - CSV-Export nur mit den Zusammenfassungen, keine Zeitreihe.
-Version 1.6.0 (Pulszonen, Cardio und Auswertungen)
-STATUS: PLANNED
-    - Im Tab Körper einmalig Maximalpuls (mit Info-i, wo er in der Garmin-Connect-App steht), Alter und Geschlecht eintragen; daraus die Garmin-Zonen anzeigen. Pulsanzeige in Garmins Zonenfarben, Zeit in Zonen.
-    - Neuer Übungstyp Aufwärmen/Cardio: Ziel ist entweder ein Zielpulswert oder eine Zone, die für X Minuten gehalten werden soll.
-    - Pause nach Puls: optionaler Haken auf der Seite Übung erstellen/bearbeiten; die Pause ist vorbei, wenn der Puls unter einen Wert gefallen ist.
-    - Erholungspuls und Wochenbelastung (TRIMP) in der Statistik, jeweils mit Info-i, wie sie berechnet werden und was sie aussagen.
-    - Kalorien-Schätzung mit Info-i zu den Annahmen.
-    - Warnung bei hohem Puls; wo man sie einstellt (Körper oder Pulsmesser) ist noch offen – möglichst keine neue Einstellungs-Unterseite.
+Version 1.6.0 (Pulsbereiche, Cardio und Auswertungen)
+STATUS: FINISHED
+    - Im Tab Körper ein Puls-Profil: Maximalpuls (mit Info-i, wo er in der Garmin-Connect-App steht), Geburtsjahr und Geschlecht; daraus die Garmin-Pulsbereiche 1–5 (Prozent des Maximalpulses) mit Garmins Farben. Bewusst „Bereich“, nicht „Zone“: Das klassische Zone-2-Training meint die Intensität unter der ersten Laktatschwelle, die individuell ist.
+    - Pulsanzeige in den Bereichsfarben; Zeit in den Bereichen nach dem Training.
+    - Aufwärmen/Cardio: Zeitübung mit Pulsziel – ein Bereich (Zeit innerhalb zählt) oder ein bpm-Wert (Zeit bei mindestens diesem Puls zählt) für X Minuten; der Timer zählt nur die Zeit im Ziel, vibriert und zeigt „Ziel erreicht“. Ohne Pulsmesser normaler Countdown. (Kein eigener Übungstyp und keine eigene Kategorie: Dafür müsste die Übungstabelle neu angelegt werden – CLAUDE.md, Regel 4.)
+    - Pause nach Puls: Haken je Übung im Übungsformular; die Pause endet, wenn der Puls unter den Grenzwert aus dem Puls-Profil fällt (Vorschlag: Ende Bereich 1 = 60 % des Maximalpulses, frühestens nach 30 s) oder die Pausenzeit abläuft – was zuerst kommt.
+    - Warnung bei hohem Puls im Puls-Profil (Vorschlag 95 % des Maximalpulses, abschaltbar): Anzeige rot, Vibration, höchstens alle 2 Minuten.
+    - Zusammenfassung und Verlauf: Zeit in Bereichen, Erholungspuls, Kalorien. Statistik → Gesamt: Erholungspuls je Training, Wochenbelastung (Edwards-TRIMP aus Bereichs-Minuten) und Kalorien je Woche. Jeweils mit Info-i zu Berechnung und Aussage.
 Version 2.X.0 (Personality)
 STATUS: PLANNED
     - Give the app more individual personality like e.g. Duolingo. The theme should be a little robot.

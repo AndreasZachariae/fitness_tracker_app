@@ -10,6 +10,9 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 abstract interface class DeviceFeedback {
   /// End of the rest or of a countdown: 3 × 300 ms (SPEC §6.2.1).
   Future<void> restOver();
+
+  /// Heart rate above the warning limit (1.6.0): two long buzzes.
+  Future<void> heartRateWarning();
 }
 
 /// Vibrates at the end of a rest while the app is in the background or the
@@ -35,6 +38,10 @@ final class PlatformFeedback implements DeviceFeedback {
   static const restOverPattern = [0, 300, 250, 300, 250, 300];
   static const restOverIntensities = [0, 255, 0, 255, 0, 255];
 
+  /// Two long buzzes, clearly different from the end of a rest (1.6.0).
+  static const warningPattern = [0, 700, 300, 700];
+  static const warningIntensities = [0, 255, 0, 255];
+
   static Future<void> _safe(Future<void> Function() action) async {
     try {
       await action();
@@ -55,6 +62,15 @@ final class PlatformFeedback implements DeviceFeedback {
       await fallback();
     }
   });
+
+  @override
+  Future<void> heartRateWarning() => _buzz(
+    () => Vibration.vibrate(
+      pattern: warningPattern,
+      intensities: warningIntensities,
+    ),
+    HapticFeedback.heavyImpact,
+  );
 
   @override
   Future<void> restOver() => _buzz(

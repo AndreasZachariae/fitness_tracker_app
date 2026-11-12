@@ -4,6 +4,7 @@ import 'package:gymlog/data/db/database.dart';
 import 'package:gymlog/data/repositories/heart_rate_repository.dart';
 import 'package:gymlog/data/repositories/repository_exceptions.dart';
 import 'package:gymlog/data/repositories/session_repository.dart';
+import 'package:gymlog/data/repositories/settings_repository.dart';
 import 'package:gymlog/domain/models/models.dart';
 
 import '../../helpers/seed.dart';
@@ -106,5 +107,96 @@ void main() {
     expect(await repo.getSamples(id), hasLength(1));
     await r.sessions.delete(id);
     expect(await repo.getSamples(id), isEmpty);
+  });
+
+  test('1.6.0: recovery and time in the warm-up target', () async {
+    await SettingsRepository(db).update((x) => x.copyWith(hrMax: 185));
+    final bike = await r.exercises.create(
+      const ExerciseDraft(
+        name: 'Ergometer',
+        type: ExerciseType.timed,
+        hrTargetRange: 2,
+        hrTargetMinutes: 1,
+      ),
+    );
+    final bench = await addExercise(r, 'Bankdrücken');
+    final clock = FixedClock(testNow);
+    final sessions = SessionRepository(db, clock);
+    final id = await sessions.start(
+      exercises: [
+        SessionExerciseDraft(exerciseId: bike, targetSets: 1),
+        SessionExerciseDraft(exerciseId: bench, targetSets: 1),
+      ],
+    );
+    final ses = await sessions.getDetails(id);
+    DateTime t(int s) => testNow.add(Duration(seconds: s));
+    await repo.addSamples(id, [
+      // Warm-up 0–90 s: 20 s below, 60 s in range 2, 10 s above.
+      for (var s = 0; s < 20; s++) (at: t(s), bpm: 100),
+      for (var s = 20; s < 80; s++) (at: t(s), bpm: 120),
+      for (var s = 80; s < 90; s++) (at: t(s), bpm: 140),
+      // Bench set ends at 300 s, peak 165 at 310 s, 60 s later 125.
+      for (var s = 240; s < 310; s++) (at: t(s), bpm: 150),
+      (at: t(310), bpm: 165),
+      for (var s = 311; s <= 380; s++) (at: t(s), bpm: 125),
+    ]);
+    clock.time = t(90);
+    await sessions.addSet(ses[0].sessionExercise.id, durationSec: 90);
+    clock.time = t(300);
+    await sessions.addSet(ses[1].sessionExercise.id, weightKg: 80, reps: 5);
+    clock.time = t(400);
+    await sessions.finishSession(id);
+
+    final details = await sessions.getDetails(id);
+    expect(details[0].sets.single.hrTargetSec, 60);
+    expect(details[1].sets.single.hrTargetSec, isNull);
+    final summary = (await repo.watchSummary(id).first)!;
+    // The warm-up peak (140) is below 70 % of 185: only the bench set.
+    expect(summary.recoveryBpm, 40);
+  });
+
+  test('1.6.0: values are checked', () async {
+    expect(
+      () => r.exercises.create(
+        const ExerciseDraft(
+          name: 'X',
+          type: ExerciseType.timed,
+          hrTargetRange: 6,
+          hrTargetMinutes: 5,
+        ),
+      ),
+      throwsA(isA<InvalidValueException>()),
+    );
+    expect(
+      () => r.exercises.create(
+        const ExerciseDraft(
+          name: 'Y',
+          type: ExerciseType.timed,
+          hrTargetRange: 2,
+          hrTargetBpm: 120,
+          hrTargetMinutes: 5,
+        ),
+      ),
+      throwsA(isA<InvalidValueException>()),
+    );
+    for (final bad in [
+      (AppSettings x) => x.copyWith(hrMax: 90),
+      (AppSettings x) => x.copyWith(birthYear: 1800),
+      (AppSettings x) => x.copyWith(hrWarnBpm: 300),
+      (AppSettings x) => x.copyWith(hrPauseBpm: 20),
+    ]) {
+      expect(
+        () => SettingsRepository(db).update(bad),
+        throwsA(isA<InvalidValueException>()),
+      );
+    }
+    final s = await SettingsRepository(db)
+        .update((x) => x.copyWith(hrMax: 185, birthYear: 1990, sex: Sex.male));
+    expect((s.pauseBpm, s.hrWarnBpm), (111, null));
+    expect(
+      (await SettingsRepository(db).update((x) => x.copyWith(hrPauseBpm: 105)))
+          .pauseBpm,
+      105,
+    );
   });
 }

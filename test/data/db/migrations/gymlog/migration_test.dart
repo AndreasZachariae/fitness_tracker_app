@@ -12,6 +12,7 @@ import 'generated/schema_v4.dart' as v4;
 import 'generated/schema_v5.dart' as v5;
 import 'generated/schema_v6.dart' as v6;
 import 'generated/schema_v7.dart' as v7;
+import 'generated/schema_v8.dart' as v8;
 
 /// Migrations must keep every user data row (CLAUDE.md, rule 4).
 void main() {
@@ -710,6 +711,66 @@ void main() {
         expect((set.hrAvg, set.hrPeak), (106, 111));
         final se = (await newDb.select(newDb.sessionExercises).get()).single;
         expect(se.hrMax, 111);
+      },
+    );
+  });
+
+  test('migration from v7 to v8: profile empty, exercises without heart rate '
+      'options, summaries kept (1.6.0)', () async {
+    const t = '2026-11-09T17:00:00.000Z';
+    await verifier.testWithDataIntegrity(
+      oldVersion: 7,
+      newVersion: 8,
+      createOld: v7.DatabaseAtV7.new,
+      createNew: v8.DatabaseAtV8.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch
+          ..insert(
+            oldDb.exercises,
+            const v7.ExercisesData(
+              id: 1,
+              name: 'Plank',
+              type: 'timed',
+              incrementKg: 2.5,
+              includeInStrengthIndex: 0,
+              notes: '',
+              archived: 0,
+              createdAt: t,
+              stepMode: 'kg',
+              incrementLbs: 15,
+              timerCountdown: 1,
+            ),
+          )
+          ..insert(
+            oldDb.sessions,
+            const v7.SessionsData(id: 1, startedAt: t, endedAt: t, notes: ''),
+          )
+          ..insert(
+            oldDb.sessionHeartRates,
+            const v7.SessionHeartRatesData(
+              sessionId: 1,
+              avgBpm: 120,
+              maxBpm: 160,
+              minBpm: 90,
+              seconds: 600,
+              histogram: '120:600',
+              curve: '120',
+            ),
+          );
+      },
+      validateItems: (newDb) async {
+        final e = (await newDb.select(newDb.exercises).get()).single;
+        expect(
+          (e.timerCountdown, e.restByHeartRate, e.hrTargetMinutes),
+          (1, 0, null),
+        );
+        final h = (await newDb.select(newDb.sessionHeartRates).get()).single;
+        expect((h.avgBpm, h.histogram, h.recoveryBpm), (120, '120:600', null));
+        final s = (await newDb.select(newDb.appSettings).get()).singleOrNull;
+        if (s != null) {
+          expect((s.hrMax, s.sex, s.hrWarnBpm), (null, null, null));
+        }
       },
     );
   });

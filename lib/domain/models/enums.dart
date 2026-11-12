@@ -132,3 +132,16 @@ enum WeightUnit implements Coded {
 
   static WeightUnit fromCode(String code) => byCode(values, code);
 }
+
+/// For the calorie estimate (1.6.0); the formula knows only these two.
+enum Sex implements Coded {
+  male('male'),
+  female('female');
+
+  const Sex(this.code);
+
+  @override
+  final String code;
+
+  static Sex fromCode(String code) => byCode(values, code);
+}

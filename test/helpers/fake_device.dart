@@ -12,6 +12,9 @@ final class FakeFeedback implements DeviceFeedback {
 
   @override
   Future<void> restOver() async => calls.add('restOver');
+
+  @override
+  Future<void> heartRateWarning() async => calls.add('heartRateWarning');
 }
 
 /// Records scheduled and cancelled rest alarms.

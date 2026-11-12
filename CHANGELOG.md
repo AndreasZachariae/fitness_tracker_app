@@ -4,16 +4,20 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.5.1] – unveröffentlicht
+## [1.6.0] – unveröffentlicht
 
-Enthält die nie einzeln veröffentlichte Version 1.5.0.
+Enthält die nie einzeln veröffentlichten Versionen 1.5.0 und 1.5.1.
 
 ### Neu
-- **Puls während des Trainings:** GymLog verbindet sich per Bluetooth mit einem Pulsmesser – einer Garmin-Uhr mit „Herzfrequenz übertragen“ (z. B. Forerunner 255, epix Pro) oder einem Brustgurt – und zeigt den Puls groß in der aktiven Übung an.
-- **Puls je Satz:** Jede Satzzeile zeigt den Spitzenpuls des Satzes; dazu kommen Durchschnitt und Maximum je Übung.
-- **Nach dem Training:** Zusammenfassung und Verlauf zeigen eine Pulskurve, die Pulsverteilung als Violinplot im Vergleich zu deinen bisherigen Trainings desselben Plans und den Spitzenpuls je Übung.
-- **Statistik:** Verlauf des Trainingspulses (Durchschnitt und Maximum) und je Übung.
-- Neuer Bereich **Einstellungen → Pulsmesser** zum Suchen, Testen und Entfernen; dort steht auch, wie man die Übertragung auf der Garmin-Uhr einschaltet.
+- **Puls während des Trainings:** GymLog verbindet sich per Bluetooth mit einem Pulsmesser – einer Garmin-Uhr mit „Herzfrequenz übertragen“ (z. B. Forerunner 255, epix Pro) oder einem Brustgurt – und zeigt den Puls groß in der aktiven Übung an, in den Farben der Garmin-Pulsbereiche.
+- **Puls-Profil im Tab Körper:** Maximalpuls (mit Hinweis, wo er in Garmin Connect steht), Geburtsjahr und Geschlecht; daraus die Pulsbereiche 1–5 wie bei Garmin.
+- **Aufwärmen/Cardio:** Zeitübungen bekommen auf Wunsch ein Pulsziel – einen Bereich oder einen Mindestpuls für X Minuten. Der Timer zählt nur die Zeit im Ziel und meldet, wenn es erreicht ist.
+- **Pause nach Puls:** Je Übung einstellbar – die Pause endet, sobald dein Puls unter einen Wert gefallen ist, oder nach der Pausenzeit.
+- **Warnung bei hohem Puls:** Die Anzeige wird rot und das Handy vibriert, höchstens alle 2 Minuten.
+- **Puls je Satz:** Jede Satzzeile zeigt den Spitzenpuls des Satzes; dazu Durchschnitt und Maximum je Übung.
+- **Nach dem Training:** Pulskurve, Pulsverteilung im Vergleich zu deinen bisherigen Trainings desselben Plans, Zeit in den Pulsbereichen, Erholungspuls, Kalorien und Spitzenpuls je Übung – mit Erklärungen hinter dem i.
+- **Statistik:** Trainingspuls, Puls je Übung, Erholungspuls, Wochenbelastung und Kalorien je Woche.
+- Neuer Bereich **Einstellungen → Pulsmesser** zum Suchen, Testen und Entfernen.
 
 ### Geändert
 - Die Statistik öffnet jetzt auf „Gesamt“; die Reihenfolge ist Gesamt, Übung, Rekorde.

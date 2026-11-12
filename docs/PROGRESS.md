@@ -225,8 +225,39 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Pulsmesser testen: RR-Intervalle ja/nein
   - [x] Statistik: Tabs Gesamt | Übung | Rekorde; Ø/Max-Trainingspuls, Spitzenpuls je Übung
   - [x] Tests, CHANGELOG, Testliste
+- [x] 1.6.0 Pulsbereiche, Cardio und Auswertungen (`docs/ROADMAP.md`, 1.6.0+23)
+  - [x] Schema 8 (additiv): Puls-Profil in `app_settings` (Maximalpuls, Geburtsjahr, Geschlecht, Warnung, Pausengrenze),
+        `exercises` (Pause nach Puls, Pulsziel Bereich/bpm/Minuten), `set_entries.hr_target_sec`,
+        `session_heart_rates.recovery_bpm`; Backup-Format 8
+  - [x] Domain: Garmin-Bereiche, Zeit in Bereichen, Edwards-TRIMP, Kalorien (Keytel), Erholungspuls, Zeit im Pulsziel
+  - [x] Körper: Puls-Profil mit Bereichen und Info-i; Übungsformular: Pause nach Puls, Pulsziel
+  - [x] Training: Bereichsfarben, Warnung, Pause nach Puls, Cardio-Timer
+  - [x] Zusammenfassung/Verlauf/Statistik: Bereiche, Erholungspuls, Kalorien, Wochenbelastung
+  - [x] Tests, CHANGELOG, Testliste
 
 ## Annahmen
+- **1.6.0 Entscheidungen des Menschen:** keine RR-Intervalle von der Uhr, HRV entfällt; Warnung im Puls-Profil (Körper),
+  rot + Vibration höchstens alle 2 min; Pause nach Puls: Puls oder Zeit, was zuerst kommt, Grenze im Profil (Ende
+  Bereich 1); Cardio: Bereich = innerhalb, bpm = mindestens; Erholungspuls, Wochenbelastung und Kalorien in
+  Zusammenfassung/Verlauf und Statistik, mit Info-i. „Bereich“ statt „Zone“ (Garmin-Bereiche = % des Maximalpulses,
+  klassische Zone 2 = unter der ersten Laktatschwelle, individuell; kurz recherchiert).
+- **1.6.0 Cardio ohne eigenen Typ:** Typ und Kategorie der Übungen sind in der Datenbank per CHECK auf feste Werte
+  begrenzt; ein neuer Wert ginge nur mit neu angelegter Tabelle (Regel 4). Daher: Zeitübung mit Pulsziel.
+- **1.6.0 Pulsbereiche:** Garmins Standard (50/60/70/80/90 % des Maximalpulses), gerundet; die Obergrenze eines
+  Bereichs ist die Untergrenze des nächsten minus 1. Unter 50 % = „unter Bereich 1“. Andere Garmin-Einstellungen
+  (Herzfrequenzreserve, Laktatschwelle) werden nicht nachgebildet.
+- **1.6.0 Pause nach Puls:** Wirkt nur im Vordergrund (die Pausenleiste prüft den Live-Puls); im Hintergrund vibriert der
+  Alarm zur normalen Pausenzeit. Mindestpause 30 s, damit der Puls direkt nach dem Satz nicht zählt.
+- **1.6.0 Erholungspuls:** Je Satz Spitzenpuls im Satzfenster, dann der Wert ±6 s um 60 s später; nur Sätze ab 70 % des
+  Maximalpulses (ohne Profil alle). Beim Beenden aus dem Puffer berechnet und gespeichert (später nicht mehr möglich,
+  weil die Reihe gelöscht wird).
+- **1.6.0 Kalorien und Belastung:** Werden bei der Anzeige aus den gespeicherten Zusammenfassungen und dem aktuellen
+  Profil berechnet (ändert man den Maximalpuls, ändern sich Bereiche und TRIMP rückwirkend). Kalorien brauchen
+  Körpergewicht (Eintrag am nächsten zum Trainingstag), Geburtsjahr und Geschlecht; Keytel ist für Ausdauer ermittelt
+  und beim Krafttraining nur ein Richtwert.
+- **1.6.0 Warnung:** Vibration nur im Vordergrund und nur mit eingeschalteter Vibration; die rote Anzeige immer.
+- **1.6.0 Wiederherstellen eines Backups:** Der gespeicherte Pulsmesser (Gerätezustand) bleibt erhalten.
+- **1.6.0 Changelog:** 1.5.0 und 1.5.1 wurden nie veröffentlicht; ihr Inhalt steht in [1.6.0].
 - **1.5.1 Entscheidungen des Menschen:** Puls rechtsbündig vor dem Griff der aktiven Übung; nur Zusammenfassungen
   speichern, während des Trainings ein Puffer in der Datenbank, der am Ende gelöscht wird; kompakte Kurve (1 Wert/min)
   bleibt; Violinplot gegen den Durchschnitt desselben Plans; HRV entfällt (Annahme: keine oder ungenaue RR-Intervalle),
@@ -832,6 +863,15 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.6.0 Pulsbereiche, Cardio und Auswertungen
+Nur, was live ausprobiert werden muss; Rechnen, Speichern und Abläufe sind automatisch getestet.
+- [ ] Körper → Puls-Profil: Maximalpuls aus Garmin Connect eintragen (stimmt der Hinweis im i?); die Bereiche passen zu denen der Uhr.
+- [ ] Training: Die Pulsfarbe wechselt passend zu den Bereichen der Uhr (grau, blau, grün, orange, rot).
+- [ ] Warnung testweise niedrig setzen (z. B. 100): Anzeige rot, Handy vibriert 2 × lang, nicht öfter als alle 2 Minuten.
+- [ ] Übung mit „Pause nach Puls“: Die Pausenleiste zeigt „♥ < …“, die Pause endet, sobald der Puls darunter fällt; Vibration wie gewohnt.
+- [ ] Aufwärm-Übung (Zeit, Pulsziel Bereich 2 für 2–3 min): Der Timer zählt nur im Ziel, „Ziel erreicht“ mit Vibration; im Verlauf steht „im Ziel …“.
+- [ ] Zusammenfassung: Zeit in Pulsbereichen, Erholungspuls und Kalorien plausibel; Statistik → Gesamt: Erholungspuls, Wochenbelastung, Kalorien je Woche.
 
 ### 1.5.1 Puls: Verbesserungen
 Nur, was live ausprobiert werden muss; Speichern, Zusammenfassen und Rechnen sind automatisch getestet.

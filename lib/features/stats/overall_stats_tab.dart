@@ -1,11 +1,13 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/format/formatters.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../core/theme/gym_colors.dart';
 import '../../core/theme/typography.dart';
+import '../../data/providers.dart';
 import '../../domain/body_weight.dart';
 import '../../domain/calendar.dart';
 import '../../domain/models/models.dart';
@@ -82,6 +84,46 @@ class OverallStatsTab extends StatelessWidget {
             for (final p in trainingHeartRates(data))
               if (!p.day.isBefore(from)) p,
           ],
+        ),
+        // 1.6.0: recovery, weekly load, calories.
+        Consumer(
+          builder: (context, ref, _) {
+            final settings = ref.watch(settingsProvider).value;
+            final hrMax = settings?.hrMax;
+            return Column(
+              children: [
+                ValueTrendChart(
+                  title: S.heartRateRecovery,
+                  info: S.heartRateRecoveryInfo,
+                  unit: S.unitBpm,
+                  points: [
+                    for (final p in trainingRecoveries(data))
+                      if (!p.day.isBefore(from)) p,
+                  ],
+                ),
+                if (hrMax != null)
+                  WeeklyBarsChart(
+                    title: S.weeklyLoad,
+                    info: S.weeklyLoadInfo,
+                    unit: S.weeklyLoadUnit,
+                    weeks: [
+                      for (final w in weeklyLoad(data, today, hrMax))
+                        if (!w.monday.addDays(6).isBefore(from)) w,
+                    ],
+                  ),
+                if (settings != null)
+                  WeeklyBarsChart(
+                    title: S.weeklyCalories,
+                    info: S.caloriesWeekInfo,
+                    unit: 'kcal',
+                    weeks: [
+                      for (final w in weeklyCalories(data, today, settings))
+                        if (!w.monday.addDays(6).isBefore(from)) w,
+                    ],
+                  ),
+              ],
+            );
+          },
         ),
         _Heatmap(
           grid: trainingHeatmap(data, today),

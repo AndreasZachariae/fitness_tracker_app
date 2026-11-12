@@ -3,6 +3,7 @@
 library;
 
 import 'calendar.dart';
+import 'heart_rate_ranges.dart';
 import 'metrics.dart';
 import 'models/models.dart';
 import 'period.dart';
@@ -563,3 +564,84 @@ List<HeartRateTrendPoint> exerciseHeartRates(StatsData data, int exerciseId) =>
             ))
               (day: t.day, average: avg, max: max),
     ];
+
+// ---------------------------------------------------------------------------
+// Heart rate evaluations (1.6.0)
+
+/// Estimated kilocalories of a training (Keytel), with the body weight
+/// closest to its day; null if weight, birth year or sex is missing.
+int? trainingCalories(
+  SessionHeartRate h,
+  DateTime startedAt,
+  List<BodyWeightEntry> weightsAscending,
+  AppSettings settings,
+) => caloriesKeytel(
+  averageBpm: h.avgBpm,
+  seconds: h.seconds,
+  weightKg: nearestBodyWeight(
+    weightsAscending,
+    LocalDate.fromDateTime(startedAt),
+  ),
+  age: settings.birthYear == null
+      ? null
+      : ageAt(settings.birthYear!, startedAt),
+  sex: settings.sex,
+);
+
+/// One value per training.
+typedef DayValue = ({LocalDate day, double value});
+
+/// Heart rate recovery of each training that has one, oldest first.
+List<DayValue> trainingRecoveries(StatsData data) => [
+  for (final t in data.trainings)
+    if (data.heartRates[t.session.id]?.recoveryBpm case final r?)
+      (day: t.day, value: r.toDouble()),
+];
+
+/// One value per ISO week (Monday).
+typedef WeekSum = ({LocalDate monday, double value});
+
+/// Sums per week from the first week with heart rate to the current one,
+/// weeks without training included as 0.
+List<WeekSum> _weekly(
+  StatsData data,
+  LocalDate today,
+  double? Function(Training t, SessionHeartRate h) valueOf,
+) {
+  final byWeek = <LocalDate, double>{};
+  LocalDate? first;
+  for (final t in data.trainings) {
+    final h = data.heartRates[t.session.id];
+    if (h == null) continue;
+    final v = valueOf(t, h);
+    if (v == null) continue;
+    final monday = mondayOf(t.day);
+    first ??= monday;
+    byWeek[monday] = (byWeek[monday] ?? 0) + v;
+  }
+  if (first == null) return const [];
+  return [
+    for (var w = first; !w.isAfter(mondayOf(today)); w = w.addDays(7))
+      (monday: w, value: byWeek[w] ?? 0),
+  ];
+}
+
+/// Training load per week: Edwards' TRIMP from the minutes in the ranges.
+List<WeekSum> weeklyLoad(StatsData data, LocalDate today, int hrMax) =>
+    _weekly(data, today, (_, h) => edwardsTrimp(h.distribution, hrMax));
+
+/// Estimated kilocalories per week.
+List<WeekSum> weeklyCalories(
+  StatsData data,
+  LocalDate today,
+  AppSettings settings,
+) => _weekly(
+  data,
+  today,
+  (t, h) => trainingCalories(
+    h,
+    t.session.startedAt,
+    data.bodyWeights,
+    settings,
+  )?.toDouble(),
+);

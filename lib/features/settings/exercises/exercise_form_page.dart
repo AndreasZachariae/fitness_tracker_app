@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/format/exercise_format.dart';
@@ -7,6 +8,7 @@ import '../../../core/l10n/strings_de.dart';
 import '../../../data/providers.dart';
 import '../../../data/repositories/plan_repository.dart';
 import '../../../data/repositories/repository_exceptions.dart';
+import '../../../domain/heart_rate_ranges.dart';
 import '../../../domain/models/models.dart';
 import '../../../domain/names.dart';
 import '../../../domain/weight_steps.dart';
@@ -14,6 +16,7 @@ import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/info_button.dart';
 import '../../../widgets/number_stepper.dart';
 import '../../../widgets/snackbars.dart';
+import '../../heart_rate/range_colors.dart';
 import 'exercise_actions.dart';
 
 /// Result of the exercise form.
@@ -103,6 +106,22 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
   /// `true` while unknown, so the type cannot change before we know.
   bool _typeLocked = true;
 
+  // 1.6.0: pause by heart rate, heart rate target (warm-up / cardio).
+  late bool _restByHr = _original?.restByHeartRate ?? false;
+  late _TargetKind _targetKind = _original?.hrTargetRange != null
+      ? _TargetKind.range
+      : _original?.hrTargetBpm != null
+      ? _TargetKind.bpm
+      : _TargetKind.none;
+  late int _targetRange = _original?.hrTargetRange ?? 2;
+  late final _targetBpm = TextEditingController(
+    text: _original?.hrTargetBpm?.toString() ?? '',
+  );
+  late final _targetMinutes = TextEditingController(
+    text: (_original?.hrTargetMinutes ?? 8).toString(),
+  );
+  String? _targetError;
+
   int? _sets;
   int? _reps;
   int? _duration;
@@ -139,6 +158,8 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
     _levelKg.dispose();
     _rest.dispose();
     _notes.dispose();
+    _targetBpm.dispose();
+    _targetMinutes.dispose();
     super.dispose();
   }
 
@@ -191,13 +212,16 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
           restText.isNotEmpty && (rest == null || rest < 0 || rest > 3600)
           ? S.errorRest
           : null;
+      _targetError = _target == null && _hasTarget ? S.errorHrTarget : null;
     });
     if (_nameError != null ||
         _incrementError != null ||
         _levelKgError != null ||
-        _restError != null) {
+        _restError != null ||
+        _targetError != null) {
       return;
     }
+    final target = _hasTarget ? _target : null;
     if (!await _confirmConversion(mode, levelKg)) return;
 
     setState(() => _busy = true);
@@ -217,6 +241,10 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
             stepMode: mode,
             incrementLbs: incrementLbs!,
             levelKg: levelKg,
+            restByHeartRate: _restByHr,
+            hrTargetRange: target?.range,
+            hrTargetBpm: target?.bpm,
+            hrTargetMinutes: target?.minutes,
           ),
         );
       } else {
@@ -233,6 +261,10 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
             stepMode: mode,
             incrementLbs: incrementLbs,
             levelKg: levelKg,
+            restByHeartRate: _restByHr,
+            hrTargetRange: target?.range,
+            hrTargetBpm: target?.bpm,
+            hrTargetMinutes: target?.minutes,
           ),
         );
       }
@@ -408,6 +440,7 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
                       errorText: _restError,
                     ),
                   ),
+                  _heartRateSection(settings),
                   gap,
                   TextField(
                     controller: _notes,
@@ -459,7 +492,134 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
   }
 }
 
+/// Heart rate target of a warm-up / cardio exercise (1.6.0).
+enum _TargetKind { none, range, bpm }
+
 extension on _ExerciseFormPageState {
+  bool get _hasTarget =>
+      _type == ExerciseType.timed && _targetKind != _TargetKind.none;
+
+  /// The target as entered; null if invalid.
+  ({int? range, int? bpm, int minutes})? get _target {
+    final minutes = int.tryParse(_targetMinutes.text.trim());
+    if (minutes == null || minutes < 1 || minutes > 180) return null;
+    if (_targetKind == _TargetKind.range) {
+      return (range: _targetRange, bpm: null, minutes: minutes);
+    }
+    final bpm = int.tryParse(_targetBpm.text.trim());
+    if (bpm == null || bpm < 40 || bpm > 250) return null;
+    return (range: null, bpm: bpm, minutes: minutes);
+  }
+
+  /// "Pause nach Puls" and, for timed exercises, the heart rate target.
+  Widget _heartRateSection(AppSettings settings) {
+    final theme = Theme.of(context);
+    final hint = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final pause = settings.pauseBpm;
+    final hrMax = settings.hrMax;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SwitchListTile(
+          key: const ValueKey('rest-by-hr'),
+          contentPadding: EdgeInsets.zero,
+          title: const Text(S.fieldRestByHr),
+          subtitle: Text(
+            pause == null
+                ? S.fieldRestByHrNoProfile
+                : S.fieldRestByHrHint(pause),
+          ),
+          value: _restByHr,
+          onChanged: (v) => _update(() => _restByHr = v),
+        ),
+        if (_type == ExerciseType.timed) ...[
+          const SizedBox(height: 8),
+          Text(S.fieldHrTarget, style: theme.textTheme.titleSmall),
+          const SizedBox(height: 6),
+          SegmentedButton<_TargetKind>(
+            segments: const [
+              ButtonSegment(
+                value: _TargetKind.none,
+                label: Text(S.hrTargetNone),
+              ),
+              ButtonSegment(
+                value: _TargetKind.range,
+                label: Text(S.hrTargetRangeKind),
+              ),
+              ButtonSegment(value: _TargetKind.bpm, label: Text(S.unitBpm)),
+            ],
+            selected: {_targetKind},
+            showSelectedIcon: false,
+            onSelectionChanged: (v) => _update(() => _targetKind = v.first),
+          ),
+          if (_targetKind == _TargetKind.range) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                for (var r = 1; r <= 5; r++)
+                  ChoiceChip(
+                    avatar: CircleAvatar(backgroundColor: rangeColor(r)),
+                    label: Text(
+                      hrMax == null
+                          ? S.hrRange(r)
+                          : '${S.hrRange(r)} · '
+                                '${S.hrRangeBpm(garminRanges(hrMax)[r - 1].from, garminRanges(hrMax)[r - 1].to)}',
+                    ),
+                    selected: _targetRange == r,
+                    onSelected: (_) => _update(() => _targetRange = r),
+                  ),
+              ],
+            ),
+            if (hrMax == null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(S.hrTargetNeedsProfile, style: hint),
+              ),
+          ],
+          if (_targetKind == _TargetKind.bpm)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: TextField(
+                key: const ValueKey('hr-target-bpm'),
+                controller: _targetBpm,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: S.hrTargetBpmLabel,
+                  suffixText: S.unitBpm,
+                ),
+              ),
+            ),
+          if (_targetKind != _TargetKind.none) ...[
+            const SizedBox(height: 8),
+            TextField(
+              key: const ValueKey('hr-target-minutes'),
+              controller: _targetMinutes,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: InputDecoration(
+                labelText: S.hrTargetMinutesLabel,
+                suffixText: S.unitMinutes,
+                errorText: _targetError,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _targetKind == _TargetKind.range
+                  ? S.hrTargetRangeHint
+                  : S.hrTargetBpmHint,
+              style: hint,
+            ),
+          ],
+        ],
+      ],
+    );
+  }
+
   /// "Gewichtsschritte": Standard / Eigene (kg or lbs) / Stufen (1.1.0).
   Widget _stepSection(AppSettings settings) {
     final theme = Theme.of(context);

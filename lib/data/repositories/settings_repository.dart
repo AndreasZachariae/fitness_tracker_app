@@ -58,6 +58,17 @@ class SettingsRepository {
     if (s.backupReminderDays < 0 || s.backupReminderDays > 365) {
       throw InvalidValueException('backupReminderDays', s.backupReminderDays);
     }
+    // 1.6.0: heart rate profile.
+    void range(String name, int? v, int min, int max) {
+      if (v != null && (v < min || v > max)) {
+        throw InvalidValueException(name, v);
+      }
+    }
+
+    range('hrMax', s.hrMax, 100, 250);
+    range('birthYear', s.birthYear, 1900, 2100);
+    range('hrWarnBpm', s.hrWarnBpm, 60, 250);
+    range('hrPauseBpm', s.hrPauseBpm, 40, 220);
   }
 }
 

@@ -12,6 +12,7 @@ final class SessionHeartRate {
     required this.seconds,
     required this.histogram,
     required this.curve,
+    this.recoveryBpm,
   });
 
   factory SessionHeartRate.fromSummary(int sessionId, HeartRateSummary s) =>
@@ -39,6 +40,10 @@ final class SessionHeartRate {
   /// [encodeCurve]: average per minute since the start.
   final String curve;
 
+  /// Heart rate recovery: average drop in the 60 s after hard sets
+  /// (1.6.0); null if no set was usable.
+  final int? recoveryBpm;
+
   Map<int, int> get distribution => decodeHistogram(histogram);
   List<int?> get perMinute => decodeCurve(curve);
 
@@ -51,9 +56,18 @@ final class SessionHeartRate {
       other.minBpm == minBpm &&
       other.seconds == seconds &&
       other.histogram == histogram &&
-      other.curve == curve;
+      other.curve == curve &&
+      other.recoveryBpm == recoveryBpm;
 
   @override
-  int get hashCode =>
-      Object.hash(sessionId, avgBpm, maxBpm, minBpm, seconds, histogram, curve);
+  int get hashCode => Object.hash(
+    sessionId,
+    avgBpm,
+    maxBpm,
+    minBpm,
+    seconds,
+    histogram,
+    curve,
+    recoveryBpm,
+  );
 }

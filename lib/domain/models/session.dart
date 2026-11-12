@@ -184,10 +184,14 @@ final class SetEntry {
     required this.completedAt,
     this.hrAvg,
     this.hrPeak,
+    this.hrTargetSec,
   });
 
   final int id;
   final int sessionExerciseId;
+
+  /// Warm-up / cardio: seconds in the heart rate target (1.6.0).
+  final int? hrTargetSec;
 
   /// Heart rate during the set and its peak until shortly after (1.5.1);
   /// stored when the training ends, null without a monitor.
@@ -221,7 +225,8 @@ final class SetEntry {
       other.isWarmup == isWarmup &&
       other.completedAt == completedAt &&
       other.hrAvg == hrAvg &&
-      other.hrPeak == hrPeak;
+      other.hrPeak == hrPeak &&
+      other.hrTargetSec == hrTargetSec;
 
   @override
   int get hashCode => Object.hash(
@@ -235,6 +240,7 @@ final class SetEntry {
     completedAt,
     hrAvg,
     hrPeak,
+    hrTargetSec,
   );
 
   @override

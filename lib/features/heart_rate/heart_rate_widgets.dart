@@ -2,12 +2,17 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/format/formatters.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../core/theme/gym_colors.dart';
 import '../../data/providers.dart';
 import '../../domain/heart_rate.dart';
+import '../../domain/heart_rate_ranges.dart';
+import '../../domain/statistics.dart';
 import '../../widgets/charts.dart';
+import '../../widgets/info_button.dart';
 import 'heart_rate_recorder.dart';
+import 'range_colors.dart';
 
 /// "♥ 128" (1.5.0); since 1.5.1 in the active exercise and larger with
 /// [large]. Nothing without a chosen monitor or training; "♥ –" in grey
@@ -22,10 +27,21 @@ class HeartRateIndicator extends ConsumerWidget {
     final live = ref.watch(heartRateLiveProvider);
     if (live.status == HeartRateStatus.off) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final settings = ref.watch(settingsProvider).value;
     final connected = live.status == HeartRateStatus.connected;
-    final color = connected
-        ? GymColors.of(context).record
-        : theme.colorScheme.onSurfaceVariant;
+    final bpm = live.bpm;
+    final hrMax = settings?.hrMax;
+    // 1.6.0: Garmin's color of the range; red above the warning limit.
+    final warn =
+        connected &&
+        bpm != null &&
+        settings?.hrWarnBpm != null &&
+        bpm >= settings!.hrWarnBpm!;
+    final color = !connected || bpm == null
+        ? theme.colorScheme.onSurfaceVariant
+        : hrMax != null
+        ? rangeColor(rangeOf(bpm, hrMax))
+        : GymColors.of(context).record;
     final status = switch (live.status) {
       HeartRateStatus.connected => '${live.bpm} ${S.unitBpm}',
       HeartRateStatus.connecting => S.heartRateStatusConnecting,
@@ -45,21 +61,33 @@ class HeartRateIndicator extends ConsumerWidget {
       child: Semantics(
         label: S.heartRateLiveLabel(status),
         excludeSemantics: true,
-        child: Row(
+        child: Container(
           key: const ValueKey('heart-rate-indicator'),
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              connected ? Icons.favorite : Icons.favorite_border,
-              size: large ? 26 : 20,
-              color: color,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              connected && live.bpm != null ? '${live.bpm}' : '–',
-              style: text,
-            ),
-          ],
+          padding: warn
+              ? const EdgeInsets.symmetric(horizontal: 6, vertical: 2)
+              : EdgeInsets.zero,
+          decoration: warn
+              ? BoxDecoration(
+                  color: theme.colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                )
+              : null,
+          child: Row(
+            key: warn ? const ValueKey('heart-rate-warning') : null,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                connected ? Icons.favorite : Icons.favorite_border,
+                size: large ? 26 : 20,
+                color: color,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                connected && live.bpm != null ? '${live.bpm}' : '–',
+                style: text,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -118,6 +146,16 @@ class HeartRateSection extends ConsumerWidget {
       for (final d in details)
         if (d.sessionExercise.hrMax case final max?) (d.exercise.name, max),
     ];
+    // 1.6.0: ranges, recovery, calories.
+    final settings = ref.watch(settingsProvider).value;
+    final session = ref.watch(sessionProvider(sessionId)).value;
+    final weights = ref.watch(bodyWeightsProvider).value ?? const [];
+    final sortedWeights = [...weights]
+      ..sort((a, b) => a.date.compareTo(b.date));
+    final hrMax = settings?.hrMax;
+    final calories = settings == null || session == null
+        ? null
+        : trainingCalories(summary, session.startedAt, sortedWeights, settings);
     return Column(
       key: const ValueKey('heart-rate-section'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -127,6 +165,13 @@ class HeartRateSection extends ConsumerWidget {
           average: summary.avgBpm,
           max: summary.maxBpm,
           min: summary.minBpm,
+        ),
+        if (hrMax != null)
+          _RangesCard(seconds: secondsPerRange(summary.distribution, hrMax)),
+        _FiguresCard(
+          recovery: summary.recoveryBpm,
+          calories: calories,
+          caloriesMissing: settings?.birthYear == null || settings?.sex == null,
         ),
         _ViolinCard(current: summary.distribution, earlier: earlier),
         if (perExercise.isNotEmpty) _PeaksCard(peaks: perExercise),
@@ -414,6 +459,159 @@ class _PeaksCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Minutes in Garmin's ranges as one bar and a legend (1.6.0).
+class _RangesCard extends StatelessWidget {
+  const _RangesCard({required this.seconds});
+
+  /// Range 0 (below 1) to 5 → seconds.
+  final Map<int, int> seconds;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final total = seconds.values.fold<int>(0, (a, b) => a + b);
+    if (total == 0) return const SizedBox.shrink();
+    return Card.outlined(
+      key: const ValueKey('heart-rate-ranges'),
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    S.heartRateRanges,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+                const InfoButton(
+                  title: S.heartRateRanges,
+                  text: S.heartRateRangesInfo,
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8, top: 4),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: SizedBox(
+                  height: 16,
+                  child: Row(
+                    children: [
+                      for (var r = 5; r >= 0; r--)
+                        if (seconds[r]! > 0)
+                          Expanded(
+                            flex: seconds[r]!,
+                            child: ColoredBox(color: rangeColor(r)),
+                          ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (var r = 5; r >= 0; r--)
+              if (seconds[r]! > 0)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8, bottom: 2),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: rangeColor(r),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          r == 0 ? S.heartRateBelowRanges : S.hrRange(r),
+                        ),
+                      ),
+                      Text(
+                        '${formatTrainingDuration(Duration(seconds: seconds[r]!))}'
+                        ' · ${(seconds[r]! * 100 / total).round()} %',
+                      ),
+                    ],
+                  ),
+                ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Heart rate recovery and calories of a training (1.6.0).
+class _FiguresCard extends StatelessWidget {
+  const _FiguresCard({
+    required this.recovery,
+    required this.calories,
+    required this.caloriesMissing,
+  });
+
+  final int? recovery;
+  final int? calories;
+  final bool caloriesMissing;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    Widget figure(String label, String value, String info, Key key) => Expanded(
+      child: Card.outlined(
+        key: key,
+        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 4, 0, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  InfoButton(title: label, text: info),
+                ],
+              ),
+              Text(value, style: theme.textTheme.titleLarge),
+            ],
+          ),
+        ),
+      ),
+    );
+    return Row(
+      children: [
+        figure(
+          S.heartRateRecovery,
+          recovery == null ? '–' : S.heartRateRecoveryValue(recovery!),
+          S.heartRateRecoveryInfo,
+          const ValueKey('heart-rate-recovery'),
+        ),
+        const SizedBox(width: 8),
+        figure(
+          S.calories,
+          calories == null
+              ? (caloriesMissing ? S.caloriesNeedProfile : '–')
+              : S.caloriesValue(calories!),
+          S.caloriesInfo,
+          const ValueKey('heart-rate-calories'),
+        ),
+      ],
     );
   }
 }

@@ -17,6 +17,7 @@ import '../../widgets/confirm_dialog.dart';
 import '../../widgets/number_input_dialog.dart';
 import '../../widgets/snackbars.dart';
 import '../../widgets/tab_page.dart';
+import 'heart_rate_profile_card.dart';
 
 /// Tab "Körper" (SPEC §6.6).
 class BodyPage extends ConsumerStatefulWidget {
@@ -92,7 +93,7 @@ class _BodyPageState extends ConsumerState<BodyPage> {
           ? const SizedBox.shrink()
           : ListView.builder(
               padding: const EdgeInsets.only(bottom: 24),
-              itemCount: entries.length + 4,
+              itemCount: entries.length + 5,
               itemBuilder: (context, i) => switch (i) {
                 0 => _InputCard(
                   lastWeight: entries.isEmpty ? null : entries.first.weightKg,
@@ -111,7 +112,9 @@ class _BodyPageState extends ConsumerState<BodyPage> {
                     if (entries.isNotEmpty) _StatsRow(stats: stats),
                   ],
                 ),
-                3 =>
+                // 1.6.0: maximum heart rate, ranges, warning, pause limit.
+                3 => const HeartRateProfileCard(),
+                4 =>
                   entries.isEmpty
                       ? const SizedBox.shrink()
                       : Padding(
@@ -122,7 +125,7 @@ class _BodyPageState extends ConsumerState<BodyPage> {
                           ),
                         ),
                 _ => _EntryTile(
-                  entry: entries[i - 4],
+                  entry: entries[i - 5],
                   onDelete: _delete,
                   onTap: _edit,
                 ),

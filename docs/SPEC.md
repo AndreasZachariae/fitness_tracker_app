@@ -242,6 +242,28 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
 - Backup-Format 7 mit Zusammenfassungen (und dem Puffer eines laufenden Trainings); CSV: `hr_avg_bpm`/`hr_peak_bpm` in
   `sets.csv`, `hr_avg_bpm`/`hr_max_bpm` in `sessions.csv`. Der gespeicherte Pulsmesser ist Gerätezustand, nicht im Backup.
 
+#### 6.2.0a Pulsbereiche, Cardio und Auswertungen (ab 1.6.0)
+
+- **Puls-Profil** im Tab Körper: Maximalpuls (Info-i: wo er in Garmin Connect steht), Geburtsjahr, Geschlecht,
+  „Warnung bei hohem Puls ab …“ (leer = aus, Vorschlag 95 %), „Pause nach Puls endet unter …“ (leer = Ende Bereich 1,
+  60 %). Daraus Garmins Pulsbereiche 1–5 (50/60/70/80/90 % des Maximalpulses) in Garmins Farben (grau, blau, grün,
+  orange, rot). Bewusst „Bereich“, nicht „Zone“: klassisches Zone-2-Training bezieht sich auf die erste Laktatschwelle.
+- **Training:** Pulsanzeige in der Farbe des Bereichs; ab der Warngrenze rot hinterlegt, Vibration (2 × lang),
+  höchstens alle 2 Minuten.
+- **Pause nach Puls** (Haken je Übung): Die Pause endet, sobald der Puls unter die Grenze fällt (frühestens nach 30 s)
+  oder die Pausenzeit abläuft; die Leiste zeigt „♥ < 111“. Im Hintergrund gilt nur die Zeit.
+- **Aufwärmen/Cardio:** Zeitübung mit Pulsziel (Bereich 1–5 oder mindestens X bpm) für X Minuten. Mit Pulsmesser zählt
+  ein eigener Timer nur die Zeit im Ziel (Bereich: innerhalb, bpm: mindestens), meldet „Ziel erreicht“, vibriert und
+  übernimmt die Gesamtdauer; ohne Pulsmesser Countdown der Minuten. Beim Beenden wird die Zeit im Ziel je Satz
+  gespeichert (`set_entries.hr_target_sec`). Kein eigener Typ und keine eigene Kategorie (Regel 4: die Werte von Typ
+  und Kategorie sind in der Tabelle festgelegt).
+- **Zusammenfassung/Verlauf:** Zeit in Pulsbereichen (Balken und Liste), Erholungspuls (Ø-Abfall 60 s nach dem
+  Spitzenpuls harter Sätze, ab 70 % des Maximalpulses), Kalorien (Keytel et al. 2005: Ø-Puls, Dauer, Körpergewicht am
+  nächsten zum Trainingstag, Alter, Geschlecht), jeweils mit Info-i.
+- **Statistik → Gesamt:** Erholungspuls je Training, Wochenbelastung (Edwards-TRIMP: Σ Minuten in Bereich i × i),
+  Kalorien je Woche – jeweils mit Info-i zu Berechnung und Aussage.
+- Backup-Format 8 enthält Profil, Übungsoptionen, Zeit im Ziel und Erholungspuls.
+
 #### 6.2.1 Pausentimer
 
 - Leiste am unteren Rand über der NavigationBar: „Pause 1:12“, Fortschrittsbalken, Buttons „−15 s“, „+15 s“, „Überspringen“.

@@ -41,6 +41,10 @@ class WeightUnitConverter extends CodedConverter<WeightUnit> {
   const WeightUnitConverter() : super(WeightUnit.values);
 }
 
+class SexConverter extends CodedConverter<Sex> {
+  const SexConverter() : super(Sex.values);
+}
+
 class ThemePreferenceConverter extends CodedConverter<ThemePreference> {
   const ThemePreferenceConverter() : super(ThemePreference.values);
 }

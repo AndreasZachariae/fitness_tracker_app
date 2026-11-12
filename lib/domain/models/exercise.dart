@@ -18,6 +18,10 @@ final class Exercise {
     this.incrementLbs = defaultIncrementLbs,
     this.levelKg,
     this.timerCountdown = false,
+    this.restByHeartRate = false,
+    this.hrTargetRange,
+    this.hrTargetBpm,
+    this.hrTargetMinutes,
   });
 
   static const defaultIncrementLbs = 15.0;
@@ -44,6 +48,22 @@ final class Exercise {
   /// up (1.3.0); switched with the arrow next to the timer.
   final bool timerCountdown;
 
+  /// The rest after a set ends when the heart rate falls below the limit of
+  /// the heart rate profile (or the rest time is over, 1.6.0).
+  final bool restByHeartRate;
+
+  /// Warm-up / cardio (timed exercises, 1.6.0): hold Garmin range
+  /// [hrTargetRange] or at least [hrTargetBpm] for [hrTargetMinutes].
+  final int? hrTargetRange;
+  final int? hrTargetBpm;
+  final int? hrTargetMinutes;
+
+  /// Whether this is a warm-up / cardio exercise with a heart rate target.
+  bool get hasHeartRateTarget =>
+      type == ExerciseType.timed &&
+      hrTargetMinutes != null &&
+      (hrTargetRange != null || hrTargetBpm != null);
+
   /// Overrides the default rest time; `null` = use the default.
   final int? restSec;
   final bool includeInStrengthIndex;
@@ -68,6 +88,10 @@ final class Exercise {
     double? incrementLbs,
     Object? levelKg = unset,
     bool? timerCountdown,
+    bool? restByHeartRate,
+    Object? hrTargetRange = unset,
+    Object? hrTargetBpm = unset,
+    Object? hrTargetMinutes = unset,
   }) {
     return Exercise(
       id: id,
@@ -85,6 +109,10 @@ final class Exercise {
       incrementLbs: incrementLbs ?? this.incrementLbs,
       levelKg: pick<double?>(levelKg, this.levelKg),
       timerCountdown: timerCountdown ?? this.timerCountdown,
+      restByHeartRate: restByHeartRate ?? this.restByHeartRate,
+      hrTargetRange: pick<int?>(hrTargetRange, this.hrTargetRange),
+      hrTargetBpm: pick<int?>(hrTargetBpm, this.hrTargetBpm),
+      hrTargetMinutes: pick<int?>(hrTargetMinutes, this.hrTargetMinutes),
     );
   }
 
@@ -104,7 +132,11 @@ final class Exercise {
       other.stepMode == stepMode &&
       other.incrementLbs == incrementLbs &&
       other.levelKg == levelKg &&
-      other.timerCountdown == timerCountdown;
+      other.timerCountdown == timerCountdown &&
+      other.restByHeartRate == restByHeartRate &&
+      other.hrTargetRange == hrTargetRange &&
+      other.hrTargetBpm == hrTargetBpm &&
+      other.hrTargetMinutes == hrTargetMinutes;
 
   @override
   int get hashCode => Object.hash(
@@ -122,6 +154,10 @@ final class Exercise {
     incrementLbs,
     levelKg,
     timerCountdown,
+    restByHeartRate,
+    hrTargetRange,
+    hrTargetBpm,
+    hrTargetMinutes,
   );
 
   @override
@@ -141,6 +177,10 @@ final class ExerciseDraft {
     this.stepMode = StepMode.kg,
     this.incrementLbs = Exercise.defaultIncrementLbs,
     this.levelKg,
+    this.restByHeartRate = false,
+    this.hrTargetRange,
+    this.hrTargetBpm,
+    this.hrTargetMinutes,
   }) : includeInStrengthIndex =
            includeInStrengthIndex ??
            // Same as ExerciseType.includeInStrengthIndexByDefault (const).
@@ -158,4 +198,10 @@ final class ExerciseDraft {
   final StepMode stepMode;
   final double incrementLbs;
   final double? levelKg;
+
+  /// 1.6.0, see [Exercise].
+  final bool restByHeartRate;
+  final int? hrTargetRange;
+  final int? hrTargetBpm;
+  final int? hrTargetMinutes;
 }

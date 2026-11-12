@@ -27,7 +27,7 @@ void main() {
   test('header fields (SPEC §8.2)', () {
     final json = jsonDecode(encodeBackup(backup)) as Map<String, Object?>;
     expect(json['format'], 'gymlog-backup');
-    expect(json['formatVersion'], 7);
+    expect(json['formatVersion'], 8);
     expect(json['schemaVersion'], 1);
     expect(json['appVersion'], '1.0.0+12');
     expect(json['exportedAt'], isA<String>());
@@ -328,6 +328,79 @@ void main() {
     }
   });
 
+  test('1.6.0: profile, heart rate options, target time and recovery round '
+      'trip; format 7 has none', () {
+    final timed = demo.exercises.firstWhere(
+      (e) => e.type == ExerciseType.timed,
+    );
+    final profile = settings.copyWith(
+      hrMax: 185,
+      birthYear: 1990,
+      sex: Sex.female,
+      hrWarnBpm: 176,
+      hrPauseBpm: 105,
+    );
+    final finished = demo.sessions.firstWhere((x) => !x.isActive);
+    final kept = SessionHeartRate(
+      sessionId: finished.id,
+      avgBpm: 120,
+      maxBpm: 160,
+      minBpm: 90,
+      seconds: 600,
+      histogram: '120:600',
+      curve: '120',
+      recoveryBpm: 28,
+    );
+    final data = BackupData(
+      dataset: Dataset(
+        exercises: [
+          for (final e in demo.exercises)
+            e.id == timed.id
+                ? e.copyWith(
+                    restByHeartRate: true,
+                    hrTargetRange: 2,
+                    hrTargetMinutes: 8,
+                  )
+                : e,
+        ],
+        plans: demo.plans,
+        planExercises: demo.planExercises,
+        planGroups: demo.planGroups,
+        planSchedules: demo.planSchedules,
+        sessions: demo.sessions,
+        sessionExercises: demo.sessionExercises,
+        sessionSupersets: demo.sessionSupersets,
+        sets: demo.sets,
+        bodyWeights: demo.bodyWeights,
+        sessionHeartRates: [kept],
+      ),
+      settings: profile,
+      schemaVersion: 8,
+      appVersion: '1.6.0+23',
+      exportedAt: testNow,
+    );
+    final text = encodeBackup(data);
+    final decoded = decodeBackup(text);
+    final e = decoded.dataset.exercises.firstWhere((x) => x.id == timed.id);
+    expect(
+      (e.restByHeartRate, e.hrTargetRange, e.hrTargetMinutes),
+      (true, 2, 8),
+    );
+    expect(decoded.dataset.sessionHeartRates.single.recoveryBpm, 28);
+    final s = decoded.settings;
+    expect(
+      (s.hrMax, s.birthYear, s.sex, s.hrWarnBpm, s.hrPauseBpm),
+      (185, 1990, Sex.female, 176, 105),
+    );
+
+    final j = jsonDecode(text) as Map<String, Object?>;
+    j['formatVersion'] = 7;
+    final old = decodeBackup(jsonEncode(j));
+    expect(old.settings.hrMax, isNull);
+    expect(old.dataset.exercises.any((x) => x.restByHeartRate), isFalse);
+    expect(old.dataset.sessionHeartRates.single.recoveryBpm, isNull);
+  });
+
   test('training days: round trip and validation (1.2.0)', () {
     final planId = demo.plans.first.id;
     final withDays = BackupData(
@@ -410,7 +483,7 @@ void main() {
       (
         'newer version',
         () {
-          final j = json()..['formatVersion'] = 8;
+          final j = json()..['formatVersion'] = 9;
           return jsonEncode(j);
         },
         BackupError.newerVersion,
