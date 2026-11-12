@@ -13,7 +13,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.DocumentsContract
-import android.provider.Settings
 
 /**
  * Update APK via Android's download manager (1.6.1): the system downloads and shows the progress; the user
@@ -122,39 +121,43 @@ object ApkDownloads {
         if (ids.isNotEmpty()) dm.remove(*ids.toLongArray())
     }
 
-    /** The folder Download/GymLog in the file manager, where the user taps the APK (1.6.2). */
-    fun folderIntent(): Intent {
+    /** Files by Google: the nicer view (1.6.2, wish of the human); otherwise the system's "Dateien". */
+    private const val FILES_BY_GOOGLE = "com.google.android.apps.nbu.files"
+
+    /** The folder Download/GymLog as a document URI. */
+    private fun folderView(): Intent {
         val uri = DocumentsContract.buildDocumentUri(
             "com.android.externalstorage.documents",
             "primary:${Environment.DIRECTORY_DOWNLOADS}/$FOLDER",
         )
         return Intent(Intent.ACTION_VIEW)
             .setDataAndType(uri, DocumentsContract.Document.MIME_TYPE_DIR)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 
-    /** Opens the folder; without a file manager for it the system list of downloads. */
+    /**
+     * Where the user taps the APK (1.6.2), the first that exists: the folder in Files by Google, its downloads
+     * (the newest file on top), the folder in "Dateien", the system list of downloads.
+     */
+    fun folderIntent(context: Context): Intent {
+        val downloads = Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)
+        val candidates = listOf(
+            folderView().setPackage(FILES_BY_GOOGLE),
+            Intent(downloads).setPackage(FILES_BY_GOOGLE),
+            folderView(),
+        )
+        val pm = context.packageManager
+        val chosen = candidates.firstOrNull { it.resolveActivity(pm) != null } ?: downloads
+        return chosen.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
     fun openFolder(context: Context) {
         try {
-            context.startActivity(folderIntent())
+            context.startActivity(folderIntent(context))
         } catch (_: ActivityNotFoundException) {
             context.startActivity(
                 Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
-        }
-    }
-
-    /** Android's list "Unbekannte Apps installieren", where the user allows the file manager once. */
-    fun openInstallSettings(context: Context) {
-        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
-        } else {
-            Intent(Settings.ACTION_SECURITY_SETTINGS)
-        }
-        try {
-            context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        } catch (_: ActivityNotFoundException) {
-            context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
     }
 
@@ -181,7 +184,7 @@ object ApkDownloads {
         val open = PendingIntent.getActivity(
             context,
             0,
-            folderIntent(),
+            folderIntent(context),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         @Suppress("DEPRECATION")

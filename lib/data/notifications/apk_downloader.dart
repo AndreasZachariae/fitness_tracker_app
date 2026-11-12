@@ -34,12 +34,9 @@ abstract interface class ApkDownloader {
   /// Removes all GymLog APK downloads with their files.
   Future<void> removeAll();
 
-  /// Opens the folder Download/GymLog in the file manager (1.6.2).
+  /// Opens the folder Download/GymLog, preferably in Files by Google
+  /// (1.6.2), else in "Dateien" or the downloads.
   Future<void> openFolder();
-
-  /// Opens Android's list "Unbekannte Apps installieren" (1.6.2): the file
-  /// manager must be allowed once to install the APK.
-  Future<void> openInstallSettings();
 }
 
 final class PlatformApkDownloader implements ApkDownloader {
@@ -81,8 +78,4 @@ final class PlatformApkDownloader implements ApkDownloader {
 
   @override
   Future<void> openFolder() => _channel.invokeMethod<void>('openFolder');
-
-  @override
-  Future<void> openInstallSettings() =>
-      _channel.invokeMethod<void>('openInstallSettings');
 }

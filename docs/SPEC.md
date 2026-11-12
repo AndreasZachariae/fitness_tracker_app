@@ -379,8 +379,8 @@ der Startseite (nur wenn es Trainings gibt).
   Benachrichtigung oder Einstellungen → Über („Update ansehen“). Die Seite
   zeigt Version, Neuerungen (aufgeklappt), „APK herunterladen“ und „Auf GitHub ansehen“. Ab 1.6.1 lädt Androids
   Download-Manager die APK nach `Download/GymLog` (vorher öffnete der Browser sie); die Seite zeigt den Fortschritt
-  („12,3 von 25,0 MB“), danach den Dateinamen, „Ordner GymLog öffnen“ und „Installieren erlauben“ (Liste „Unbekannte
-  Apps installieren“, für den Dateimanager einmal nötig). Ab 1.6.2 zeigt der Download-Manager nur den Fortschritt; am
+  („12,3 von 25,0 MB“), danach den Dateinamen, „Ordner GymLog öffnen“ (Files by Google, sonst „Dateien“) und den
+  Hinweis, dass der Dateimanager das Installieren einmal erlauben muss. Ab 1.6.2 zeigt der Download-Manager nur den Fortschritt; am
   Ende meldet GymLog „Update geladen“, Antippen öffnet den Ordner. Installiert wird durch Antippen der Datei im Ordner. Frühere GymLog-APK-Downloads werden vor einem neuen Download und beim Start ohne
   neuere Version gelöscht. Fehlschlag → „Erneut versuchen“ oder „Im Browser herunterladen“.
 - **Automatische Buchung:** Adresse der Buchungsseite, ab 1.6.1 mit Knopf „Im Browser öffnen“ zum Testen.

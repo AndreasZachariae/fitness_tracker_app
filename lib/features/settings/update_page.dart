@@ -163,8 +163,6 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
                 onStart: () => _startDownload(apk),
                 onOpenFolder: () =>
                     ref.read(apkDownloaderProvider).openFolder(),
-                onInstallSettings: () =>
-                    ref.read(apkDownloaderProvider).openInstallSettings(),
                 onBrowser: () => openInBrowser(apk),
               )
             else
@@ -213,7 +211,6 @@ class _DownloadBox extends StatelessWidget {
     required this.failed,
     required this.onStart,
     required this.onOpenFolder,
-    required this.onInstallSettings,
     required this.onBrowser,
   });
 
@@ -221,7 +218,6 @@ class _DownloadBox extends StatelessWidget {
   final bool failed;
   final VoidCallback onStart;
   final VoidCallback onOpenFolder;
-  final VoidCallback onInstallSettings;
   final VoidCallback onBrowser;
 
   @override
@@ -282,12 +278,6 @@ class _DownloadBox extends StatelessWidget {
             icon: const Icon(Icons.folder_open),
             label: const Text(S.updateOpenFolder),
             onPressed: onOpenFolder,
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.verified_user_outlined),
-            label: const Text(S.updateInstallSettings),
-            onPressed: onInstallSettings,
           ),
         ],
       );

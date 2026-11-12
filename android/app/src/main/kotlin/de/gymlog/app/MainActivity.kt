@@ -61,10 +61,6 @@ class MainActivity : FlutterActivity() {
                             ApkDownloads.openFolder(this)
                             result.success(null)
                         }
-                        "openInstallSettings" -> {
-                            ApkDownloads.openInstallSettings(this)
-                            result.success(null)
-                        }
                         else -> result.notImplemented()
                     }
                 } catch (e: Exception) {

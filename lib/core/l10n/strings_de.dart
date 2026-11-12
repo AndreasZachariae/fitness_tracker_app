@@ -217,9 +217,18 @@ abstract final class S {
   static const heartRateEarlier = 'Ø bisher';
   static const heartRateDistribution = 'Pulsverteilung';
   static const heartRateDistributionInfo =
-      'Boxplot: Kasten = mittlere Hälfte der Zeit (1. bis 3. Quartil), Strich = '
-      'Median, Linien bis Min. und Max.; Punkte = Ausreißer, mehr als 1,5 '
-      'Kastenlängen entfernt. Rechts: frühere Trainings dieses Plans.';
+      'Wie dein Puls über das Training verteilt war, als Boxplot:\n\n'
+      '• Kasten: die mittlere Hälfte der Zeit, vom 1. Quartil (ein Viertel '
+      'der Zeit lag darunter) bis zum 3. Quartil (ein Viertel darüber).\n'
+      '• Strich im Kasten: Median – die Hälfte der Zeit lag darunter, die '
+      'Hälfte darüber.\n'
+      '• Linien (Whisker): bis zum niedrigsten und höchsten Puls, höchstens '
+      '1,5 Kastenlängen weit.\n'
+      '• Punkte: Ausreißer, die weiter entfernt liegen, z. B. kurze Spitzen.\n'
+      '• min./max.: niedrigster und höchster Puls (max. dieses Trainings in '
+      'Rot).\n\n'
+      'Rechts „Ø bisher“: deine früheren Trainings dieses Plans zum '
+      'Vergleich. Liegt der Kasten höher, war das Training intensiver.';
   static String heartRateBoxMax(int bpm) => 'max. $bpm';
   static String heartRateBoxMin(int bpm) => 'min. $bpm';
   static const heartRatePerExercise = 'Spitzenpuls je Übung';
@@ -913,9 +922,8 @@ abstract final class S {
   static const updateInstallHint =
       'Zum Installieren im Ordner GymLog die Datei antippen. Beim ersten Mal '
       'fragt Android, ob die Dateien-App Apps installieren darf: einmal '
-      'erlauben.';
+      'erlauben, danach genügt das Antippen.';
   static const updateOpenFolder = 'Ordner GymLog öffnen';
-  static const updateInstallSettings = 'Installieren erlauben (Einstellungen)';
   static const updateDownloadedTitle = 'Update geladen';
   static const updateDownloadedBody =
       'Antippen öffnet den Ordner GymLog. Dort die Datei antippen und '

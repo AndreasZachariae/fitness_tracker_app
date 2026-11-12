@@ -396,10 +396,8 @@ void main() {
     await tester.tap(find.text(S.updateOpenFolder));
     await tester.pump();
     expect(downloader.opened, 1);
-    // 1.6.2: the file manager must be allowed once to install.
-    await tester.tap(find.text(S.updateInstallSettings));
-    await tester.pump();
-    expect(downloader.settingsOpened, 1);
+    // 1.6.2: the hint suffices, no extra settings button.
+    expect(find.text(S.updateInstallHint), findsOneWidget);
     // Polling ends with the download.
     await tester.pump(const Duration(seconds: 2));
     await disposeApp(tester, db);
