@@ -4,7 +4,7 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.6.2] – unveröffentlicht
+## [1.6.2] – 2026-11-12
 
 Enthält die nie einzeln veröffentlichten Versionen 1.5.0, 1.5.1, 1.6.0 und 1.6.1.
 
@@ -34,6 +34,35 @@ Enthält die nie einzeln veröffentlichten Versionen 1.5.0, 1.5.1, 1.6.0 und 1.6
 
 ### Hinweis
 - Für den Pulsmesser fragt Android einmal nach der Berechtigung „Geräte in der Nähe“. Den Standort braucht GymLog nicht. Pulsmesser funktionieren ab Android 12.
+
+<details>
+<summary>Commits seit v1.4.0 (für Entwickler)</summary>
+
+#### Features
+- live heart rate from a Bluetooth monitor (1.5.0) (`13e6cf7`)
+- heart rate per set, summaries only, violin plot (1.5.1) (`f34c75b`)
+- heart rate ranges, warm-up targets, pause by heart rate (1.6.0) (`40763f3`)
+- lactate threshold zones, in-app APK download, bug fixes (1.6.1) (`781785e`)
+- heart rate box plot, blue segment selection, APK install via folder (1.6.2) (`26f3e6c`)
+
+#### Fehlerbehebungen
+- open the APK folder in Files by Google, longer box plot info (1.6.2) (`48893f4`)
+- open the APK folder in "Dateien" only (1.6.2) (`35576e4`)
+- version in the update APK file name (1.6.2) (`76920c5`)
+- download the update via the GitHub asset and check its version (1.6.2) (`b26c838`)
+
+#### Dokumentation
+- 1.6.2 phone test list confirmed (`0abb01a`)
+
+#### Wartung
+- test dev update (`f9e5591`)
+- test dev update (`cd89a25`)
+- test dev update (`8d9278c`)
+- test dev update (`ffc3533`)
+- test dev update (`94bd13c`)
+- test dev update (`b4197ad`)
+
+</details>
 
 ## [1.4.0] – 2026-11-11
 
