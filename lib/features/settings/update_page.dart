@@ -55,10 +55,11 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
         received: 0,
         total: null,
         file: null,
+        found: null,
       );
     });
     try {
-      _downloadId = await downloader.start(url, apkFileName(version));
+      _downloadId = await downloader.start(url, apkFileName(version), version);
     } on Object catch (e) {
       debugPrint('APK download failed: $e');
       if (mounted) setState(() => _downloadFailed = true);
@@ -82,13 +83,23 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
     final over =
         state == null ||
         state.status == ApkDownloadStatus.done ||
-        state.status == ApkDownloadStatus.failed;
+        state.status == ApkDownloadStatus.failed ||
+        state.status == ApkDownloadStatus.stale;
     if (over) _poll?.cancel();
     setState(() {
       _download = state;
       _downloadFailed =
           state == null || state.status == ApkDownloadStatus.failed;
     });
+  }
+
+  /// After a stale file (1.6.2): look again on GitHub, then download anew.
+  Future<void> _retryStale() async {
+    setState(() {
+      _download = null;
+      _downloadId = null;
+    });
+    await _load();
   }
 
   @override
@@ -161,7 +172,9 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
               _DownloadBox(
                 state: _downloadFailed ? null : _download,
                 failed: _downloadFailed,
-                onStart: () => _startDownload(apk, release.version),
+                onStart: () =>
+                    _startDownload(release.apkAssetUrl ?? apk, release.version),
+                onRetryStale: _retryStale,
                 onOpenFolder: () =>
                     ref.read(apkDownloaderProvider).openFolder(),
                 onBrowser: () => openInBrowser(apk),
@@ -211,6 +224,7 @@ class _DownloadBox extends StatelessWidget {
     required this.state,
     required this.failed,
     required this.onStart,
+    required this.onRetryStale,
     required this.onOpenFolder,
     required this.onBrowser,
   });
@@ -218,6 +232,7 @@ class _DownloadBox extends StatelessWidget {
   final ApkDownloadState? state;
   final bool failed;
   final VoidCallback onStart;
+  final VoidCallback onRetryStale;
   final VoidCallback onOpenFolder;
   final VoidCallback onBrowser;
 
@@ -244,6 +259,24 @@ class _DownloadBox extends StatelessWidget {
             icon: const Icon(Icons.open_in_browser),
             label: const Text(S.updateDownloadInBrowser),
             onPressed: onBrowser,
+          ),
+        ],
+      );
+    }
+    if (s != null && s.status == ApkDownloadStatus.stale) {
+      return Column(
+        key: const ValueKey('update-stale'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            S.updateDownloadStale(s.found ?? '?'),
+            style: TextStyle(color: theme.colorScheme.error),
+          ),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            icon: const Icon(Icons.refresh),
+            label: const Text(S.updateRetry),
+            onPressed: onRetryStale,
           ),
         ],
       );

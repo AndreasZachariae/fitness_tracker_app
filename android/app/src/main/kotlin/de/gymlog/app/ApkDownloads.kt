@@ -12,7 +12,9 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
+import java.io.File
 
 /**
  * Update APK via Android's download manager (1.6.1): the system downloads and shows the progress; the user
@@ -23,8 +25,13 @@ import android.provider.DocumentsContract
  * source, which cannot be allowed to install apps. Instead [DownloadDoneReceiver] shows GymLog's own
  * notification that opens the folder; the file manager there is the source (allowed once by the user).
  *
- * Only release files from github.com. At most one APK is kept: older GymLog downloads are removed
+ * Only release files from GitHub. At most one APK is kept: older GymLog downloads are removed
  * (with their files) before a new one starts.
+ *
+ * 1.6.2: The fixed address of the DEV APK (…/download/dev/gymlog-dev.apk) delivered the previous file for a
+ * while after a new upload (GitHub's cache). Therefore the download uses the asset's own API address (new for
+ * every upload), and a finished file only counts when the version inside the APK is the expected one
+ * ("stale" otherwise: removed, "try again later").
  */
 object ApkDownloads {
     const val CHANNEL = "de.gymlog.app/downloads"
@@ -36,14 +43,23 @@ object ApkDownloads {
 
     private const val PREFS = "apk_downloads"
 
+    private val ASSET_PATH = Regex("^/repos/[^/]+/[^/]+/releases/assets/\\d+$")
+
+    /** A release file on GitHub: the download address (github.com) or the asset in the API. */
+    fun isGitHubFile(uri: Uri): Boolean =
+        uri.scheme == "https" &&
+            (uri.host == "github.com" || (uri.host == "api.github.com" && ASSET_PATH.matches(uri.path ?: "")))
+
     /** Starts (or resumes showing) the download of [url] as [name] (with the version, 1.6.2); returns its id.
-     *  [done] holds the texts of the notification at the end (from Dart, where all texts live). */
-    fun start(context: Context, url: String, name: String, done: Map<String, Any?>): Long {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().apply {
+     *  [version] is the one the APK must contain. [done] holds the texts of the notifications at the end
+     *  (from Dart, where all texts live). */
+    fun start(context: Context, url: String, name: String, version: String, done: Map<String, Any?>): Long {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        prefs.edit().apply {
             for ((key, value) in done) putString(key, value?.toString())
         }.apply()
         val uri = Uri.parse(url)
-        require(uri.scheme == "https" && uri.host == "github.com") { "not a GitHub release file" }
+        require(isGitHubFile(uri)) { "not a GitHub release file" }
         require(Regex("^gymlog-[A-Za-z0-9._-]+\\.apk$").matches(name)) { "bad file name" }
         val dm = manager(context)
         // The same version still running or already there: keep it. The URL alone is not enough: the DEV
@@ -51,6 +67,8 @@ object ApkDownloads {
         sameFile(dm, url, name)?.let { return it }
         removeAll(context)
         val request = DownloadManager.Request(uri)
+            // The API answers with the file itself (a redirect) only for this type.
+            .addRequestHeader("Accept", "application/octet-stream")
             .setTitle(name)
             .setMimeType(APK_TYPE)
             // Progress only; the end is announced by GymLog (see above).
@@ -60,7 +78,9 @@ object ApkDownloads {
         } else {
             request.setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, name)
         }
-        return dm.enqueue(request)
+        val id = dm.enqueue(request)
+        prefs.edit().putString("expected_$id", version).apply()
+        return id
     }
 
     private fun sameFile(dm: DownloadManager, url: String, name: String): Long? {
@@ -92,8 +112,12 @@ object ApkDownloads {
     fun query(context: Context, id: Long): Map<String, Any?>? {
         manager(context).query(DownloadManager.Query().setFilterById(id)).use { c ->
             if (!c.moveToFirst()) return null
+            var found: String? = null
             val status = when (c.int(DownloadManager.COLUMN_STATUS)) {
-                DownloadManager.STATUS_SUCCESSFUL -> "done"
+                DownloadManager.STATUS_SUCCESSFUL -> {
+                    found = check(context, id)
+                    if (found == null) "done" else "stale"
+                }
                 DownloadManager.STATUS_FAILED -> "failed"
                 DownloadManager.STATUS_RUNNING -> "running"
                 DownloadManager.STATUS_PAUSED -> "paused"
@@ -105,6 +129,7 @@ object ApkDownloads {
                 "received" to c.long(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR),
                 "total" to c.long(DownloadManager.COLUMN_TOTAL_SIZE_BYTES),
                 "file" to local,
+                "found" to found,
             )
         }
     }
@@ -158,7 +183,39 @@ object ApkDownloads {
         }
     }
 
-    /** GymLog's notification "Update geladen" for download [id], if it is a finished APK. */
+    /** Version inside the downloaded APK [id], read from a copy in the cache; null if unreadable. */
+    private fun apkVersion(context: Context, dm: DownloadManager, id: Long): String? = try {
+        val copy = File(context.cacheDir, "update-check.apk")
+        ParcelFileDescriptor.AutoCloseInputStream(dm.openDownloadedFile(id)).use { input ->
+            copy.outputStream().use { input.copyTo(it) }
+        }
+        @Suppress("DEPRECATION")
+        val info = context.packageManager.getPackageArchiveInfo(copy.path, 0)
+        copy.delete()
+        info?.versionName
+    } catch (_: Exception) {
+        null
+    }
+
+    /**
+     * Checks a finished download once: null if it holds the expected version (or nothing to compare), else the
+     * version found – then the download and its file are removed (1.6.2).
+     */
+    @Synchronized
+    fun check(context: Context, id: Long): String? {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        prefs.getString("checked_$id", null)?.let { return it.ifEmpty { null } }
+        val expected = prefs.getString("expected_$id", null)
+        val dm = manager(context)
+        val found = expected?.let { apkVersion(context, dm, id) }
+        val stale = if (expected != null && found != null && found != expected) found else null
+        prefs.edit().putString("checked_$id", stale ?: "").apply()
+        if (stale != null) dm.remove(id)
+        return stale
+    }
+
+    /** GymLog's notification for download [id], if it is a finished APK: "Update geladen", or "noch die
+     *  vorige Version" when the check fails (1.6.2). */
     fun notifyDone(context: Context, id: Long) {
         val dm = manager(context)
         dm.query(DownloadManager.Query().setFilterById(id)).use { c ->
@@ -166,9 +223,10 @@ object ApkDownloads {
             if (c.int(DownloadManager.COLUMN_STATUS) != DownloadManager.STATUS_SUCCESSFUL) return
             if (c.string(DownloadManager.COLUMN_MEDIA_TYPE) != APK_TYPE) return
         }
+        val stale = check(context, id) != null
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val title = prefs.getString("title", null) ?: return
-        val body = prefs.getString("body", null) ?: return
+        val title = prefs.getString(if (stale) "staleTitle" else "title", null) ?: return
+        val body = prefs.getString(if (stale) "staleBody" else "body", null) ?: return
         val channelId = prefs.getString("channelId", null) ?: return
         val channelName = prefs.getString("channelName", null) ?: channelId
         val notificationId = prefs.getString("notificationId", null)?.toIntOrNull() ?: return
@@ -195,7 +253,7 @@ object ApkDownloads {
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(android.app.Notification.BigTextStyle().bigText(body))
-            .setContentIntent(open)
+            .apply { if (!stale) setContentIntent(open) }
             .setAutoCancel(true)
             .build()
         try {
@@ -216,6 +274,15 @@ class DownloadDoneReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != DownloadManager.ACTION_DOWNLOAD_COMPLETE) return
         val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-        if (id >= 0) ApkDownloads.notifyDone(context, id)
+        if (id < 0) return
+        // Checking the version copies the APK: not on the main thread.
+        val pending = goAsync()
+        Thread {
+            try {
+                ApkDownloads.notifyDone(context.applicationContext, id)
+            } finally {
+                pending.finish()
+            }
+        }.start()
     }
 }

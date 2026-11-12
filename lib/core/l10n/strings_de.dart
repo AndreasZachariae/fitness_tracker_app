@@ -929,6 +929,13 @@ abstract final class S {
       'Antippen öffnet den Ordner GymLog. Dort die Datei antippen und '
       'installieren.';
   static const updateDownloadFailed = 'Der Download hat nicht geklappt.';
+  static String updateDownloadStale(String found) =>
+      'GitHub hat noch die vorige Version ($found) geliefert; die Datei ist '
+      'wieder gelöscht. In ein paar Minuten erneut versuchen.';
+  static const updateStaleTitle = 'Update noch nicht bereit';
+  static const updateStaleBody =
+      'GitHub hat noch die vorige Version geliefert. In ein paar Minuten in '
+      'GymLog erneut herunterladen.';
   static const updateDownloadInBrowser = 'Im Browser herunterladen';
   static const updateNoApk =
       'Die Release hat noch keine APK. Schau auf GitHub nach oder versuch es '

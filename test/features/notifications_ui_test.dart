@@ -340,7 +340,8 @@ void main() {
       '(1.6.1)', (tester) async {
     phone(tester);
     final releases = FakeReleases('1.3.0')
-      ..apkUrl = 'https://github.com/x/y/releases/download/v1.3.0/gymlog.apk';
+      ..apkUrl = 'https://github.com/x/y/releases/download/v1.3.0/gymlog.apk'
+      ..apkAssetUrl = 'https://api.github.com/repos/x/y/releases/assets/7';
     final downloader = FakeApkDownloader();
     await pumpApp(tester, db: db, releases: releases, downloader: downloader);
     await tester.tap(find.byTooltip(S.openSettings));
@@ -373,12 +374,16 @@ void main() {
         received: 12 * 1024 * 1024,
         total: 24 * 1024 * 1024,
         file: null,
+        found: null,
       );
     await tester.tap(find.text(S.updateRetry).last);
     await tester.pump();
     await tester.pump();
-    // 1.6.2: the version in the name, so a newer APK is downloaded anew.
-    expect(downloader.started, ['${releases.apkUrl} → gymlog-1.3.0.apk']);
+    // 1.6.2: the asset address (new for every upload) and the version in
+    // the name, so a newer APK is downloaded anew and checked.
+    expect(downloader.started, [
+      '${releases.apkAssetUrl} → gymlog-1.3.0.apk (1.3.0)',
+    ]);
     expect(find.text(S.updateProgress('12,0', '24,0')), findsOneWidget);
     final bar = tester.widget<LinearProgressIndicator>(
       find.byType(LinearProgressIndicator),
@@ -390,6 +395,7 @@ void main() {
       received: 24 * 1024 * 1024,
       total: 24 * 1024 * 1024,
       file: 'gymlog.apk',
+      found: null,
     );
     await tester.pump(const Duration(seconds: 1));
     expect(find.text(S.updateDownloaded('gymlog.apk')), findsOneWidget);
@@ -401,6 +407,28 @@ void main() {
     expect(find.text(S.updateInstallHint), findsOneWidget);
     // Polling ends with the download.
     await tester.pump(const Duration(seconds: 2));
+
+    // 1.6.2: GitHub still delivered the previous version: removed, retry
+    // looks on GitHub again.
+    await leavePage(tester);
+    await tester.tap(find.text(S.updateOpen));
+    await settle(tester);
+    downloader.state = (
+      status: ApkDownloadStatus.stale,
+      received: 24 * 1024 * 1024,
+      total: 24 * 1024 * 1024,
+      file: null,
+      found: '1.2.9',
+    );
+    await tester.tap(find.text(S.updateDownload));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(S.updateDownloadStale('1.2.9')), findsOneWidget);
+    final calls = releases.calls;
+    await tester.tap(find.text(S.updateRetry));
+    await settle(tester);
+    expect(releases.calls, calls + 1);
+    expect(find.text(S.updateDownload), findsOneWidget);
     await disposeApp(tester, db);
   });
 

@@ -21,6 +21,7 @@ final class ReleaseInfo {
     required this.notes,
     required this.pageUrl,
     this.apkUrl,
+    this.apkAssetUrl,
     this.apkSize,
   });
 
@@ -33,8 +34,14 @@ final class ReleaseInfo {
   /// The release page on GitHub.
   final String pageUrl;
 
-  /// Download of the APK; null if the release has none (yet).
+  /// Download of the APK; null if the release has none (yet). For the
+  /// browser.
   final String? apkUrl;
+
+  /// The APK as asset in the GitHub API, new for every upload (1.6.2): the
+  /// in-app download uses it, because the fixed [apkUrl] of the DEV release
+  /// delivered the previous file for a while after a new upload.
+  final String? apkAssetUrl;
 
   /// Size of the APK in bytes, to check the download.
   final int? apkSize;
@@ -140,6 +147,7 @@ final class GitHubReleases implements ReleaseSource {
       notes: notes is String ? notes : '',
       pageUrl: page is String ? page : latestReleaseUrl,
       apkUrl: apk?['browser_download_url'] as String?,
+      apkAssetUrl: apk?['url'] is String ? apk!['url']! as String : null,
       apkSize: apk?['size'] is int ? apk!['size']! as int : null,
     );
   }

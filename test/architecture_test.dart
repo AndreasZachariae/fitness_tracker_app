@@ -114,10 +114,14 @@ void main() {
       final downloads = File(
         'android/app/src/main/kotlin/de/gymlog/app/ApkDownloads.kt',
       ).readAsStringSync();
-      expect(
-        downloads,
-        contains('uri.scheme == "https" && uri.host == "github.com"'),
-      );
+      // Only https, the download address or the asset in the GitHub API.
+      for (final rule in [
+        'uri.scheme == "https"',
+        'uri.host == "github.com"',
+        'uri.host == "api.github.com" && ASSET_PATH.matches',
+      ]) {
+        expect(downloads, contains(rule), reason: rule);
+      }
       final kotlin = [
         for (final file in Directory(
           'android/app/src/main/kotlin',

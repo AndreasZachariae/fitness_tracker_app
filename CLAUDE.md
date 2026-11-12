@@ -74,7 +74,7 @@ Auf dem Handy liegen echte Trainingsdaten in der Release-App `de.gymlog.app`. De
    (jeweils vom Menschen freigegeben): `VIBRATE`; `USE_EXACT_ALARM` und `SCHEDULE_EXACT_ALARM` mit `maxSdkVersion="32"`
    (Pausen-Vibration, 1.0.1); `POST_NOTIFICATIONS` und `RECEIVE_BOOT_COMPLETED` (Erinnerungen, 1.2.0); `INTERNET`
    **ausschließlich** für die Update-Abfrage der GitHub-Releases (1.2.0, abschaltbar) und den angetippten APK-Download von
-   github.com über Androids Download-Manager (1.6.1); `BLUETOOTH_SCAN` mit
+   GitHub (Release-Datei bzw. Asset der GitHub-API) über Androids Download-Manager (1.6.1); `BLUETOOTH_SCAN` mit
    `usesPermissionFlags="neverForLocation"` und `BLUETOOTH_CONNECT` (Pulsmesser, 1.5.0, nur Android 12+, keine
    Standort-Rechte; die Alt-Rechte `BLUETOOTH`/`BLUETOOTH_ADMIN` des Plugins werden per `tools:node="remove"` entfernt). Kein anderer
    Netzzugriff, keine weiteren Permissions. Insbesondere **kein** `REQUEST_INSTALL_PACKAGES`, kein Speicher-Recht und kein Installieren von

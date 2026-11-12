@@ -5,7 +5,9 @@ import '../../core/notifications.dart';
 import '../../domain/reminders.dart';
 
 /// State of an update download (1.6.1).
-enum ApkDownloadStatus { pending, running, paused, done, failed }
+/// [stale]: finished, but the APK holds another version than expected
+/// (GitHub still delivered the previous file); removed again (1.6.2).
+enum ApkDownloadStatus { pending, running, paused, done, failed, stale }
 
 typedef ApkDownloadState = ({
   ApkDownloadStatus status,
@@ -16,6 +18,9 @@ typedef ApkDownloadState = ({
 
   /// File name in Download/GymLog, once known.
   String? file,
+
+  /// For [ApkDownloadStatus.stale]: the version found in the file.
+  String? found,
 });
 
 /// The update APK via Android's download manager (1.6.1): Android downloads
@@ -26,8 +31,9 @@ typedef ApkDownloadState = ({
 abstract interface class ApkDownloader {
   /// Starts the download of [url] (a GitHub release file) as [fileName]
   /// (with the version, see `apkFileName`) and returns its id; the same
-  /// version still running or already there is not started again.
-  Future<int> start(String url, String fileName);
+  /// version still running or already there is not started again. The APK
+  /// must contain [version], else it ends as stale (1.6.2).
+  Future<int> start(String url, String fileName, String version);
 
   /// Progress of download [id]; `null` if Android does not know it.
   Future<ApkDownloadState?> query(int id);
@@ -46,14 +52,17 @@ final class PlatformApkDownloader implements ApkDownloader {
   static const _channel = MethodChannel('de.gymlog.app/downloads');
 
   @override
-  Future<int> start(String url, String fileName) async =>
+  Future<int> start(String url, String fileName, String version) async =>
       (await _channel.invokeMethod<int>('start', {
         'url': url,
         'name': fileName,
+        'version': version,
         // The native notification at the end; texts live in Dart.
         'done': {
           'title': S.updateDownloadedTitle,
           'body': S.updateDownloadedBody,
+          'staleTitle': S.updateStaleTitle,
+          'staleBody': S.updateStaleBody,
           'channelId': NotificationChannel.updates.id,
           'channelName': NotificationChannel.updates.label,
           'notificationId': '${ReminderIds.updateDownloaded}',
@@ -72,6 +81,7 @@ final class PlatformApkDownloader implements ApkDownloader {
       received: map['received'] as int? ?? 0,
       total: total > 0 ? total : null,
       file: map['file'] as String?,
+      found: map['found'] as String?,
     );
   }
 

@@ -139,6 +139,7 @@ final class FakeReleases implements ReleaseSource {
   String? version;
   String notes;
   String? apkUrl = 'https://example.org/gymlog.apk';
+  String? apkAssetUrl;
   int calls = 0;
 
   @override
@@ -152,6 +153,7 @@ final class FakeReleases implements ReleaseSource {
             notes: notes,
             pageUrl: 'https://example.org/releases/$v',
             apkUrl: apkUrl,
+            apkAssetUrl: apkAssetUrl,
             apkSize: 3,
           );
   }
@@ -168,12 +170,13 @@ final class FakeApkDownloader implements ApkDownloader {
     received: 0,
     total: null,
     file: null,
+    found: null,
   );
 
   @override
-  Future<int> start(String url, String fileName) async {
+  Future<int> start(String url, String fileName, String version) async {
     if (fail) throw StateError('no download');
-    started.add('$url → $fileName');
+    started.add('$url → $fileName ($version)');
     return started.length;
   }
 

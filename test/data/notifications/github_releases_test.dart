@@ -22,6 +22,7 @@ void main() {
     'name': 'gymlog-1.3.0.apk',
     'size': 20000000,
     'browser_download_url': 'https://github.com/x/download/gymlog-1.3.0.apk',
+    'url': 'https://api.github.com/repos/x/y/releases/assets/7',
   };
 
   test('release app: version from the tag, the APK asset', () {
@@ -39,6 +40,8 @@ void main() {
     expect(r.pageUrl, 'https://github.com/x/releases/tag/v1.3.0');
     expect(r.apkUrl, 'https://github.com/x/download/gymlog-1.3.0.apk');
     expect(r.apkSize, 20000000);
+    // 1.6.2: the asset address for the in-app download.
+    expect(r.apkAssetUrl, 'https://api.github.com/repos/x/y/releases/assets/7');
   });
 
   test('DEV app: version from the title of the pre-release "dev"', () {

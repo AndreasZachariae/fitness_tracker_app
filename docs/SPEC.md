@@ -380,7 +380,9 @@ der Startseite (nur wenn es Trainings gibt).
   zeigt Version, Neuerungen (aufgeklappt), „APK herunterladen“ und „Auf GitHub ansehen“. Ab 1.6.1 lädt Androids
   Download-Manager die APK nach `Download/GymLog` (vorher öffnete der Browser sie); die Seite zeigt den Fortschritt
   („12,3 von 25,0 MB“), danach den Dateinamen, „Ordner GymLog öffnen“ (App „Dateien“, sonst die Download-Liste) und den
-  Hinweis, dass der Dateimanager das Installieren einmal erlauben muss. Dateiname mit Version (`gymlog-1.6.2-dev.53.apk`), damit eine neue DEV-Version nicht als schon geladen gilt. Ab 1.6.2 zeigt der Download-Manager nur den Fortschritt; am
+  Hinweis, dass der Dateimanager das Installieren einmal erlauben muss. Dateiname mit Version (`gymlog-1.6.2-dev.53.apk`), damit eine neue DEV-Version nicht als schon geladen gilt;
+  geladen wird über die Asset-Adresse der GitHub-API (neu je Upload), und nach dem Download wird die Version in der APK
+  geprüft (falsche Version → Datei gelöscht, Hinweis „erneut versuchen“). Ab 1.6.2 zeigt der Download-Manager nur den Fortschritt; am
   Ende meldet GymLog „Update geladen“, Antippen öffnet den Ordner. Installiert wird durch Antippen der Datei im Ordner. Frühere GymLog-APK-Downloads werden vor einem neuen Download und beim Start ohne
   neuere Version gelöscht. Fehlschlag → „Erneut versuchen“ oder „Im Browser herunterladen“.
 - **Automatische Buchung:** Adresse der Buchungsseite, ab 1.6.1 mit Knopf „Im Browser öffnen“ zum Testen.

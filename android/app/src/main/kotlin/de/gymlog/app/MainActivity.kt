@@ -38,35 +38,44 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
-        // Update APK via the system download manager (1.6.1); installing stays with the user.
+        // Update APK via the system download manager (1.6.1); installing stays with the user. Off the main
+        // thread: checking a finished APK copies it (1.6.2).
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ApkDownloads.CHANNEL)
             .setMethodCallHandler { call, result ->
-                try {
-                    when (call.method) {
-                        "start" -> result.success(
-                            ApkDownloads.start(
+                if (call.method == "openFolder") {
+                    ApkDownloads.openFolder(this)
+                    result.success(null)
+                    return@setMethodCallHandler
+                }
+                val main = Handler(Looper.getMainLooper())
+                Thread {
+                    try {
+                        val value: Any? = when (call.method) {
+                            "start" -> ApkDownloads.start(
                                 applicationContext,
                                 call.argument<String>("url")!!,
                                 call.argument<String>("name")!!,
+                                call.argument<String>("version")!!,
                                 call.argument<Map<String, Any?>>("done") ?: emptyMap(),
-                            ),
-                        )
-                        "query" -> result.success(
-                            ApkDownloads.query(applicationContext, call.argument<Number>("id")!!.toLong()),
-                        )
-                        "removeAll" -> {
-                            ApkDownloads.removeAll(applicationContext)
-                            result.success(null)
+                            )
+                            "query" -> ApkDownloads.query(
+                                applicationContext,
+                                call.argument<Number>("id")!!.toLong(),
+                            )
+                            "removeAll" -> {
+                                ApkDownloads.removeAll(applicationContext)
+                                null
+                            }
+                            else -> {
+                                main.post { result.notImplemented() }
+                                return@Thread
+                            }
                         }
-                        "openFolder" -> {
-                            ApkDownloads.openFolder(this)
-                            result.success(null)
-                        }
-                        else -> result.notImplemented()
+                        main.post { result.success(value) }
+                    } catch (e: Exception) {
+                        main.post { result.error("download", e.message, null) }
                     }
-                } catch (e: Exception) {
-                    result.error("download", e.message, null)
-                }
+                }.start()
             }
         // Backups and exports into Download/GymLog (1.6.1), off the main thread.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DownloadsFolder.CHANNEL)
