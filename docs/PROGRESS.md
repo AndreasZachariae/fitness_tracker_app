@@ -945,13 +945,13 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
 
 ### 1.6.2 Boxplot, Geschlecht, APK installieren
-Nur, was live ausprobiert werden muss; Boxplot-Werte, Farben und die Download-Seite sind automatisch getestet.
-- [ ] Puls-Profil: Das gewählte Geschlecht ist blau hervorgehoben (ebenso Zeitraum in Körper/Statistik).
-- [ ] Zusammenfassung: Pulsverteilung als Boxplot – Kasten, Median, Whisker, evtl. Ausreißer-Punkte, „max.“ (rot) und „min.“ passend zu Kurve und Ø/Max; daneben „Ø bisher“. Ausführlicher i-Text verständlich?
-- [ ] Update (nach dem nächsten DEV-Release): Download läuft mit Fortschritt; am Ende Benachrichtigung „Update geladen“ – Antippen öffnet den Ordner GymLog in „Dateien“; „Ordner GymLog öffnen“ in der App ebenso. Kein großer Einstellungs-Knopf mehr, nur der Hinweis.
-- [ ] Direkt nach einem neuen DEV-Release (innerhalb weniger Minuten) laden: Die APK enthält die neue Version (nach dem Installieren zeigt „Über“ sie, kein blauer Punkt mehr). Falls GitHub noch die alte liefert: Meldung „noch die vorige Version“ statt einer falschen Datei.
-- [ ] Zwei DEV-Updates nacheinander: Jedes lädt neu herunter (Name mit Version, z. B. `gymlog-1.6.2-dev.54.apk`), im Ordner liegt danach nur die neueste APK.
-- [ ] APK antippen: Android fragt einmal, ob „Dateien“ installieren darf → erlauben → Installation klappt, Trainings bleiben erhalten. Keine Meldung „unbekannte Quelle com.android.providers.media“ mehr.
+Am Handy bestätigt (2026-11-12). Nur, was live ausprobiert werden muss; Boxplot-Werte, Farben und die Download-Seite sind automatisch getestet.
+- [x] Puls-Profil: Das gewählte Geschlecht ist blau hervorgehoben (ebenso Zeitraum in Körper/Statistik).
+- [x] Zusammenfassung: Pulsverteilung als Boxplot – Kasten, Median, Whisker, evtl. Ausreißer-Punkte, „max.“ (rot) und „min.“ passend zu Kurve und Ø/Max; daneben „Ø bisher“. Ausführlicher i-Text verständlich?
+- [x] Update (nach dem nächsten DEV-Release): Download läuft mit Fortschritt; am Ende Benachrichtigung „Update geladen“ – Antippen öffnet den Ordner GymLog in „Dateien“; „Ordner GymLog öffnen“ in der App ebenso. Kein großer Einstellungs-Knopf mehr, nur der Hinweis.
+- [x] Direkt nach einem neuen DEV-Release (innerhalb weniger Minuten) laden: Die APK enthält die neue Version (nach dem Installieren zeigt „Über“ sie, kein blauer Punkt mehr). Falls GitHub noch die alte liefert: Meldung „noch die vorige Version“ statt einer falschen Datei.
+- [x] Zwei DEV-Updates nacheinander: Jedes lädt neu herunter (Name mit Version, z. B. `gymlog-1.6.2-dev.54.apk`), im Ordner liegt danach nur die neueste APK.
+- [x] APK antippen: Android fragt einmal, ob „Dateien“ installieren darf → erlauben → Installation klappt, Trainings bleiben erhalten. Keine Meldung „unbekannte Quelle com.android.providers.media“ mehr.
 
 ### 1.6.1 Bugfixes und Laktatschwellen-Zonen
 Nur, was live ausprobiert werden muss; Zonen, Vorschläge, Speichern, Backup-Ablauf und Download-Anzeige sind automatisch getestet.
