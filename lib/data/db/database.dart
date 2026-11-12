@@ -50,7 +50,7 @@ class AppDatabase extends _$AppDatabase {
   final Clock? libraryClock;
 
   /// Current schema version. Changes only via migration (CLAUDE.md, rule 4).
-  static const currentSchemaVersion = 8;
+  static const currentSchemaVersion = 9;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -180,6 +180,10 @@ class AppDatabase extends _$AppDatabase {
           schema.sessionHeartRates,
           schema.sessionHeartRates.recoveryBpm,
         );
+      },
+      // 1.6.1: zones after the lactate threshold (the maximum stays unused).
+      from8To9: (m, schema) async {
+        await m.addColumn(schema.appSettings, schema.appSettings.hrThreshold);
       },
     ),
     beforeOpen: (details) async {

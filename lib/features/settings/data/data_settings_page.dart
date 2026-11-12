@@ -30,12 +30,19 @@ class DataSettingsPage extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.backup_outlined),
                   title: const Text(S.createBackup),
+                  // 1.6.1: straight into Download/GymLog.
                   subtitle: Text(
-                    settings.lastBackupAt == null
-                        ? S.noBackupYet
-                        : S.lastBackup(formatDateTime(settings.lastBackupAt!)),
+                    '${S.backupGoesTo}\n'
+                    '${settings.lastBackupAt == null ? S.noBackupYet : S.lastBackup(formatDateTime(settings.lastBackupAt!))}',
                   ),
+                  isThreeLine: true,
                   onTap: () => createBackupFlow(context, ref),
+                ),
+                ListTile(
+                  key: const ValueKey('backup-elsewhere'),
+                  leading: const Icon(Icons.share_outlined),
+                  title: const Text(S.backupElsewhere),
+                  onTap: () => createBackupElsewhereFlow(context, ref),
                 ),
                 ListTile(
                   enabled: !sessionRunning,

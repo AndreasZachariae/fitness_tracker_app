@@ -110,12 +110,12 @@ void main() {
   });
 
   test('1.6.0: recovery and time in the warm-up target', () async {
-    await SettingsRepository(db).update((x) => x.copyWith(hrMax: 185));
+    await SettingsRepository(db).update((x) => x.copyWith(hrThreshold: 170));
     final bike = await r.exercises.create(
       const ExerciseDraft(
         name: 'Ergometer',
         type: ExerciseType.timed,
-        hrTargetRange: 2,
+        hrTargetZone: 2,
         hrTargetMinutes: 1,
       ),
     );
@@ -131,7 +131,7 @@ void main() {
     final ses = await sessions.getDetails(id);
     DateTime t(int s) => testNow.add(Duration(seconds: s));
     await repo.addSamples(id, [
-      // Warm-up 0–90 s: 20 s below, 60 s in range 2, 10 s above.
+      // Warm-up 0–90 s: 20 s below, 60 s in zone 2 (114–133), 10 s above.
       for (var s = 0; s < 20; s++) (at: t(s), bpm: 100),
       for (var s = 20; s < 80; s++) (at: t(s), bpm: 120),
       for (var s = 80; s < 90; s++) (at: t(s), bpm: 140),
@@ -151,7 +151,8 @@ void main() {
     expect(details[0].sets.single.hrTargetSec, 60);
     expect(details[1].sets.single.hrTargetSec, isNull);
     final summary = (await repo.watchSummary(id).first)!;
-    // The warm-up peak (140) is below 70 % of 185: only the bench set.
+    // The warm-up peak (140) has no value a minute later: only the bench
+    // set (peak 165, zone 4).
     expect(summary.recoveryBpm, 40);
   });
 
@@ -161,7 +162,7 @@ void main() {
         const ExerciseDraft(
           name: 'X',
           type: ExerciseType.timed,
-          hrTargetRange: 6,
+          hrTargetZone: 6,
           hrTargetMinutes: 5,
         ),
       ),
@@ -172,7 +173,7 @@ void main() {
         const ExerciseDraft(
           name: 'Y',
           type: ExerciseType.timed,
-          hrTargetRange: 2,
+          hrTargetZone: 2,
           hrTargetBpm: 120,
           hrTargetMinutes: 5,
         ),
@@ -180,7 +181,8 @@ void main() {
       throwsA(isA<InvalidValueException>()),
     );
     for (final bad in [
-      (AppSettings x) => x.copyWith(hrMax: 90),
+      (AppSettings x) => x.copyWith(hrThreshold: 79),
+      (AppSettings x) => x.copyWith(hrThreshold: 231),
       (AppSettings x) => x.copyWith(birthYear: 1800),
       (AppSettings x) => x.copyWith(hrWarnBpm: 300),
       (AppSettings x) => x.copyWith(hrPauseBpm: 20),
@@ -190,9 +192,11 @@ void main() {
         throwsA(isA<InvalidValueException>()),
       );
     }
-    final s = await SettingsRepository(db)
-        .update((x) => x.copyWith(hrMax: 185, birthYear: 1990, sex: Sex.male));
-    expect((s.pauseBpm, s.hrWarnBpm), (111, null));
+    final s = await SettingsRepository(db).update(
+      (x) => x.copyWith(hrThreshold: 170, birthYear: 1990, sex: Sex.male),
+    );
+    // Default pause: end of zone 1.
+    expect((s.pauseBpm, s.hrWarnBpm), (113, null));
     expect(
       (await SettingsRepository(db).update((x) => x.copyWith(hrPauseBpm: 105)))
           .pauseBpm,

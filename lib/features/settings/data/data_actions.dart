@@ -9,58 +9,106 @@ import '../../../domain/serialization/backup.dart';
 import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/snackbars.dart';
 
-enum _Target { share, saveAs }
+enum _Target { downloads, share, saveAs }
 
-Future<_Target?> _chooseTarget(BuildContext context, String title) =>
-    showModalBottomSheet<_Target>(
-      context: context,
-      useRootNavigator: true,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-            ),
-            ListTile(
-              leading: const Icon(Icons.share_outlined),
-              title: const Text(S.shareAction),
-              onTap: () => Navigator.pop(context, _Target.share),
-            ),
-            ListTile(
-              leading: const Icon(Icons.save_alt),
-              title: const Text(S.saveAsAction),
-              onTap: () => Navigator.pop(context, _Target.saveAs),
-            ),
-          ],
+Future<_Target?> _chooseTarget(
+  BuildContext context,
+  String title, {
+  bool downloads = true,
+}) => showModalBottomSheet<_Target>(
+  context: context,
+  useRootNavigator: true,
+  showDragHandle: true,
+  builder: (context) => SafeArea(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
         ),
-      ),
-    );
+        if (downloads)
+          ListTile(
+            leading: const Icon(Icons.download_outlined),
+            title: const Text(S.saveToDownloadsAction),
+            subtitle: const Text(S.downloadsFolder),
+            onTap: () => Navigator.pop(context, _Target.downloads),
+          ),
+        ListTile(
+          leading: const Icon(Icons.share_outlined),
+          title: const Text(S.shareAction),
+          onTap: () => Navigator.pop(context, _Target.share),
+        ),
+        ListTile(
+          leading: const Icon(Icons.save_alt),
+          title: const Text(S.saveAsAction),
+          onTap: () => Navigator.pop(context, _Target.saveAs),
+        ),
+      ],
+    ),
+  ),
+);
 
-Future<bool> _deliver(WidgetRef ref, _Target target, ExportFile file) {
+/// Hands [file] over; `true` if delivered. Saved into Download/GymLog
+/// (1.6.1), a message says where it lies.
+Future<bool> _deliver(
+  BuildContext context,
+  WidgetRef ref,
+  _Target target,
+  ExportFile file,
+) async {
   final files = ref.read(fileGatewayProvider);
-  return switch (target) {
-    _Target.share => files.share(file.bytes, file.name, file.mimeType),
-    _Target.saveAs => files.saveAs(file.bytes, file.name, file.mimeType),
-  };
+  switch (target) {
+    case _Target.downloads:
+      final where = await files.saveToDownloads(
+        file.bytes,
+        file.name,
+        file.mimeType,
+      );
+      if (context.mounted) showMessage(context, S.savedIn(where));
+      return true;
+    case _Target.share:
+      return files.share(file.bytes, file.name, file.mimeType);
+    case _Target.saveAs:
+      return files.saveAs(file.bytes, file.name, file.mimeType);
+  }
 }
 
-/// "Backup erstellen": share or save; on success `lastBackupAt` is set.
-Future<void> createBackupFlow(BuildContext context, WidgetRef ref) async {
-  final target = await _chooseTarget(context, S.createBackup);
-  if (target == null) return;
+Future<void> _backup(
+  BuildContext context,
+  WidgetRef ref,
+  _Target target,
+) async {
   final service = ref.read(dataTransferProvider);
   try {
     final file = await service.createBackup();
-    if (await _deliver(ref, target, file)) {
+    if (!context.mounted) return;
+    if (await _deliver(context, ref, target, file)) {
       await service.markBackedUp();
     }
   } on Object {
     if (context.mounted) showMessage(context, S.exportFailed);
   }
+}
+
+/// "Backup erstellen" (1.6.1): straight into Download/GymLog, no dialog;
+/// on success `lastBackupAt` is set.
+Future<void> createBackupFlow(BuildContext context, WidgetRef ref) =>
+    _backup(context, ref, _Target.downloads);
+
+/// "Backup teilen oder anderswo speichern": share or "Speichern unter …".
+Future<void> createBackupElsewhereFlow(
+  BuildContext context,
+  WidgetRef ref,
+) async {
+  final target = await _chooseTarget(
+    context,
+    S.backupElsewhere,
+    downloads: false,
+  );
+  if (target == null || !context.mounted) return;
+  await _backup(context, ref, target);
 }
 
 /// "CSV exportieren" (does not count as a backup).
@@ -69,7 +117,8 @@ Future<void> exportCsvFlow(BuildContext context, WidgetRef ref) async {
   if (target == null) return;
   try {
     final file = await ref.read(dataTransferProvider).createCsvExport();
-    await _deliver(ref, target, file);
+    if (!context.mounted) return;
+    await _deliver(context, ref, target, file);
   } on Object {
     if (context.mounted) showMessage(context, S.exportFailed);
   }

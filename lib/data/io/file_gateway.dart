@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -9,6 +9,14 @@ import 'package:share_plus/share_plus.dart';
 abstract interface class FileGateway {
   /// Opens the share menu. Returns `true` unless the user dismissed it.
   Future<bool> share(Uint8List bytes, String fileName, String mimeType);
+
+  /// Saves straight into Download/GymLog, without a dialog (1.6.1).
+  /// Returns where the file lies, e.g. "Download/GymLog/gymlog-….json".
+  Future<String> saveToDownloads(
+    Uint8List bytes,
+    String fileName,
+    String mimeType,
+  );
 
   /// "Speichern unter …" via the system file dialog. `true` if saved.
   Future<bool> saveAs(Uint8List bytes, String fileName, String mimeType);
@@ -34,6 +42,19 @@ final class PlatformFileGateway implements FileGateway {
     // Android often cannot tell whether an app was chosen ("unavailable").
     return result.status != ShareResultStatus.dismissed;
   }
+
+  static const _channel = MethodChannel('de.gymlog.app/files');
+
+  @override
+  Future<String> saveToDownloads(
+    Uint8List bytes,
+    String fileName,
+    String mimeType,
+  ) async => (await _channel.invokeMethod<String>('saveToDownloads', {
+    'name': fileName,
+    'mimeType': mimeType,
+    'bytes': bytes,
+  }))!;
 
   @override
   Future<bool> saveAs(Uint8List bytes, String fileName, String mimeType) async {

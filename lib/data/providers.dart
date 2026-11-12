@@ -15,6 +15,7 @@ import 'demo/dev_tools.dart';
 import 'io/data_transfer_service.dart';
 import 'io/file_gateway.dart';
 import 'io/fitnotes_import_service.dart';
+import 'notifications/apk_downloader.dart';
 import 'notifications/reminder_service.dart';
 import 'notifications/update_checker.dart';
 import 'repositories/body_weight_repository.dart';
@@ -175,6 +176,11 @@ final appInfoProvider = FutureProvider<AppInfo>((ref) async {
 
 final fileGatewayProvider = Provider<FileGateway>(
   (ref) => const PlatformFileGateway(),
+);
+
+/// The update APK via Android's download manager (1.6.1).
+final apkDownloaderProvider = Provider<ApkDownloader>(
+  (ref) => const PlatformApkDownloader(),
 );
 
 final heartRateRepositoryProvider = Provider<HeartRateRepository>(

@@ -233,7 +233,7 @@ void main() {
       await expectInfo(
         tester,
         S.metric(ExerciseMetric.volume),
-        'insgesamt bewegte Gewicht',
+        'Summe aus Gewicht × Wdh',
       );
       await disposeApp(tester, db);
     });
@@ -243,17 +243,17 @@ void main() {
       await openStats(tester);
       await tester.tap(find.text(S.statsTabOverall));
       await settle(tester);
-      await expectInfo(tester, S.strengthIndex, 'komplett neu berechnet');
+      await expectInfo(tester, S.strengthIndex, 'Fortschritt der Übungen');
       await tester.dragUntilVisible(
         find.text(S.trainingVolume),
         find.byType(ListView).last,
         const Offset(0, -300),
       );
       await tester.pumpAndSettle();
-      await expectInfo(tester, S.trainingVolume, 'ohne Zeitachse');
+      await expectInfo(tester, S.trainingVolume, 'ein Balken je');
       await tester.tap(find.text(S.statsTabRecords));
       await settle(tester);
-      await expectInfo(tester, S.statsTabRecords, 'übertrifft');
+      await expectInfo(tester, S.statsTabRecords, 'Startwert');
       await disposeApp(tester, db);
     });
   });

@@ -9,6 +9,7 @@ import '../../data/repositories/settings_repository.dart';
 import '../../domain/models/models.dart';
 import '../../widgets/number_stepper.dart';
 import '../../widgets/settings_section.dart';
+import '../notifications/reminder_sync.dart';
 
 /// Settings → Benachrichtigungen (1.2.0, own page since 1.2.1).
 class NotificationSettingsPage extends ConsumerWidget {
@@ -201,7 +202,22 @@ class _BookingUrlFieldState extends State<BookingUrlField> {
         labelText: S.settingBookingUrl,
         hintText: S.settingBookingUrlHint,
         errorText: _error,
+        // 1.6.1: try the address at once.
+        suffixIcon: ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => IconButton(
+            key: const ValueKey('booking-url-open'),
+            icon: const Icon(Icons.open_in_new),
+            tooltip: S.openInBrowser,
+            onPressed: _controller.text.trim().isEmpty ? null : _open,
+          ),
+        ),
       ),
     ),
   );
+
+  Future<void> _open() async {
+    await _save();
+    if (_error == null) await openInBrowser(_controller.text);
+  }
 }

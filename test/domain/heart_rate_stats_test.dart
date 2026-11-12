@@ -21,7 +21,7 @@ void main() {
     maxBpm: 170,
     minBpm: 90,
     seconds: 3600,
-    // 30 min in range 1 and 30 min in range 4 (maximum 185).
+    // 30 min in zone 1 and 30 min in zone 3 (threshold 170).
     histogram: '100:1800,150:1800',
     curve: '',
     recoveryBpm: recovery,
@@ -55,12 +55,12 @@ void main() {
   });
 
   test('weekly load: TRIMP per week, empty weeks included', () {
-    // One training: 30 × 1 + 30 × 4 = 150.
-    final weeks = weeklyLoad(data, today, 185);
+    // One training: 30 × 1 + 30 × 3 = 120.
+    final weeks = weeklyLoad(data, today, 170);
     expect(weeks.map((w) => (w.monday, w.value)), [
-      (LocalDate(2026, 10, 19), 300.0),
+      (LocalDate(2026, 10, 19), 240.0),
       (LocalDate(2026, 10, 26), 0.0),
-      (LocalDate(2026, 11, 2), 150.0),
+      (LocalDate(2026, 11, 2), 120.0),
     ]);
   });
 

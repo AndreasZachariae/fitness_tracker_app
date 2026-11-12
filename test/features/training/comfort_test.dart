@@ -141,6 +141,31 @@ void main() {
       await disposeApp(tester, db);
     });
 
+    testWidgets('1.6.1: after "Beenden" no rest alarm in the background', (
+      tester,
+    ) async {
+      await seed(tester);
+      await open(tester);
+      await tapSave(tester);
+      expect(find.text(S.rest), findsOneWidget);
+      await tester.tap(find.text(S.finishTraining));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, S.finishTraining));
+      await settle(tester);
+      expect(find.text(S.summaryTitle), findsOneWidget);
+      // Alarm and lock screen countdown removed on finishing.
+      expect(alarm.calls, ['cancel']);
+      expect(notifications.cancelled, contains(ReminderIds.rest));
+      // Leaving the app with the summary open: nothing is scheduled.
+      await lifecycle(tester, toBackground);
+      await settle(tester);
+      expect(alarm.calls, ['cancel']);
+      expect(notifications.shown, isEmpty);
+      // Frames only run in the foreground; needed to unmount the app.
+      await lifecycle(tester, toForeground);
+      await disposeApp(tester, db);
+    });
+
     testWidgets('a covered home screen does not vibrate for a stopped rest', (
       tester,
     ) async {

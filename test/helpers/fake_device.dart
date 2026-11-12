@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:gymlog/core/device.dart';
 import 'package:gymlog/core/heart_rate_monitor.dart';
 import 'package:gymlog/core/notifications.dart';
+import 'package:gymlog/data/notifications/apk_downloader.dart';
 import 'package:gymlog/data/notifications/update_checker.dart';
 import 'package:gymlog/domain/heart_rate.dart';
 
@@ -154,6 +155,36 @@ final class FakeReleases implements ReleaseSource {
             apkSize: 3,
           );
   }
+}
+
+/// Android's download manager under the test's control (1.6.1).
+final class FakeApkDownloader implements ApkDownloader {
+  final started = <String>[];
+  int removed = 0;
+  int opened = 0;
+  bool fail = false;
+  ApkDownloadState state = (
+    status: ApkDownloadStatus.pending,
+    received: 0,
+    total: null,
+    file: null,
+  );
+
+  @override
+  Future<int> start(String url) async {
+    if (fail) throw StateError('no download');
+    started.add(url);
+    return started.length;
+  }
+
+  @override
+  Future<ApkDownloadState?> query(int id) async => state;
+
+  @override
+  Future<void> removeAll() async => removed++;
+
+  @override
+  Future<void> openDownloads() async => opened++;
 }
 
 /// A heart rate monitor under the test's control (1.5.0).

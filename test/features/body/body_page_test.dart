@@ -36,6 +36,22 @@ void main() {
 
   Finder weightField() => find.widgetWithText(TextField, S.weightKgLabel);
 
+  /// 1.6.1: the entries live on their own page.
+  Future<void> openEntries(WidgetTester tester, int count) async {
+    final tile = find.byKey(const ValueKey('body-entries'));
+    await tester.dragUntilVisible(
+      tile,
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
+    expect(find.text(S.bodyEntriesCount(count)), findsOneWidget);
+    await tester.ensureVisible(tile);
+    await tester.pumpAndSettle();
+    await tester.tap(tile);
+    await settle(tester);
+    expect(find.text(S.bodyEntries), findsOneWidget);
+  }
+
   testWidgets('first entry: hint, save for today', (tester) async {
     await openBody(tester);
     expect(find.text(S.bodyFirstHint), findsOneWidget);
@@ -105,12 +121,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('80,0 / 81,0'), findsOneWidget);
     expect(find.byType(LineChart), findsOneWidget);
+    // Not on the tab itself any more.
+    expect(find.text('So, 1.11.'), findsNothing);
 
-    await tester.dragUntilVisible(
-      find.text('So, 1.11.'),
-      find.byType(ListView),
-      const Offset(0, -200),
-    );
+    await openEntries(tester, 4);
     // Newest first.
     expect(
       tester.getTopLeft(find.text('Di, 3.11.')).dy,
@@ -125,11 +139,7 @@ void main() {
       await repo.save(today, 80);
     });
     await openBody(tester);
-    await tester.dragUntilVisible(
-      find.text('Mo, 2.11.'),
-      find.byType(ListView),
-      const Offset(0, -200),
-    );
+    await openEntries(tester, 2);
     await tester.drag(find.text('Mo, 2.11.'), const Offset(-600, 0));
     await settle(tester);
     expect(await entries(tester), hasLength(1));
@@ -141,11 +151,6 @@ void main() {
     await settle(tester);
     expect(await entries(tester), hasLength(2));
 
-    await tester.dragUntilVisible(
-      find.text('Di, 3.11.'),
-      find.byType(ListView),
-      const Offset(0, -200),
-    );
     await tester.tap(find.text('Di, 3.11.'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, '79,9');

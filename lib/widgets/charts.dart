@@ -24,6 +24,7 @@ class ChartCard extends StatelessWidget {
     this.trailing,
     this.info,
     this.height = 220,
+    this.margin = const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
     super.key,
   });
 
@@ -38,11 +39,14 @@ class ChartCard extends StatelessWidget {
   /// Fixed chart height; `null` = height of the child.
   final double? height;
 
+  /// Outside space; inside an already padded list only vertical (1.6.1).
+  final EdgeInsetsGeometry margin;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: margin,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         child: Column(

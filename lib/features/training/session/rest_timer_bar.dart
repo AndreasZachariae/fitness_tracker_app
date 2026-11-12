@@ -128,21 +128,7 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
           return;
         }
         _alarm = running;
-        unawaited(
-          handTimerToAndroid(
-            ref,
-            settings: settings,
-            ids: restNotificationIds,
-            texts: const (
-              title: S.notifyRestTitle,
-              body: S.notifyRestBody,
-              doneTitle: S.notifyRestDoneTitle,
-              doneBody: S.notifyRestDoneBody,
-            ),
-            at: running.end,
-            countDown: true,
-          ),
-        );
+        unawaited(_handToAndroid(running.end, settings));
       case AppLifecycleState.resumed:
         final alarm = _alarm;
         if (alarm == null) return;
@@ -155,6 +141,26 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
       case AppLifecycleState.inactive || AppLifecycleState.detached:
         break;
     }
+  }
+
+  /// The rest alarm for the background – only while a training runs: this
+  /// bar may be covered (and not updated) when the training ends (1.6.1).
+  Future<void> _handToAndroid(DateTime end, AppSettings settings) async {
+    final active = await ref.read(sessionRepositoryProvider).getActive();
+    if (active == null || !mounted) return;
+    await handTimerToAndroid(
+      ref,
+      settings: settings,
+      ids: restNotificationIds,
+      texts: const (
+        title: S.notifyRestTitle,
+        body: S.notifyRestBody,
+        doneTitle: S.notifyRestDoneTitle,
+        doneBody: S.notifyRestDoneBody,
+      ),
+      at: end,
+      countDown: true,
+    );
   }
 
   void _signalIfDue(int setId, AppSettings settings) {

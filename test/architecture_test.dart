@@ -46,9 +46,10 @@ void main() {
             .toList();
     // Exact alarm for the rest-over vibration in the background (1.0.1).
     // 1.2.0 (approved): notifications, rescheduling after a reboot and the
-    // update check on GitHub – the only network access. No
+    // update check on GitHub – the only network access besides the APK
+    // download by Android's download manager (1.6.1). No
     // REQUEST_INSTALL_PACKAGES: an app that installs downloaded APKs itself
-    // is blocked by Play Protect as harmful (1.2.2); the browser does it.
+    // is blocked by Play Protect as harmful (1.2.2); the user does it.
     // 1.5.0 (approved): Bluetooth heart rate monitor, without location.
     expect(permissions, [
       'android.permission.VIBRATE',
@@ -104,6 +105,35 @@ void main() {
       {'github.com', 'api.github.com'},
     );
   });
+
+  test(
+    'update APK only from github.com, never installed by GymLog (1.6.1)',
+    () {
+      // Android's download manager fetches the file the user tapped; the user
+      // installs it (no REQUEST_INSTALL_PACKAGES, see the permission test).
+      final downloads = File(
+        'android/app/src/main/kotlin/de/gymlog/app/ApkDownloads.kt',
+      ).readAsStringSync();
+      expect(
+        downloads,
+        contains('uri.scheme == "https" && uri.host == "github.com"'),
+      );
+      final kotlin = [
+        for (final file in Directory(
+          'android/app/src/main/kotlin',
+        ).listSync(recursive: true))
+          if (file is File) file.readAsStringSync(),
+      ].join('\n');
+      for (final forbidden in [
+        'PackageInstaller',
+        'ACTION_INSTALL_PACKAGE',
+        'setDataAndType',
+        'HttpURLConnection',
+      ]) {
+        expect(kotlin, isNot(contains(forbidden)), reason: forbidden);
+      }
+    },
+  );
 
   test('drawables named only from Dart survive resource shrinking (1.3.1)', () {
     // Release builds remove resources the native code does not reference;

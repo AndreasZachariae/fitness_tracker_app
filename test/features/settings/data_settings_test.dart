@@ -132,12 +132,13 @@ void main() {
     await openSettings(tester);
     await openArea(tester, S.sectionAbout);
     expect(find.text('0.9.0'), findsOneWidget);
-    expect(find.text('9'), findsOneWidget);
-    expect(find.text('${AppDatabase.currentSchemaVersion}'), findsOneWidget);
+    // Build 9 and schema version 9.
+    expect(AppDatabase.currentSchemaVersion, 9);
+    expect(find.text('9'), findsNWidgets(2));
     await disposeApp(tester, db);
   });
 
-  testWidgets('backup: share sets "Letztes Backup", dismiss does not', (
+  testWidgets('backup: straight into Download/GymLog (1.6.1); share', (
     tester,
   ) async {
     await dbWork(
@@ -148,33 +149,47 @@ void main() {
     await openSettings(tester);
     await showData(tester);
     // Tile subtitle and the reminder card (1.0.1).
-    expect(find.text(S.noBackupYet), findsNWidgets(2));
+    expect(find.textContaining(S.noBackupYet), findsNWidgets(2));
 
-    files.dismissShare = true;
+    // One tap, no dialog: saved, and the message says where.
     await tester.tap(find.widgetWithText(ListTile, S.createBackup));
+    await settle(tester);
+    final name = files.downloads.single.$1;
+    expect(name, startsWith('gymlog-backup-'));
+    expect(find.text(S.savedIn('Download/GymLog/$name')), findsOneWidget);
+    expect((await settings(tester)).lastBackupAt, testNow);
+    expect(find.textContaining(S.lastBackup('3.11.2026, 18:20')), findsOne);
+    expect(find.textContaining(S.noBackupYet), findsNothing);
+    expect(
+      () => decodeBackup(utf8.decode(files.downloads.single.$2)),
+      returnsNormally,
+    );
+    ScaffoldMessenger.of(tester.element(find.byType(ListView).first))
+        .hideCurrentSnackBar();
+    await settle(tester);
+
+    // Elsewhere: share; dismissed counts not.
+    await dbWork(
+      tester,
+      () =>
+          SettingsRepository(db).update((s) => s.copyWith(lastBackupAt: null)),
+    );
+    await settle(tester);
+    files.dismissShare = true;
+    await tester.tap(find.byKey(const ValueKey('backup-elsewhere')));
     await tester.pumpAndSettle();
+    expect(find.text(S.saveToDownloadsAction), findsNothing);
     await tester.tap(find.text(S.shareAction));
     await settle(tester);
     expect((await settings(tester)).lastBackupAt, isNull);
 
     files.dismissShare = false;
-    await tester.tap(find.widgetWithText(ListTile, S.createBackup));
+    await tester.tap(find.byKey(const ValueKey('backup-elsewhere')));
     await tester.pumpAndSettle();
     await tester.tap(find.text(S.shareAction));
     await settle(tester);
     expect(files.shared.single.$1, startsWith('gymlog-backup-'));
     expect((await settings(tester)).lastBackupAt, testNow);
-    expect(find.text(S.lastBackup('3.11.2026, 18:20')), findsOneWidget);
-    expect(find.text(S.noBackupYet), findsNothing, reason: 'card gone');
-    expect(
-      find.byType(SnackBar),
-      findsNothing,
-      reason: 'no confirmation (1.0.1)',
-    );
-    expect(
-      () => decodeBackup(utf8.decode(files.shared.single.$2)),
-      returnsNormally,
-    );
     await disposeApp(tester, db);
   });
 
@@ -354,10 +369,9 @@ void main() {
     await tester.tap(
       find.descendant(of: card, matching: find.text(S.createBackup)),
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(S.shareAction));
     await settle(tester);
-    expect(files.shared, hasLength(1));
+    // 1.6.1: straight into Download/GymLog.
+    expect(files.downloads, hasLength(1));
     expect(find.text(S.backupAgo(40)), findsNothing);
     await disposeApp(tester, db);
   });

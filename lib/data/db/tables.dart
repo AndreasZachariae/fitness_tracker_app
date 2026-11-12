@@ -70,8 +70,10 @@ class Exercises extends Table {
   // Schema 8 (1.6.0): pause by heart rate, heart rate target (warm-up).
   BoolColumn get restByHeartRate =>
       boolean().withDefault(const Constant(false))();
-  IntColumn get hrTargetRange =>
-      integer().nullable().check(hrTargetRange.isBetweenValues(1, 5))();
+  IntColumn get hrTargetZone => integer()
+      .named('hr_target_range')
+      .nullable()
+      .check(hrTargetZone.isBetweenValues(1, 5))();
   IntColumn get hrTargetBpm =>
       integer().nullable().check(hrTargetBpm.isBetweenValues(40, 250))();
   IntColumn get hrTargetMinutes =>
@@ -382,6 +384,9 @@ class AppSettingsTable extends Table {
       integer().nullable().check(hrWarnBpm.isBetweenValues(60, 250))();
   IntColumn get hrPauseBpm =>
       integer().nullable().check(hrPauseBpm.isBetweenValues(40, 220))();
+  // Schema 9 (1.6.1): zones after the lactate threshold heart rate.
+  IntColumn get hrThreshold =>
+      integer().nullable().check(hrThreshold.isBetweenValues(80, 230))();
 
   @override
   Set<Column> get primaryKey => {id};

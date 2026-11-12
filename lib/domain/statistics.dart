@@ -3,7 +3,7 @@
 library;
 
 import 'calendar.dart';
-import 'heart_rate_ranges.dart';
+import 'heart_rate_zones.dart';
 import 'metrics.dart';
 import 'models/models.dart';
 import 'period.dart';
@@ -626,9 +626,9 @@ List<WeekSum> _weekly(
   ];
 }
 
-/// Training load per week: Edwards' TRIMP from the minutes in the ranges.
-List<WeekSum> weeklyLoad(StatsData data, LocalDate today, int hrMax) =>
-    _weekly(data, today, (_, h) => edwardsTrimp(h.distribution, hrMax));
+/// Training load per week: Edwards' TRIMP from the minutes in the zones.
+List<WeekSum> weeklyLoad(StatsData data, LocalDate today, int threshold) =>
+    _weekly(data, today, (_, h) => edwardsTrimp(h.distribution, threshold));
 
 /// Estimated kilocalories per week.
 List<WeekSum> weeklyCalories(

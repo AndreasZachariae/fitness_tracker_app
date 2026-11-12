@@ -9,30 +9,30 @@ import '../../../core/format/formatters.dart';
 import '../../../core/l10n/strings_de.dart';
 import '../../../core/theme/typography.dart';
 import '../../../data/providers.dart';
-import '../../../domain/heart_rate_ranges.dart';
+import '../../../domain/heart_rate_zones.dart';
 import '../../../domain/models/models.dart';
 import '../../heart_rate/heart_rate_recorder.dart';
-import '../../heart_rate/range_colors.dart';
+import '../../heart_rate/zone_colors.dart';
 
 /// The heart rate target of a warm-up / cardio exercise (1.6.0).
-typedef HeartRateTarget = ({int? range, int? bpm, int minutes});
+typedef HeartRateTarget = ({int? zone, int? bpm, int minutes});
 
 HeartRateTarget? heartRateTargetOf(Exercise e) => e.hasHeartRateTarget
-    ? (range: e.hrTargetRange, bpm: e.hrTargetBpm, minutes: e.hrTargetMinutes!)
+    ? (zone: e.hrTargetZone, bpm: e.hrTargetBpm, minutes: e.hrTargetMinutes!)
     : null;
 
-/// "Bereich 2 (111–129 bpm)" or "mind. 120 bpm".
-String heartRateTargetLabel(HeartRateTarget t, int? hrMax) {
-  if (t.range case final r?) {
-    if (hrMax == null) return S.hrRange(r);
-    final range = garminRanges(hrMax)[r - 1];
-    return '${S.hrRange(r)} (${S.hrRangeBpm(range.from, range.to)})';
+/// "Zone 2 (114–133 bpm)" or "mind. 120 bpm".
+String heartRateTargetLabel(HeartRateTarget t, int? threshold) {
+  if (t.zone case final z?) {
+    if (threshold == null) return S.hrZone(z);
+    final zone = heartRateZones(threshold)[z - 1];
+    return '${S.hrZone(z)} (${S.hrZoneBpm(zone.from, zone.to)})';
   }
   return S.hrTargetAtLeast(t.bpm!);
 }
 
 /// Timer of a warm-up / cardio set (1.6.0): counts only the time in the
-/// heart rate target – inside the range, or at least the bpm value. At
+/// heart rate target – inside the zone, or at least the bpm value. At
 /// [HeartRateTarget.minutes] it vibrates, shows "Ziel erreicht" and hands
 /// the whole duration to [onStopped]; "Stopp" before hands it over too.
 class CardioTimer extends ConsumerStatefulWidget {
@@ -87,14 +87,14 @@ class _CardioTimerState extends ConsumerState<CardioTimer> {
     final delta = now.difference(_lastTick ?? now).inMilliseconds / 1000;
     _lastTick = now;
     final live = ref.read(heartRateLiveProvider);
-    final hrMax = ref.read(settingsProvider).value?.hrMax;
+    final threshold = ref.read(settingsProvider).value?.hrThreshold;
     if (live.status == HeartRateStatus.connected &&
         live.bpm != null &&
         inTarget(
           live.bpm!,
-          range: widget.target.range,
+          zone: widget.target.zone,
           targetBpm: widget.target.bpm,
-          hrMax: hrMax,
+          threshold: threshold,
         )) {
       // A gap (app paused) counts at most 5 s.
       _inTarget += delta.clamp(0, 5);
@@ -128,8 +128,8 @@ class _CardioTimerState extends ConsumerState<CardioTimer> {
     final theme = Theme.of(context);
     final settings = ref.watch(settingsProvider).value;
     final live = ref.watch(heartRateLiveProvider);
-    final hrMax = settings?.hrMax;
-    final label = heartRateTargetLabel(widget.target, hrMax);
+    final threshold = settings?.hrThreshold;
+    final label = heartRateTargetLabel(widget.target, threshold);
     final running = _startedAt != null;
     final bpm = live.bpm;
     final inside =
@@ -137,9 +137,9 @@ class _CardioTimerState extends ConsumerState<CardioTimer> {
         bpm != null &&
         inTarget(
           bpm,
-          range: widget.target.range,
+          zone: widget.target.zone,
           targetBpm: widget.target.bpm,
-          hrMax: hrMax,
+          threshold: threshold,
         );
     final goal = Duration(seconds: _goal);
     return Column(
@@ -192,8 +192,8 @@ class _CardioTimerState extends ConsumerState<CardioTimer> {
                 inside ? Icons.check_circle : Icons.favorite_border,
                 size: 18,
                 color: inside
-                    ? (hrMax != null
-                          ? rangeColor(rangeOf(bpm, hrMax))
+                    ? (threshold != null
+                          ? zoneColor(zoneOf(bpm, threshold))
                           : theme.colorScheme.primary)
                     : theme.colorScheme.onSurfaceVariant,
               ),

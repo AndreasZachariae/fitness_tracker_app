@@ -14,8 +14,8 @@ const backupFormat = 'gymlog-backup';
 /// 5 (1.3.0): `exercises[].timerCountdown`. 6 (1.5.0): `heartRateSamples`.
 /// 7 (1.5.1): `sessionHeartRates`, heart rate of sets and session exercises.
 /// 8 (1.6.0): heart rate profile, pause by heart rate, warm-up targets,
-/// time in target, heart rate recovery.
-const backupFormatVersion = 8;
+/// time in target, heart rate recovery. 9 (1.6.1): `settings.hrThreshold`.
+const backupFormatVersion = 9;
 
 final class BackupData {
   const BackupData({
@@ -128,7 +128,8 @@ String encodeBackup(BackupData b) {
             'levelKg': e.levelKg,
             'timerCountdown': e.timerCountdown,
             'restByHeartRate': e.restByHeartRate,
-            'hrTargetRange': e.hrTargetRange,
+            // Key from format 8 (when zones were called ranges).
+            'hrTargetRange': e.hrTargetZone,
             'hrTargetBpm': e.hrTargetBpm,
             'hrTargetMinutes': e.hrTargetMinutes,
           },
@@ -286,6 +287,7 @@ String encodeBackup(BackupData b) {
         // Format 8 (1.6.0): heart rate profile. The chosen monitor is device
         // state and not part of a backup.
         'hrMax': s.hrMax,
+        'hrThreshold': s.hrThreshold,
         'birthYear': s.birthYear,
         'sex': s.sex?.code,
         'hrWarnBpm': s.hrWarnBpm,
@@ -433,6 +435,7 @@ BackupData decodeBackup(String text) {
   final v6 = version >= 6;
   final v7 = version >= 7;
   final v8 = version >= 8;
+  final v9 = version >= 9;
   final dataset = Dataset(
     exercises: _list(
       data,
@@ -469,7 +472,7 @@ BackupData decodeBackup(String text) {
             : null,
         timerCountdown: v5 && r.boolean('timerCountdown'),
         restByHeartRate: v8 && r.boolean('restByHeartRate'),
-        hrTargetRange: v8 ? r.intOrNull('hrTargetRange') : null,
+        hrTargetZone: v8 ? r.intOrNull('hrTargetRange') : null,
         hrTargetBpm: v8 ? r.intOrNull('hrTargetBpm') : null,
         hrTargetMinutes: v8 ? r.intOrNull('hrTargetMinutes') : null,
       ),
@@ -668,6 +671,7 @@ BackupData decodeBackup(String text) {
           sex: r.codedOrNull('sex', Sex.values),
           hrWarnBpm: r.intOrNull('hrWarnBpm'),
           hrPauseBpm: r.intOrNull('hrPauseBpm'),
+          hrThreshold: v9 ? r.intOrNull('hrThreshold') : null,
         )
       : notifications;
 

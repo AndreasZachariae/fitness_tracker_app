@@ -7,7 +7,7 @@ import 'package:gymlog/data/repositories/heart_rate_repository.dart';
 import 'package:gymlog/data/repositories/session_repository.dart';
 import 'package:gymlog/data/repositories/settings_repository.dart';
 import 'package:gymlog/domain/models/models.dart';
-import 'package:gymlog/features/heart_rate/range_colors.dart';
+import 'package:gymlog/features/heart_rate/zone_colors.dart';
 import 'package:gymlog/features/settings/exercises/exercise_form_page.dart';
 import 'package:gymlog/features/training/session/cardio_timer.dart';
 
@@ -16,7 +16,8 @@ import '../helpers/pump_app.dart';
 import '../helpers/seed.dart';
 import '../helpers/test_db.dart';
 
-/// 1.6.0: heart rate profile, ranges, warning, pause by heart rate, cardio.
+/// 1.6.0: heart rate profile, zones, warning, pause by heart rate, cardio
+/// (1.6.1: zones after the lactate threshold heart rate).
 void main() {
   late AppDatabase db;
   late Repos r;
@@ -48,13 +49,17 @@ void main() {
 
   Future<void> profile(
     WidgetTester tester, {
-    int hrMax = 185,
+    int threshold = 170,
     int? warn,
     String? device = 'AA:01',
   }) => dbWork(
     tester,
     () => SettingsRepository(db).update(
-      (s) => s.copyWith(hrMax: hrMax, hrWarnBpm: warn, hrDeviceId: device),
+      (s) => s.copyWith(
+        hrThreshold: threshold,
+        hrWarnBpm: warn,
+        hrDeviceId: device,
+      ),
     ),
   );
 
@@ -64,7 +69,9 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('Körper: enter the maximum, see Garmin ranges', (tester) async {
+  testWidgets('Körper: enter the LSHF, suggestions filled in, see the zones', (
+    tester,
+  ) async {
     await open(tester);
     await tester.tap(find.text(S.tabBody).last);
     await settle(tester);
@@ -77,12 +84,26 @@ void main() {
     expect(find.text(S.hrProfileEmpty), findsOneWidget);
     await tester.tap(find.text(S.hrProfileSet));
     await settle(tester);
-    await tester.enterText(find.byKey(const ValueKey('hr-max')), '185');
+    String field(String key) =>
+        tester.widget<TextField>(find.byKey(ValueKey(key))).controller!.text;
+    await tester.enterText(find.byKey(const ValueKey('hr-threshold')), '170');
     await tester.pump();
-    // The suggestions follow the maximum.
-    expect(find.text(S.hrWarnHint(176)), findsOneWidget);
-    await tester.enterText(find.byKey(const ValueKey('hr-birth')), '1990');
+    // 1.6.1: the suggestions are filled in at once (107 %, end of zone 1).
+    expect((field('hr-warn'), field('hr-pause')), ('182', '113'));
+    // A changed threshold moves suggestions not edited by hand.
+    await tester.enterText(find.byKey(const ValueKey('hr-warn')), '185');
+    await tester.enterText(find.byKey(const ValueKey('hr-threshold')), '160');
+    await tester.pump();
+    expect((field('hr-warn'), field('hr-pause')), ('185', '106'));
+    await tester.enterText(find.byKey(const ValueKey('hr-threshold')), '170');
+    await tester.pump();
+    // Sex is optional and shows the selection.
     await tester.tap(find.text(S.hrSexLabel(Sex.male)));
+    await tester.pump();
+    final sex = tester.widget<SegmentedButton<Sex>>(
+      find.byKey(const ValueKey('hr-sex')),
+    );
+    expect(sex.selected, {Sex.male});
     // The weight input below also has "Speichern".
     await tester.tap(
       find.descendant(
@@ -91,20 +112,21 @@ void main() {
       ),
     );
     await settle(tester);
+    expect(find.byType(AlertDialog), findsNothing);
 
     final s = await dbWork(tester, () => SettingsRepository(db).get());
     expect(
-      (s.hrMax, s.birthYear, s.sex, s.hrWarnBpm),
-      (185, 1990, Sex.male, null),
+      (s.hrThreshold, s.birthYear, s.sex, s.hrWarnBpm, s.hrPauseBpm),
+      (170, null, Sex.male, 185, null),
     );
     await tester.dragUntilVisible(
-      find.text(S.hrRange(5)),
+      find.text(S.hrZone(5)),
       find.byType(ListView).first,
       const Offset(0, -300),
     );
-    expect(find.text(S.hrRangeBpm(111, 129)), findsOneWidget);
-    expect(find.text(S.hrWarnOff), findsOneWidget);
-    expect(find.text('111 ${S.unitBpm}'), findsOneWidget, reason: 'pause');
+    expect(find.text(S.hrZoneBpm(114, 133)), findsOneWidget);
+    expect(find.text('185 ${S.unitBpm}'), findsOneWidget, reason: 'warning');
+    expect(find.text('113 ${S.unitBpm}'), findsOneWidget, reason: 'pause');
     await disposeApp(tester, db);
   });
 
@@ -134,9 +156,9 @@ void main() {
     }
 
     await tapVisible(find.byKey(const ValueKey('rest-by-hr')));
-    await tapVisible(find.text(S.hrTargetRangeKind));
-    // The ranges show their bpm with the profile.
-    await tapVisible(find.textContaining(S.hrRangeBpm(111, 129)));
+    await tapVisible(find.text(S.hrTargetZoneKind));
+    // The zones show their bpm with the profile.
+    await tapVisible(find.textContaining(S.hrZoneBpm(114, 133)));
     final minutes = find.byKey(const ValueKey('hr-target-minutes'));
     await tester.ensureVisible(minutes);
     await tester.enterText(minutes, '6');
@@ -149,14 +171,14 @@ void main() {
       () => r.exercises.getAll(),
     )).firstWhere((x) => x.name == 'Ergometer');
     expect(
-      (e.restByHeartRate, e.hrTargetRange, e.hrTargetBpm, e.hrTargetMinutes),
+      (e.restByHeartRate, e.hrTargetZone, e.hrTargetBpm, e.hrTargetMinutes),
       (true, 2, null, 6),
     );
     expect(e.hasHeartRateTarget, isTrue);
     await disposeApp(tester, db);
   });
 
-  testWidgets('training: range color, warning at most every 2 minutes', (
+  testWidgets('training: zone color, warning at most every 2 minutes', (
     tester,
   ) async {
     await profile(tester, warn: 176);
@@ -169,7 +191,7 @@ void main() {
     await open(tester);
     await beat(tester, 115);
     final heart = tester.widget<Icon>(find.byIcon(Icons.favorite).first);
-    expect(heart.color, rangeColor(2));
+    expect(heart.color, zoneColor(2));
     expect(find.byKey(const ValueKey('heart-rate-warning')), findsNothing);
 
     await beat(tester, 180);
@@ -277,7 +299,7 @@ void main() {
         const ExerciseDraft(
           name: 'Ergometer',
           type: ExerciseType.timed,
-          hrTargetRange: 2,
+          hrTargetZone: 2,
           hrTargetMinutes: 8,
         ),
       );
@@ -291,11 +313,11 @@ void main() {
     await disposeApp(tester, db);
   });
 
-  testWidgets('summary: time in ranges, recovery and calories', (tester) async {
+  testWidgets('summary: time in zones, recovery and calories', (tester) async {
     final id = await dbWork(tester, () async {
-      await SettingsRepository(
-        db,
-      ).update((s) => s.copyWith(hrMax: 185, birthYear: 1990, sex: Sex.male));
+      await SettingsRepository(db).update(
+        (s) => s.copyWith(hrThreshold: 170, birthYear: 1990, sex: Sex.male),
+      );
       final bench = await addExercise(r, 'Bankdrücken');
       final sessions = SessionRepository(db, clock);
       final id = await sessions.start(
@@ -319,13 +341,13 @@ void main() {
     await settle(tester);
     await tester.tap(find.textContaining('Di, 3.11.'));
     await settle(tester);
-    final ranges = find.byKey(const ValueKey('heart-rate-ranges'));
+    final zones = find.byKey(const ValueKey('heart-rate-zones'));
     await tester.dragUntilVisible(
-      ranges,
+      zones,
       find.byType(ListView).first,
       const Offset(0, -300),
     );
-    expect(find.text(S.hrRange(4)), findsOneWidget);
+    expect(find.text(S.hrZone(4)), findsOneWidget);
     expect(find.text(S.heartRateRecoveryValue(40)), findsOneWidget);
     // Without a body weight no calories.
     expect(

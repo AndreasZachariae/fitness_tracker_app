@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/core/l10n/strings_de.dart';
 import 'package:gymlog/data/db/database.dart';
+import 'package:gymlog/data/notifications/apk_downloader.dart';
 import 'package:gymlog/data/notifications/reminder_service.dart';
 import 'package:gymlog/data/repositories/settings_repository.dart';
 import 'package:gymlog/domain/models/models.dart';
@@ -137,6 +138,22 @@ void main() {
       (await dbWork(tester, SettingsRepository(db).get)).bookingUrl,
       'https://buchen.example/termin',
     );
+    // 1.6.1: the button next to it saves and opens the page in the browser.
+    final openButton = find.byKey(const ValueKey('booking-url-open'));
+    await tester.enterText(url, 'https://buchen.example/neu');
+    await tester.pump();
+    await tester.tap(openButton);
+    await settle(tester);
+    expect(
+      (await dbWork(tester, SettingsRepository(db).get)).bookingUrl,
+      'https://buchen.example/neu',
+    );
+    await tester.enterText(url, '');
+    await tester.pump();
+    expect(tester.widget<IconButton>(openButton).onPressed, isNull);
+    await tester.enterText(url, 'https://buchen.example/neu');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await settle(tester);
 
     await leavePage(tester);
     await tester.ensureVisible(find.text(S.sectionAbout));
@@ -257,7 +274,7 @@ void main() {
     await disposeApp(tester, db);
   });
 
-  testWidgets('update page: APK in the browser, GitHub, no installing; '
+  testWidgets('update page: APK download, GitHub, no installing; '
       'blue dots (1.2.2)', (tester) async {
     phone(tester);
     final releases = FakeReleases('1.3.0');
@@ -316,6 +333,71 @@ void main() {
     expect(tester.widget<Badge>(aboutDot).isLabelVisible, isTrue);
     await leavePage(tester);
     expect(tester.widget<Badge>(dot.first).isLabelVisible, isTrue);
+    await disposeApp(tester, db);
+  });
+
+  testWidgets('update page: download with progress, then install by hand '
+      '(1.6.1)', (tester) async {
+    phone(tester);
+    final releases = FakeReleases('1.3.0')
+      ..apkUrl = 'https://github.com/x/y/releases/download/v1.3.0/gymlog.apk';
+    final downloader = FakeApkDownloader();
+    await pumpApp(tester, db: db, releases: releases, downloader: downloader);
+    await tester.tap(find.byTooltip(S.openSettings));
+    await settle(tester);
+    await tester.dragUntilVisible(
+      find.text(S.sectionAbout),
+      find.byType(ListView),
+      const Offset(0, -300),
+    );
+    await tester.ensureVisible(find.text(S.sectionAbout));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.sectionAbout));
+    await settle(tester);
+    await tester.tap(find.text(S.checkForUpdates));
+    await settle(tester);
+    await tester.tap(find.text(S.updateOpen));
+    await settle(tester);
+
+    // Failing: retry, or the browser as before.
+    downloader.fail = true;
+    await tester.tap(find.text(S.updateDownload));
+    await tester.pump();
+    expect(find.text(S.updateDownloadFailed), findsOneWidget);
+    expect(find.text(S.updateDownloadInBrowser), findsOneWidget);
+
+    downloader
+      ..fail = false
+      ..state = (
+        status: ApkDownloadStatus.running,
+        received: 12 * 1024 * 1024,
+        total: 24 * 1024 * 1024,
+        file: null,
+      );
+    await tester.tap(find.text(S.updateRetry).last);
+    await tester.pump();
+    await tester.pump();
+    expect(downloader.started, [releases.apkUrl]);
+    expect(find.text(S.updateProgress('12,0', '24,0')), findsOneWidget);
+    final bar = tester.widget<LinearProgressIndicator>(
+      find.byType(LinearProgressIndicator),
+    );
+    expect(bar.value, 0.5);
+
+    downloader.state = (
+      status: ApkDownloadStatus.done,
+      received: 24 * 1024 * 1024,
+      total: 24 * 1024 * 1024,
+      file: 'gymlog.apk',
+    );
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text(S.updateDownloaded('gymlog.apk')), findsOneWidget);
+    expect(find.text(S.updateInstallHint), findsOneWidget);
+    await tester.tap(find.text(S.updateOpenDownloads));
+    await tester.pump();
+    expect(downloader.opened, 1);
+    // Polling ends with the download.
+    await tester.pump(const Duration(seconds: 2));
     await disposeApp(tester, db);
   });
 

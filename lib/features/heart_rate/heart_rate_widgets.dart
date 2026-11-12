@@ -7,12 +7,12 @@ import '../../core/l10n/strings_de.dart';
 import '../../core/theme/gym_colors.dart';
 import '../../data/providers.dart';
 import '../../domain/heart_rate.dart';
-import '../../domain/heart_rate_ranges.dart';
+import '../../domain/heart_rate_zones.dart';
 import '../../domain/statistics.dart';
 import '../../widgets/charts.dart';
 import '../../widgets/info_button.dart';
 import 'heart_rate_recorder.dart';
-import 'range_colors.dart';
+import 'zone_colors.dart';
 
 /// "♥ 128" (1.5.0); since 1.5.1 in the active exercise and larger with
 /// [large]. Nothing without a chosen monitor or training; "♥ –" in grey
@@ -30,7 +30,7 @@ class HeartRateIndicator extends ConsumerWidget {
     final settings = ref.watch(settingsProvider).value;
     final connected = live.status == HeartRateStatus.connected;
     final bpm = live.bpm;
-    final hrMax = settings?.hrMax;
+    final threshold = settings?.hrThreshold;
     // 1.6.0: Garmin's color of the range; red above the warning limit.
     final warn =
         connected &&
@@ -39,8 +39,8 @@ class HeartRateIndicator extends ConsumerWidget {
         bpm >= settings!.hrWarnBpm!;
     final color = !connected || bpm == null
         ? theme.colorScheme.onSurfaceVariant
-        : hrMax != null
-        ? rangeColor(rangeOf(bpm, hrMax))
+        : threshold != null
+        ? zoneColor(zoneOf(bpm, threshold))
         : GymColors.of(context).record;
     final status = switch (live.status) {
       HeartRateStatus.connected => '${live.bpm} ${S.unitBpm}',
@@ -146,13 +146,13 @@ class HeartRateSection extends ConsumerWidget {
       for (final d in details)
         if (d.sessionExercise.hrMax case final max?) (d.exercise.name, max),
     ];
-    // 1.6.0: ranges, recovery, calories.
+    // 1.6.0: zones, recovery, calories.
     final settings = ref.watch(settingsProvider).value;
     final session = ref.watch(sessionProvider(sessionId)).value;
     final weights = ref.watch(bodyWeightsProvider).value ?? const [];
     final sortedWeights = [...weights]
       ..sort((a, b) => a.date.compareTo(b.date));
-    final hrMax = settings?.hrMax;
+    final threshold = settings?.hrThreshold;
     final calories = settings == null || session == null
         ? null
         : trainingCalories(summary, session.startedAt, sortedWeights, settings);
@@ -166,14 +166,18 @@ class HeartRateSection extends ConsumerWidget {
           max: summary.maxBpm,
           min: summary.minBpm,
         ),
-        if (hrMax != null)
-          _RangesCard(seconds: secondsPerRange(summary.distribution, hrMax)),
+        if (threshold != null)
+          _ZonesCard(seconds: secondsPerZone(summary.distribution, threshold)),
         _FiguresCard(
           recovery: summary.recoveryBpm,
           calories: calories,
           caloriesMissing: settings?.birthYear == null || settings?.sex == null,
         ),
-        _ViolinCard(current: summary.distribution, earlier: earlier),
+        _ViolinCard(
+          current: summary.distribution,
+          earlier: earlier,
+          max: summary.maxBpm,
+        ),
         if (perExercise.isNotEmpty) _PeaksCard(peaks: perExercise),
       ],
     );
@@ -212,6 +216,7 @@ class _CurveCard extends StatelessWidget {
       subtitle: S.heartRateSummary(average, max),
       info: S.heartRateInfo,
       height: 180,
+      margin: const EdgeInsets.symmetric(vertical: 6),
       child: LineChart(
         LineChartData(
           minX: 0,
@@ -275,10 +280,17 @@ class _CurveCard extends StatelessWidget {
 
 /// This training's distribution next to the average of earlier ones.
 class _ViolinCard extends StatelessWidget {
-  const _ViolinCard({required this.current, required this.earlier});
+  const _ViolinCard({
+    required this.current,
+    required this.earlier,
+    required this.max,
+  });
 
   final Map<int, int> current;
   final Map<int, double> earlier;
+
+  /// This training's highest heart rate, marked in its violin (1.6.1).
+  final int max;
 
   @override
   Widget build(BuildContext context) {
@@ -295,6 +307,7 @@ class _ViolinCard extends StatelessWidget {
         shape: violinShape(now, from: lo, to: hi),
         quartiles: quartilesOf(now),
         color: gym.record,
+        max: max,
       ),
       if (earlier.isNotEmpty)
         (
@@ -302,12 +315,14 @@ class _ViolinCard extends StatelessWidget {
           shape: violinShape(earlier, from: lo, to: hi),
           quartiles: quartilesOf(earlier),
           color: theme.colorScheme.onSurfaceVariant,
+          max: null,
         ),
     ];
     return ChartCard(
       title: S.heartRateDistribution,
       info: S.heartRateDistributionInfo,
       height: 220,
+      margin: const EdgeInsets.symmetric(vertical: 6),
       child: CustomPaint(
         key: const ValueKey('heart-rate-violin'),
         painter: _ViolinPainter(
@@ -321,6 +336,7 @@ class _ViolinCard extends StatelessWidget {
               const TextStyle(fontSize: 11),
           lineColor: theme.colorScheme.onSurface,
           gridColor: theme.colorScheme.outlineVariant,
+          maxColor: theme.colorScheme.error,
         ),
         child: const SizedBox.expand(),
       ),
@@ -333,6 +349,7 @@ typedef _Violin = ({
   List<({int bpm, double density})> shape,
   Quartiles? quartiles,
   Color color,
+  int? max,
 });
 
 class _ViolinPainter extends CustomPainter {
@@ -343,6 +360,7 @@ class _ViolinPainter extends CustomPainter {
     required this.textStyle,
     required this.lineColor,
     required this.gridColor,
+    required this.maxColor,
   });
 
   final List<_Violin> violins;
@@ -351,13 +369,23 @@ class _ViolinPainter extends CustomPainter {
   final TextStyle textStyle;
   final Color lineColor;
   final Color gridColor;
+  final Color maxColor;
 
   static const _left = 36.0;
   static const _bottom = 20.0;
 
-  void _text(Canvas canvas, String text, Offset at, {bool center = false}) {
+  void _text(
+    Canvas canvas,
+    String text,
+    Offset at, {
+    bool center = false,
+    Color? color,
+  }) {
     final p = TextPainter(
-      text: TextSpan(text: text, style: textStyle),
+      text: TextSpan(
+        text: text,
+        style: color == null ? textStyle : textStyle.copyWith(color: color),
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
     p.paint(canvas, at - Offset(center ? p.width / 2 : 0, p.height / 2));
@@ -413,6 +441,21 @@ class _ViolinPainter extends CustomPainter {
           );
         _text(canvas, '${q.median}', Offset(cx + 16, y(q.median)));
       }
+      if (v.max case final max?) {
+        canvas.drawLine(
+          Offset(cx - half, y(max)),
+          Offset(cx + half, y(max)),
+          Paint()
+            ..color = maxColor
+            ..strokeWidth = 2,
+        );
+        _text(
+          canvas,
+          S.heartRateViolinMax(max),
+          Offset(cx + half + 4, y(max)),
+          color: maxColor,
+        );
+      }
       _text(canvas, v.label, Offset(cx, size.height - 8), center: true);
     }
   }
@@ -463,9 +506,9 @@ class _PeaksCard extends StatelessWidget {
   }
 }
 
-/// Minutes in Garmin's ranges as one bar and a legend (1.6.0).
-class _RangesCard extends StatelessWidget {
-  const _RangesCard({required this.seconds});
+/// Minutes in the heart rate zones as one bar and a legend (1.6.0).
+class _ZonesCard extends StatelessWidget {
+  const _ZonesCard({required this.seconds});
 
   /// Range 0 (below 1) to 5 → seconds.
   final Map<int, int> seconds;
@@ -476,7 +519,7 @@ class _RangesCard extends StatelessWidget {
     final total = seconds.values.fold<int>(0, (a, b) => a + b);
     if (total == 0) return const SizedBox.shrink();
     return Card.outlined(
-      key: const ValueKey('heart-rate-ranges'),
+      key: const ValueKey('heart-rate-zones'),
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 8, 12),
@@ -487,13 +530,13 @@ class _RangesCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    S.heartRateRanges,
+                    S.heartRateZones,
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
                 const InfoButton(
-                  title: S.heartRateRanges,
-                  text: S.heartRateRangesInfo,
+                  title: S.heartRateZones,
+                  text: S.heartRateZonesInfo,
                 ),
               ],
             ),
@@ -509,7 +552,7 @@ class _RangesCard extends StatelessWidget {
                         if (seconds[r]! > 0)
                           Expanded(
                             flex: seconds[r]!,
-                            child: ColoredBox(color: rangeColor(r)),
+                            child: ColoredBox(color: zoneColor(r)),
                           ),
                     ],
                   ),
@@ -527,14 +570,14 @@ class _RangesCard extends StatelessWidget {
                         width: 10,
                         height: 10,
                         decoration: BoxDecoration(
-                          color: rangeColor(r),
+                          color: zoneColor(r),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          r == 0 ? S.heartRateBelowRanges : S.hrRange(r),
+                          r == 0 ? S.heartRateBelowZones : S.hrZone(r),
                         ),
                       ),
                       Text(
@@ -566,7 +609,13 @@ class _FiguresCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    Widget figure(String label, String value, String info, Key key) => Expanded(
+    Widget figure(
+      String label,
+      String value,
+      String info,
+      Key key, {
+      bool hint = false,
+    }) => Expanded(
       child: Card.outlined(
         key: key,
         margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
@@ -588,7 +637,14 @@ class _FiguresCard extends StatelessWidget {
                   InfoButton(title: label, text: info),
                 ],
               ),
-              Text(value, style: theme.textTheme.titleLarge),
+              Text(
+                value,
+                style: hint
+                    ? theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      )
+                    : theme.textTheme.titleLarge,
+              ),
             ],
           ),
         ),
@@ -610,6 +666,7 @@ class _FiguresCard extends StatelessWidget {
               : S.caloriesValue(calories!),
           S.caloriesInfo,
           const ValueKey('heart-rate-calories'),
+          hint: calories == null && caloriesMissing,
         ),
       ],
     );

@@ -66,6 +66,7 @@ class SettingsRepository {
     }
 
     range('hrMax', s.hrMax, 100, 250);
+    range('hrThreshold', s.hrThreshold, 80, 230);
     range('birthYear', s.birthYear, 1900, 2100);
     range('hrWarnBpm', s.hrWarnBpm, 60, 250);
     range('hrPauseBpm', s.hrPauseBpm, 40, 220);

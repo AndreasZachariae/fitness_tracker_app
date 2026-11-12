@@ -27,7 +27,7 @@ void main() {
   test('header fields (SPEC §8.2)', () {
     final json = jsonDecode(encodeBackup(backup)) as Map<String, Object?>;
     expect(json['format'], 'gymlog-backup');
-    expect(json['formatVersion'], 8);
+    expect(json['formatVersion'], 9);
     expect(json['schemaVersion'], 1);
     expect(json['appVersion'], '1.0.0+12');
     expect(json['exportedAt'], isA<String>());
@@ -358,7 +358,7 @@ void main() {
             e.id == timed.id
                 ? e.copyWith(
                     restByHeartRate: true,
-                    hrTargetRange: 2,
+                    hrTargetZone: 2,
                     hrTargetMinutes: 8,
                   )
                 : e,
@@ -383,7 +383,7 @@ void main() {
     final decoded = decodeBackup(text);
     final e = decoded.dataset.exercises.firstWhere((x) => x.id == timed.id);
     expect(
-      (e.restByHeartRate, e.hrTargetRange, e.hrTargetMinutes),
+      (e.restByHeartRate, e.hrTargetZone, e.hrTargetMinutes),
       (true, 2, 8),
     );
     expect(decoded.dataset.sessionHeartRates.single.recoveryBpm, 28);
@@ -397,8 +397,32 @@ void main() {
     j['formatVersion'] = 7;
     final old = decodeBackup(jsonEncode(j));
     expect(old.settings.hrMax, isNull);
+    expect(old.settings.hrThreshold, isNull);
     expect(old.dataset.exercises.any((x) => x.restByHeartRate), isFalse);
     expect(old.dataset.sessionHeartRates.single.recoveryBpm, isNull);
+  });
+
+  test('1.6.1: lactate threshold heart rate; format 8 has none', () {
+    final data = BackupData(
+      dataset: demo,
+      settings: settings.copyWith(hrThreshold: 170, hrWarnBpm: 182),
+      schemaVersion: 9,
+      appVersion: '1.6.1+24',
+      exportedAt: testNow,
+    );
+    final text = encodeBackup(data);
+    expect(
+      (
+        decodeBackup(text).settings.hrThreshold,
+        decodeBackup(text).settings.hrWarnBpm,
+      ),
+      (170, 182),
+    );
+    final j = jsonDecode(text) as Map<String, Object?>;
+    j['formatVersion'] = 8;
+    final old = decodeBackup(jsonEncode(j));
+    expect(old.settings.hrThreshold, isNull);
+    expect(old.settings.hrWarnBpm, 182, reason: 'known since format 8');
   });
 
   test('training days: round trip and validation (1.2.0)', () {
@@ -483,7 +507,7 @@ void main() {
       (
         'newer version',
         () {
-          final j = json()..['formatVersion'] = 9;
+          final j = json()..['formatVersion'] = 10;
           return jsonEncode(j);
         },
         BackupError.newerVersion,

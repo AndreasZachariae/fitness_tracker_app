@@ -211,77 +211,52 @@ abstract final class S {
   static const heartRateAverage = 'Ø Puls';
   static const heartRateMax = 'Max. Puls';
   static const heartRateInfo =
-      'Puls während des Trainings vom Bluetooth-Pulsmesser, als Durchschnitt je '
-      'Minute seit Beginn. Gespeichert werden nur diese Zusammenfassungen, '
-      'nicht jeder einzelne Wert.';
+      'Verlauf des Pulses seit Beginn des Trainings als Durchschnitt je '
+      'Minute.';
   static const heartRateThisTraining = 'Dieses Training';
   static const heartRateEarlier = 'Ø bisher';
   static const heartRateDistribution = 'Pulsverteilung';
   static const heartRateDistributionInfo =
-      'Wie lange dein Puls in welcher Höhe war: Je breiter die Form, desto mehr '
-      'Zeit bei diesem Puls. Der Strich ist der Median, der Kasten die mittlere '
-      'Hälfte. Daneben der Durchschnitt deiner bisherigen Trainings desselben '
-      'Plans (ohne solche: aller Trainings).';
+      'Je breiter, desto länger war dein Puls so hoch. Strich = Median, '
+      'Kasten = mittlere Hälfte, rote Linie = Maximum. Rechts: Ø der '
+      'früheren Trainings dieses Plans.';
+  static String heartRateViolinMax(int bpm) => 'max. $bpm';
   static const heartRatePerExercise = 'Spitzenpuls je Übung';
-  static const heartRateRanges = 'Zeit in Pulsbereichen';
-  static const heartRateBelowRanges = 'Unter Bereich 1';
-  static const heartRateRangesInfo =
-      'Wie lange dein Puls in welchem Garmin-Pulsbereich war (Prozent deines '
-      'Maximalpulses aus dem Puls-Profil): Bereich 1 = 50–60 %, 2 = 60–70 %, '
-      '3 = 70–80 %, 4 = 80–90 %, 5 = 90–100 %. Das sind Garmins Bereiche, '
-      'keine Laktat-Zonen: „Zone-2-Training“ im klassischen Sinn liegt unter '
-      'deiner ersten Laktatschwelle und nicht unbedingt in Bereich 2.';
+  static const heartRateZones = 'Zeit in Pulszonen';
+  static const heartRateBelowZones = 'Unter Zone 1';
+  static const heartRateZonesInfo =
+      'Zeit je Pulszone, berechnet aus deiner LSHF im Puls-Profil.';
   static const heartRateRecovery = 'Erholungspuls';
   static String heartRateRecoveryValue(int bpm) => '−$bpm $unitBpm';
   static const heartRateRecoveryInfo =
-      'Wie stark der Puls in der Minute nach harten Sätzen fällt: Spitzenpuls '
-      'des Satzes minus Puls 60 Sekunden später, gemittelt über alle Sätze mit '
-      'mindestens 70 % des Maximalpulses (ohne Puls-Profil: alle Sätze).\n\n'
-      'Aussage: Je schneller der Puls fällt, desto besser erholt sich dein '
-      'Herz-Kreislauf-System. Ein steigender Wert über Wochen deutet auf '
-      'bessere Fitness, ein deutlich niedrigerer als sonst auf Müdigkeit. '
-      'Vergleiche nur ähnliche Trainings.';
+      'Spitzenpuls nach harten Sätzen (ab Zone 3) minus Puls 60 s später, '
+      'gemittelt. Höher = schnellere Erholung.';
   static String weekOf(String date) => 'Woche ab $date';
   static const weeklyLoad = 'Wochenbelastung';
   static const weeklyLoadUnit = 'TRIMP';
   static const weeklyLoadInfo =
-      'Edwards-TRIMP: Minuten in Bereich 1 × 1 + Bereich 2 × 2 + … + Bereich 5 '
-      '× 5, für alle Trainings einer Woche zusammengezählt. Braucht nur den '
-      'Maximalpuls aus dem Puls-Profil.\n\n'
-      'Aussage: wie stark dein Herz-Kreislauf-System in der Woche gefordert '
-      'war – lange lockere und kurze harte Einheiten werden vergleichbar. '
-      'Sinnvoll ist ein gleichmäßiger Verlauf mit langsamer Steigerung; '
-      'plötzliche Sprünge nach oben erhöhen das Risiko von Überlastung. Die '
-      'Belastung der Muskeln durch Gewichte erfasst der Wert nicht.';
+      'Edwards-TRIMP: Minuten in Zone 1 × 1 + Zone 2 × 2 + … + Zone 5 × 5, '
+      'je Woche. Ideal: gleichmäßig, langsam steigend.';
   static const weeklyCalories = 'Kalorien je Woche';
   static const caloriesWeekInfo =
-      'Summe der geschätzten Kalorien aller Trainings mit Puls in der Woche. '
-      'Zur Berechnung siehe das i bei den Kalorien eines Trainings – ein grober '
-      'Richtwert.';
+      'Summe der geschätzten Kalorien aller Trainings mit Puls.';
   static const calories = 'Kalorien';
   static String caloriesValue(int kcal) => 'ca. $kcal kcal';
-  static const caloriesNeedProfile = 'Profil fehlt';
+  static const caloriesNeedProfile =
+      'Braucht Geburtsjahr und Geschlecht im Puls-Profil';
   static const caloriesInfo =
-      'Schätzung nach Keytel et al. (2005) aus Durchschnittspuls, Dauer mit '
-      'Puls, Körpergewicht (Eintrag am nächsten zum Trainingstag), Alter und '
-      'Geschlecht aus dem Puls-Profil.\n\n'
-      'Annahmen: Die Formel wurde für Ausdauerbelastung bei mittlerem bis '
-      'hohem Puls ermittelt. Beim Krafttraining mit vielen Pausen ist sie nur '
-      'ein grober Richtwert (oft ±20–30 %), wie bei jeder Pulsuhr.';
+      'Schätzung nach Keytel (2005) aus Ø Puls, Dauer, Körpergewicht, Alter '
+      'und Geschlecht. Beim Krafttraining nur grob (±20–30 %).';
   static const heartRateLegendAverage = 'Ø';
   static const heartRateLegendMax = 'Max.';
   static const heartRateLegendPeak = 'Spitze';
   static const heartRateTrainingTrend = 'Trainingspuls';
   static const heartRateTrainingTrendInfo =
-      'Durchschnitt (durchgezogen) und Maximum (gestrichelt) des Pulses je '
-      'Training, nur Trainings mit Pulsmesser. Ein sinkender Durchschnitt bei '
-      'gleichem Training kann auf bessere Ausdauer deuten – oder auf längere '
-      'Pausen.';
+      'Ø (durchgezogen) und Maximum (gestrichelt) des Pulses je Training.';
   static const heartRateExerciseTrend = 'Puls bei dieser Übung';
   static const heartRateExerciseTrendInfo =
-      'Durchschnitt (durchgezogen) und Spitze (gestrichelt) des Pulses über '
-      'alle Sätze der Übung, je Training. Gezählt wird ab einer Minute vor '
-      'jedem Satz bis 20 Sekunden danach.';
+      'Ø (durchgezogen) und Spitze (gestrichelt) des Pulses in den Sätzen '
+      'dieser Übung, je Training.';
   static String heartRateSetPeak(int bpm) => 'Spitzenpuls $bpm $unitBpm';
   static String heartRateLiveLabel(String status) => 'Puls: $status';
   static const heartRateStatusConnecting = 'verbinde';
@@ -289,48 +264,44 @@ abstract final class S {
   static const heartRateStatusUnavailable =
       'Bluetooth aus oder keine Berechtigung';
 
-  // Heart rate profile and ranges (1.6.0)
+  // Heart rate profile and zones (1.6.0, zones after the threshold 1.6.1)
   static const hrProfile = 'Puls-Profil';
   static const hrProfileEmpty =
-      'Trage deinen Maximalpuls ein, dann zeigt GymLog die Garmin-Pulsbereiche, '
-      'färbt die Pulsanzeige danach und rechnet Belastung und Kalorien.';
+      'Trage deinen Laktatschwellen-Puls (LSHF) ein, dann zeigt GymLog deine '
+      'Pulszonen und rechnet Belastung und Kalorien.';
   static const hrProfileEdit = 'Bearbeiten';
   static const hrProfileSet = 'Eintragen';
-  static const hrMax = 'Maximalpuls';
-  static const hrMaxInfo =
-      'Den Maximalpuls findest du in der Garmin-Connect-App in den '
-      'Benutzereinstellungen unter „Herzfrequenz- und Leistungsbereiche“ (je '
-      'nach App-Version im Menü „Mehr“ unter „Einstellungen“ bzw. bei deiner '
-      'Uhr unter „Garmin-Geräte“, „Benutzereinstellungen“) als „Maximale HF“. Ohne '
-      'Messwert ist 208 − 0,7 × Alter eine grobe Schätzung.\n\n'
-      'GymLog nutzt Garmins Standard-Pulsbereiche: Bereich 1 = 50–60 %, 2 = '
-      '60–70 %, 3 = 70–80 %, 4 = 80–90 %, 5 = 90–100 % des Maximalpulses.\n\n'
-      'Bereich ist nicht Zone: Das klassische „Zone-2-Training“ meint die '
-      'Intensität knapp unter der ersten Laktatschwelle. Die liegt individuell '
-      'verschieden, oft bei 68–75 % des Maximalpulses, bei Trainierten auch '
-      'darüber. Kennst du deinen Puls an der Laktatschwelle, gib Cardio-Ziele '
-      'besser als bpm-Wert an.';
+  static const hrThreshold = 'Laktatschwellen-Puls (LSHF)';
+  static const hrThresholdShort = 'LSHF';
+  static const hrThresholdInfo =
+      'Garmin Connect: Mehr › Garmin-Geräte › deine Uhr › Benutzerprofil › '
+      'Herzfrequenz- und Leistungsbereiche › Herzfrequenz › „LSHF“.\n\n'
+      'Zonen in % der LSHF: 1 = 57–66, 2 = 67–78, 3 = 79–89, 4 = 90–100, '
+      '5 = 101–113.\n\n'
+      'Gleiche Zonen auf der Uhr: dort unter „Bereiche“ bei „Basiert auf“ '
+      '„%LSHF“ wählen.';
   static const hrBirthYear = 'Geburtsjahr';
   static const hrSex = 'Geschlecht';
   static String hrSexLabel(Sex? sex) => switch (sex) {
     Sex.male => 'männlich',
     Sex.female => 'weiblich',
-    null => 'keine Angabe',
+    null => '–',
   };
-  static const hrWarn = 'Warnung bei hohem Puls';
+  static const hrWarn = 'Warnung ab';
   static String hrWarnAbove(int bpm) => 'ab $bpm $unitBpm';
   static const hrWarnOff = 'aus';
-  static const hrPause = 'Pause nach Puls endet unter';
-  static String hrPauseHint(int bpm) =>
-      'Vorschlag: $bpm bpm (Ende Bereich 1); leer lassen für den Vorschlag';
-  static String hrWarnHint(int bpm) =>
-      'Vorschlag: $bpm bpm (95 %); leer lassen für keine Warnung';
+  static String hrWarnInfo(int percent) =>
+      'Vorschlag: $percent % der LSHF (Mitte Zone 5). Leer = keine Warnung.';
+  static const hrPause = 'Pause endet wenn Puls unter';
+  static const hrPauseInfo =
+      'Vorschlag: Ende Zone 1 (66 % der LSHF). Gilt für Übungen mit „Pause '
+      'nach Puls“.';
   static const hrProfileCaloriesHint =
-      'Geburtsjahr und Geschlecht braucht nur die Kalorien-Schätzung.';
-  static String hrRange(int n) => 'Bereich $n';
-  static String hrRangeBpm(int from, int to) => '$from–$to $unitBpm';
+      'Geburtsjahr und Geschlecht nur für die Kalorien (optional).';
+  static String hrZone(int n) => 'Zone $n';
+  static String hrZoneBpm(int from, int to) => '$from–$to $unitBpm';
   static String hrAge(int age) => '$age Jahre';
-  static const errorHrMax = 'Ein Wert zwischen 100 und 250.';
+  static const errorHrThreshold = 'Ein Wert zwischen 80 und 230.';
   static const errorBirthYear = 'Ein Jahr wie 1990.';
   static const errorBpm = 'Ein Puls zwischen 40 und 250.';
   static String hrTargetAtLeast(int bpm) => 'mind. $bpm $unitBpm';
@@ -342,25 +313,22 @@ abstract final class S {
   static const cardioReached = 'Ziel erreicht! Jetzt „Satz speichern“.';
   static const fieldRestByHr = 'Pause nach Puls';
   static String fieldRestByHrHint(int bpm) =>
-      'Die Pause endet, sobald der Puls unter $bpm bpm fällt (frühestens nach '
-      '30 s) – oder nach der Pausenzeit, was zuerst kommt.';
+      'Endet, sobald der Puls unter $bpm bpm fällt (frühestens nach 30 s), '
+      'spätestens nach der Pausenzeit.';
   static const fieldRestByHrNoProfile =
-      'Braucht den Maximalpuls im Puls-Profil (Tab Körper); bis dahin zählt '
-      'nur die Pausenzeit.';
+      'Braucht die LSHF im Puls-Profil (Tab Körper); bis dahin zählt nur die '
+      'Pausenzeit.';
   static const fieldHrTarget = 'Pulsziel (Aufwärmen/Cardio)';
   static const hrTargetNone = 'Keins';
-  static const hrTargetRangeKind = 'Bereich';
+  static const hrTargetZoneKind = 'Zone';
   static const hrTargetBpmLabel = 'Mindestens';
   static const hrTargetMinutesLabel = 'Für';
   static const unitMinutes = 'min';
-  static const hrTargetRangeHint =
-      'Es zählt nur die Zeit innerhalb des Garmin-Bereichs. Der Timer läuft im '
-      'Training und meldet, wenn die Minuten erreicht sind.';
+  static const hrTargetZoneHint = 'Es zählt nur die Zeit in dieser Zone.';
   static const hrTargetBpmHint =
-      'Es zählt nur die Zeit mit mindestens diesem Puls. Der Timer läuft im '
-      'Training und meldet, wenn die Minuten erreicht sind.';
+      'Es zählt nur die Zeit mit mindestens diesem Puls.';
   static const hrTargetNeedsProfile =
-      'Für Bereiche den Maximalpuls im Puls-Profil (Tab Körper) eintragen.';
+      'Für Zonen die LSHF im Puls-Profil (Tab Körper) eintragen.';
   static const errorHrTarget =
       'Minuten zwischen 1 und 180 und ein Puls zwischen 40 und 250.';
 
@@ -602,6 +570,8 @@ abstract final class S {
   static const overwrite = 'Überschreiben';
   static const errorBodyWeight = 'Gib ein Gewicht zwischen 20 und 400 kg ein.';
   static const bodyEntries = 'Einträge';
+  static String bodyEntriesCount(int n) => n == 1 ? '1 Eintrag' : '$n Einträge';
+  static const bodyEntriesEmpty = 'Noch keine Einträge.';
   static const bodyCurrent = 'Aktuell (Ø 7 Tage)';
   static const bodyChange30 = '30 Tage';
   static const bodyMinMax = 'Min / Max';
@@ -660,28 +630,12 @@ abstract final class S {
   };
   static String groupInfo(PlanGroupKind k) => switch (k) {
     PlanGroupKind.superset =>
-      'Übungen eines Supersets machst du abwechselnd ohne Pause '
-          'dazwischen:\n\n'
-          'Übung A Satz 1, Übung B Satz 1, Pause, A Satz 2, B Satz 2, '
-          'Pause …\n\n'
-          'Nach jedem Satz springt das Training automatisch zur nächsten Übung '
-          'des Supersets. Der Pausentimer startet erst nach dem letzten Satz '
-          'einer Runde. Die Pause stellst du für das ganze Superset ein; ohne '
-          'eigene Einstellung gilt die Pause der letzten Übung.\n\n'
-          'Haben die Übungen unterschiedlich viele Sätze, läuft die Übung mit '
-          'mehr Sätzen am Ende allein weiter.\n\n'
-          'Im Plan verschiebst du ein Superset als Ganzes am Griff oben; die '
-          'Reihenfolge innerhalb änderst du an den Griffen der Übungen.',
+      'Übungen abwechselnd ohne Pause: A 1, B 1, Pause, A 2, B 2, Pause …\n\n'
+          'Die Pause gilt je Runde (Standard: Pause der letzten Übung). '
+          'Verschieben als Ganzes am Griff oben.',
     PlanGroupKind.rotation =>
-      'In einer Rotation wechseln sich Übungen von Training zu Training ab, '
-          'z. B. Bizepscurls mit Hantel und am Seilzug.\n\n'
-          'Beim Start eines Trainings dieses Plans kommt nur die Übung, die '
-          'gerade dran ist, ins Training. Die anderen sind ausgegraut.\n\n'
-          'Die Rotation rückt weiter, wenn du das Training beendest und die '
-          'Übung dabei mindestens einen Satz hatte. Wird sie übersprungen, '
-          'bleibt sie beim nächsten Mal dran.\n\n'
-          'Mit „Wechsel nach …“ bleibt jede Übung mehrere Trainings dran. '
-          'Welche Übung als Nächstes kommt, kannst du jederzeit selbst wählen.',
+      'Je Training kommt nur die Übung, die dran ist. Sie rückt weiter, wenn '
+          'sie beim Beenden mindestens einen Satz hatte.',
   };
   static const groupNeedsTwo =
       'Dafür brauchst du mindestens zwei Übungen, die noch in keinem Superset '
@@ -716,90 +670,36 @@ abstract final class S {
   static const explain = 'Erklärung';
   static String metricInfo(ExerciseMetric m) => switch (m) {
     ExerciseMetric.estimatedOneRepMax =>
-      'Das Gewicht, das du schätzungsweise genau einmal heben könntest '
-          '(One-Rep-Max, 1RM). Berechnet nach der Epley-Formel aus jedem Satz:\n\n'
-          'Gewicht × (1 + Wdh / 30), bei 1 Wdh das Gewicht selbst.\n\n'
-          'Beispiel: 80 kg × 8 Wdh ergibt 80 × (1 + 8/30) ≈ 101,3 kg.\n\n'
-          'Pro Training zählt der beste Satz. So lassen sich Sätze mit '
-          'unterschiedlich vielen Wiederholungen vergleichen – steigt der Wert, '
-          'bist du stärker geworden.',
-    ExerciseMetric.maxWeight =>
-      'Das höchste Gewicht, das du in einem Satz dieses Trainings bewegt '
-          'hast – unabhängig davon, wie viele Wiederholungen es waren.',
-    ExerciseMetric.volume =>
-      'Das insgesamt bewegte Gewicht dieser Übung im Training: die Summe aus '
-          'Gewicht × Wiederholungen über alle Sätze.\n\n'
-          'Beispiel: 3 Sätze × 10 Wdh mit 60 kg = 1.800 kg.\n\n'
-          'Das Volumen zeigt die Trainingsmenge, nicht die Maximalkraft.',
-    ExerciseMetric.maxReps =>
-      'Die meisten Wiederholungen in einem Satz dieses Trainings.',
-    ExerciseMetric.totalReps =>
-      'Alle Wiederholungen dieser Übung im Training zusammen.',
+      'Geschätztes Gewicht für genau 1 Wdh (Epley): Gewicht × (1 + Wdh / 30). '
+          'Je Training zählt der beste Satz.',
+    ExerciseMetric.maxWeight => 'Höchstes Gewicht eines Satzes im Training.',
+    ExerciseMetric.volume => 'Summe aus Gewicht × Wdh aller Sätze im Training.',
+    ExerciseMetric.maxReps => 'Meiste Wdh in einem Satz.',
+    ExerciseMetric.totalReps => 'Alle Wdh im Training zusammen.',
     ExerciseMetric.maxAddedWeight =>
-      'Das höchste Zusatzgewicht eines Satzes (z. B. Gewichtsgürtel). '
-          'Negative Werte bedeuten Unterstützung (z. B. Gummiband, Maschine).',
+      'Höchstes Zusatzgewicht eines Satzes, negativ = Unterstützung.',
     ExerciseMetric.effectiveOneRepMax =>
-      'Wie das geschätzte 1RM, aber mit der effektiven Last: dein '
-          'Körpergewicht (Eintrag mit dem nächstgelegenen Datum) plus '
-          'Zusatzgewicht.\n\n'
-          'Beispiel: 80 kg Körpergewicht, +10 kg, 6 Wdh ergibt '
-          '90 × (1 + 6/30) = 108 kg.\n\n'
-          'Nur verfügbar, wenn du im Tab Körper Gewicht eingetragen hast.',
-    ExerciseMetric.maxDuration => 'Der längste Satz dieses Trainings.',
-    ExerciseMetric.totalDuration =>
-      'Die Dauer aller Sätze dieser Übung im Training zusammen.',
+      'Geschätztes 1RM mit Körpergewicht (Tab Körper) plus Zusatzgewicht.',
+    ExerciseMetric.maxDuration => 'Längster Satz im Training.',
+    ExerciseMetric.totalDuration => 'Dauer aller Sätze im Training zusammen.',
   };
   static const strengthIndexInfo =
-      'Deine Kraftentwicklung über mehrere Übungen in einer Zahl.\n\n'
-      'Für jede Übung mit „Im Kraftindex berücksichtigen“ wird pro Woche der '
-      'beste Leistungswert durch den Wert ihres ersten Trainings geteilt. '
-      'Leistungswert: bei Gewicht × Wdh das geschätzte 1RM, bei Körpergewicht '
-      'das 1RM mit Körpergewicht (ohne Körpergewicht-Einträge: Max. Wdh), bei '
-      'Zeit die Max. Dauer.\n\n'
-      'Der Kraftindex ist der Durchschnitt dieser Verhältnisse: 100 % = dein '
-      'Startniveau, 110 % = im Schnitt 10 % stärker als am Anfang.\n\n'
-      'Wird eine Übung eine Woche nicht trainiert, zählt ihr letzter Wert '
-      'weiter, höchstens 8 Wochen lang.\n\n'
-      'Welche Übungen zählen, stellst du je Übung ein. Der Verlauf wird bei '
-      'jeder Änderung komplett neu berechnet.';
+      'Fortschritt der Übungen im Kraftindex gegenüber ihrem ersten '
+      'Training, gemittelt je Woche: 100 % = Start, 110 % = 10 % stärker.';
   static const trainingVolumeInfo =
-      'Das insgesamt bewegte Gewicht eines Trainings: die Summe aus Gewicht × '
-      'Wiederholungen aller Sätze von Übungen mit Gewicht × Wdh.\n\n'
-      'Beispiel: 3 × 10 mit 60 kg = 1.800 kg.\n\n'
-      'Ein Balken pro Training, nebeneinander und ohne Zeitachse; Tippen zeigt '
-      'Datum und Plan. Körpergewichts- und Zeitübungen zählen nicht mit, '
-      'Trainings nur damit fehlen. Das Volumen zeigt die Trainingsmenge, nicht '
-      'die Maximalkraft.';
+      'Summe aus Gewicht × Wdh aller Sätze eines Trainings, ein Balken je '
+      'Training.';
   static const calendarInfo =
-      'Jedes Kästchen ist ein Tag der letzten 26 Wochen (Spalten = Wochen, '
-      'Zeilen = Mo–So). Je kräftiger die Farbe, desto mehr Sätze.\n\n'
-      'Ø Trainings pro Woche bezieht sich auf den gewählten Zeitraum.';
+      'Ein Kästchen je Tag der letzten 26 Wochen; je kräftiger, desto mehr '
+      'Sätze.';
   static const streakInfo =
-      'Deine Serie zählt die Wochen (Mo–So) in Folge mit mindestens einem '
-      'Training.\n\n'
-      'Die laufende Woche zählt mit, sobald du trainiert hast. Solange sie '
-      'noch leer ist, bleibt die Serie bestehen. Fällt eine ganze Woche aus, '
-      'ist die Serie vorbei.\n\n'
-      'Die längste Serie bleibt als Bestwert stehen, auch wenn sie nicht mehr '
-      'aktiv ist.';
+      'Wochen (Mo–So) in Folge mit mindestens einem Training.';
   static const recordsInfo =
-      'Rekorde sind Bestwerte je Übung:\n\n'
-      '• Gewicht × Wdh: geschätztes 1RM (Epley: Gewicht × (1 + Wdh / 30)) und '
-      'höchstes Gewicht\n'
-      '• Körpergewicht: meiste Wdh und höchstes Zusatzgewicht\n'
-      '• Zeit: längste Dauer\n\n'
-      'Ein Satz ist ein Rekord, wenn er alle früheren Sätze der Übung '
-      'übertrifft. Das erste Training einer Übung setzt nur den Startwert.';
+      'Bestwerte je Übung: 1RM und Gewicht, Wdh und Zusatzgewicht oder Dauer. '
+      'Das erste Training setzt nur den Startwert.';
   static const strengthIndexFieldInfo =
-      'Ist der Schalter an, fließt diese Übung in den Kraftindex ein '
-      '(Statistik, Tab Gesamt): Ihr Fortschritt gegenüber dem ersten Training wird '
-      'zusammen mit den anderen Übungen gemittelt.\n\n'
-      'Schaltest du ihn aus, wird der Kraftindex für den gesamten Verlauf ohne '
-      'diese Übung neu berechnet – auch rückwirkend. Schaltest du ihn wieder '
-      'ein, ist sie ebenso rückwirkend wieder enthalten.\n\n'
-      'Deine Trainingsdaten bleiben dabei unverändert.\n\n'
-      'Sinnvoll für Übungen, an denen du deine Kraft messen willst; eher aus '
-      'für Aufwärm-, Dehn- oder Technikübungen.';
+      'An: Die Übung zählt zum Kraftindex (Statistik › Gesamt). Der Verlauf '
+      'wird dann neu berechnet.';
 
   static const statBest = 'Bestwert';
   static const statChange = 'Veränderung';
@@ -867,6 +767,11 @@ abstract final class S {
   static String days(int n) => n == 1 ? '1 Tag' : '$n Tage';
   static const shareAction = 'Teilen';
   static const saveAsAction = 'Speichern unter …';
+  static const saveToDownloadsAction = 'In Downloads speichern';
+  static const downloadsFolder = 'Download/GymLog';
+  static String savedIn(String where) => 'Gespeichert in $where';
+  static const backupGoesTo = 'Speichert nach Download/GymLog';
+  static const backupElsewhere = 'Backup teilen oder anderswo speichern';
   static const exportFailed =
       'Export fehlgeschlagen. Deine Daten sind unverändert – bitte versuche es '
       'noch einmal.';
@@ -997,9 +902,19 @@ abstract final class S {
   static const updateDownload = 'APK herunterladen';
   static const updateOnGitHub = 'Auf GitHub ansehen';
   static const updateDownloadHint =
-      'Der Browser lädt die APK. Danach die Datei antippen (Download-'
-      'Benachrichtigung oder Dateien-App) und installieren – alle Trainings '
-      'bleiben erhalten.';
+      'GymLog lädt die APK nach Download/GymLog (die vorige wird gelöscht). '
+      'Installieren musst du selbst – alle Trainings bleiben erhalten.';
+  static const updateDownloading = 'Wird heruntergeladen …';
+  static String updateProgress(String received, String total) =>
+      '$received von $total MB';
+  static String updateDownloaded(String file) =>
+      'Gespeichert: Download/GymLog/$file';
+  static const updateInstallHint =
+      'Zum Installieren die Benachrichtigung „Download abgeschlossen“ oder die '
+      'Datei in den Downloads antippen.';
+  static const updateOpenDownloads = 'Downloads öffnen';
+  static const updateDownloadFailed = 'Der Download hat nicht geklappt.';
+  static const updateDownloadInBrowser = 'Im Browser herunterladen';
   static const updateNoApk =
       'Die Release hat noch keine APK. Schau auf GitHub nach oder versuch es '
       'später noch einmal.';
@@ -1024,10 +939,10 @@ abstract final class S {
   static const settingsNotificationsSubtitle = 'Erinnerungen, Pause, Updates';
   static const sectionBooking = 'Automatische Buchung';
   static const settingsBookingSubtitle = 'Buchungsseite';
+  static const openInBrowser = 'Im Browser öffnen';
   static const bookingInfo =
-      'Die Erinnerung am Abend vor einem Trainingstag hat den Knopf „Slot '
-      'buchen“, der diese Seite im Browser öffnet. Das automatische Buchen '
-      'folgt in einer späteren Version.';
+      'Die Erinnerung am Vorabend hat den Knopf „Slot buchen“, der diese Seite '
+      'öffnet.';
   static const settingsAppearanceSubtitle = 'System, hell oder dunkel';
   static const settingsDataSubtitle = 'Backup, Wiederherstellen, CSV-Export';
   static const settingsAboutSubtitle = 'Version, nach Updates suchen';

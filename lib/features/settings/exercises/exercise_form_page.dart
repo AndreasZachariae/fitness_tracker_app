@@ -8,7 +8,7 @@ import '../../../core/l10n/strings_de.dart';
 import '../../../data/providers.dart';
 import '../../../data/repositories/plan_repository.dart';
 import '../../../data/repositories/repository_exceptions.dart';
-import '../../../domain/heart_rate_ranges.dart';
+import '../../../domain/heart_rate_zones.dart';
 import '../../../domain/models/models.dart';
 import '../../../domain/names.dart';
 import '../../../domain/weight_steps.dart';
@@ -16,7 +16,7 @@ import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/info_button.dart';
 import '../../../widgets/number_stepper.dart';
 import '../../../widgets/snackbars.dart';
-import '../../heart_rate/range_colors.dart';
+import '../../heart_rate/zone_colors.dart';
 import 'exercise_actions.dart';
 
 /// Result of the exercise form.
@@ -108,12 +108,12 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
 
   // 1.6.0: pause by heart rate, heart rate target (warm-up / cardio).
   late bool _restByHr = _original?.restByHeartRate ?? false;
-  late _TargetKind _targetKind = _original?.hrTargetRange != null
-      ? _TargetKind.range
+  late _TargetKind _targetKind = _original?.hrTargetZone != null
+      ? _TargetKind.zone
       : _original?.hrTargetBpm != null
       ? _TargetKind.bpm
       : _TargetKind.none;
-  late int _targetRange = _original?.hrTargetRange ?? 2;
+  late int _targetZone = _original?.hrTargetZone ?? 2;
   late final _targetBpm = TextEditingController(
     text: _original?.hrTargetBpm?.toString() ?? '',
   );
@@ -242,7 +242,7 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
             incrementLbs: incrementLbs!,
             levelKg: levelKg,
             restByHeartRate: _restByHr,
-            hrTargetRange: target?.range,
+            hrTargetZone: target?.zone,
             hrTargetBpm: target?.bpm,
             hrTargetMinutes: target?.minutes,
           ),
@@ -262,7 +262,7 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
             incrementLbs: incrementLbs,
             levelKg: levelKg,
             restByHeartRate: _restByHr,
-            hrTargetRange: target?.range,
+            hrTargetZone: target?.zone,
             hrTargetBpm: target?.bpm,
             hrTargetMinutes: target?.minutes,
           ),
@@ -493,22 +493,22 @@ class _ExerciseFormPageState extends ConsumerState<ExerciseFormPage> {
 }
 
 /// Heart rate target of a warm-up / cardio exercise (1.6.0).
-enum _TargetKind { none, range, bpm }
+enum _TargetKind { none, zone, bpm }
 
 extension on _ExerciseFormPageState {
   bool get _hasTarget =>
       _type == ExerciseType.timed && _targetKind != _TargetKind.none;
 
   /// The target as entered; null if invalid.
-  ({int? range, int? bpm, int minutes})? get _target {
+  ({int? zone, int? bpm, int minutes})? get _target {
     final minutes = int.tryParse(_targetMinutes.text.trim());
     if (minutes == null || minutes < 1 || minutes > 180) return null;
-    if (_targetKind == _TargetKind.range) {
-      return (range: _targetRange, bpm: null, minutes: minutes);
+    if (_targetKind == _TargetKind.zone) {
+      return (zone: _targetZone, bpm: null, minutes: minutes);
     }
     final bpm = int.tryParse(_targetBpm.text.trim());
     if (bpm == null || bpm < 40 || bpm > 250) return null;
-    return (range: null, bpm: bpm, minutes: minutes);
+    return (zone: null, bpm: bpm, minutes: minutes);
   }
 
   /// "Pause nach Puls" and, for timed exercises, the heart rate target.
@@ -518,7 +518,7 @@ extension on _ExerciseFormPageState {
       color: theme.colorScheme.onSurfaceVariant,
     );
     final pause = settings.pauseBpm;
-    final hrMax = settings.hrMax;
+    final threshold = settings.hrThreshold;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -545,8 +545,8 @@ extension on _ExerciseFormPageState {
                 label: Text(S.hrTargetNone),
               ),
               ButtonSegment(
-                value: _TargetKind.range,
-                label: Text(S.hrTargetRangeKind),
+                value: _TargetKind.zone,
+                label: Text(S.hrTargetZoneKind),
               ),
               ButtonSegment(value: _TargetKind.bpm, label: Text(S.unitBpm)),
             ],
@@ -554,7 +554,7 @@ extension on _ExerciseFormPageState {
             showSelectedIcon: false,
             onSelectionChanged: (v) => _update(() => _targetKind = v.first),
           ),
-          if (_targetKind == _TargetKind.range) ...[
+          if (_targetKind == _TargetKind.zone) ...[
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,
@@ -562,19 +562,19 @@ extension on _ExerciseFormPageState {
               children: [
                 for (var r = 1; r <= 5; r++)
                   ChoiceChip(
-                    avatar: CircleAvatar(backgroundColor: rangeColor(r)),
+                    avatar: CircleAvatar(backgroundColor: zoneColor(r)),
                     label: Text(
-                      hrMax == null
-                          ? S.hrRange(r)
-                          : '${S.hrRange(r)} · '
-                                '${S.hrRangeBpm(garminRanges(hrMax)[r - 1].from, garminRanges(hrMax)[r - 1].to)}',
+                      threshold == null
+                          ? S.hrZone(r)
+                          : '${S.hrZone(r)} · '
+                                '${S.hrZoneBpm(heartRateZones(threshold)[r - 1].from, heartRateZones(threshold)[r - 1].to)}',
                     ),
-                    selected: _targetRange == r,
-                    onSelected: (_) => _update(() => _targetRange = r),
+                    selected: _targetZone == r,
+                    onSelected: (_) => _update(() => _targetZone = r),
                   ),
               ],
             ),
-            if (hrMax == null)
+            if (threshold == null)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(S.hrTargetNeedsProfile, style: hint),
@@ -609,8 +609,8 @@ extension on _ExerciseFormPageState {
             ),
             const SizedBox(height: 4),
             Text(
-              _targetKind == _TargetKind.range
-                  ? S.hrTargetRangeHint
+              _targetKind == _TargetKind.zone
+                  ? S.hrTargetZoneHint
                   : S.hrTargetBpmHint,
               style: hint,
             ),

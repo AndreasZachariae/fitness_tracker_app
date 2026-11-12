@@ -89,7 +89,7 @@ class OverallStatsTab extends StatelessWidget {
         Consumer(
           builder: (context, ref, _) {
             final settings = ref.watch(settingsProvider).value;
-            final hrMax = settings?.hrMax;
+            final threshold = settings?.hrThreshold;
             return Column(
               children: [
                 ValueTrendChart(
@@ -101,13 +101,13 @@ class OverallStatsTab extends StatelessWidget {
                       if (!p.day.isBefore(from)) p,
                   ],
                 ),
-                if (hrMax != null)
+                if (threshold != null)
                   WeeklyBarsChart(
                     title: S.weeklyLoad,
                     info: S.weeklyLoadInfo,
                     unit: S.weeklyLoadUnit,
                     weeks: [
-                      for (final w in weeklyLoad(data, today, hrMax))
+                      for (final w in weeklyLoad(data, today, threshold))
                         if (!w.monday.addDays(6).isBefore(from)) w,
                     ],
                   ),

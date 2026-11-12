@@ -1,6 +1,8 @@
 package de.gymlog.app
 
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -35,6 +37,49 @@ class MainActivity : FlutterActivity() {
                     "sdkInt" -> result.success(Build.VERSION.SDK_INT)
                     else -> result.notImplemented()
                 }
+            }
+        // Update APK via the system download manager (1.6.1); installing stays with the user.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ApkDownloads.CHANNEL)
+            .setMethodCallHandler { call, result ->
+                try {
+                    when (call.method) {
+                        "start" -> result.success(ApkDownloads.start(applicationContext, call.argument<String>("url")!!))
+                        "query" -> result.success(
+                            ApkDownloads.query(applicationContext, call.argument<Number>("id")!!.toLong()),
+                        )
+                        "removeAll" -> {
+                            ApkDownloads.removeAll(applicationContext)
+                            result.success(null)
+                        }
+                        "openDownloads" -> {
+                            ApkDownloads.openDownloads(this)
+                            result.success(null)
+                        }
+                        else -> result.notImplemented()
+                    }
+                } catch (e: Exception) {
+                    result.error("download", e.message, null)
+                }
+            }
+        // Backups and exports into Download/GymLog (1.6.1), off the main thread.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DownloadsFolder.CHANNEL)
+            .setMethodCallHandler { call, result ->
+                if (call.method != "saveToDownloads") {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                val name = call.argument<String>("name")!!
+                val mimeType = call.argument<String>("mimeType")!!
+                val bytes = call.argument<ByteArray>("bytes")!!
+                val main = Handler(Looper.getMainLooper())
+                Thread {
+                    try {
+                        val where = DownloadsFolder.save(applicationContext, name, mimeType, bytes)
+                        main.post { result.success(where) }
+                    } catch (e: Exception) {
+                        main.post { result.error("save", e.message, null) }
+                    }
+                }.start()
             }
     }
 }

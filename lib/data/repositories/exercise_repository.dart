@@ -69,7 +69,7 @@ class ExerciseRepository {
       incrementLbs: draft.incrementLbs,
       levelKg: draft.levelKg,
     );
-    _checkTarget(draft.hrTargetRange, draft.hrTargetBpm, draft.hrTargetMinutes);
+    _checkTarget(draft.hrTargetZone, draft.hrTargetBpm, draft.hrTargetMinutes);
     return _db.exercisesDao.insertExercise(
       ExercisesCompanion.insert(
         name: name,
@@ -84,7 +84,7 @@ class ExerciseRepository {
         incrementLbs: Value(draft.incrementLbs),
         levelKg: Value(draft.levelKg),
         restByHeartRate: Value(draft.restByHeartRate),
-        hrTargetRange: Value(draft.hrTargetRange),
+        hrTargetZone: Value(draft.hrTargetZone),
         hrTargetBpm: Value(draft.hrTargetBpm),
         hrTargetMinutes: Value(draft.hrTargetMinutes),
       ),
@@ -115,7 +115,7 @@ class ExerciseRepository {
       levelKg: exercise.levelKg,
     );
     _checkTarget(
-      exercise.hrTargetRange,
+      exercise.hrTargetZone,
       exercise.hrTargetBpm,
       exercise.hrTargetMinutes,
     );
@@ -220,7 +220,7 @@ class ExerciseRepository {
   /// Warm-up target (1.6.0): a range 1–5 or a bpm value, not both.
   static void _checkTarget(int? range, int? bpm, int? minutes) {
     if (range != null && (range < 1 || range > 5)) {
-      throw InvalidValueException('hrTargetRange', range);
+      throw InvalidValueException('hrTargetZone', range);
     }
     if (bpm != null && (bpm < 40 || bpm > 250)) {
       throw InvalidValueException('hrTargetBpm', bpm);

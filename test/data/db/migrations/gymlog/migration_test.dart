@@ -13,6 +13,7 @@ import 'generated/schema_v5.dart' as v5;
 import 'generated/schema_v6.dart' as v6;
 import 'generated/schema_v7.dart' as v7;
 import 'generated/schema_v8.dart' as v8;
+import 'generated/schema_v9.dart' as v9;
 
 /// Migrations must keep every user data row (CLAUDE.md, rule 4).
 void main() {
@@ -774,6 +775,41 @@ void main() {
       },
     );
   });
+
+  test(
+    'migration from v8 to v9: profile kept, threshold empty (1.6.1)',
+    () async {
+      await verifier.testWithDataIntegrity(
+        oldVersion: 8,
+        newVersion: 9,
+        createOld: v8.DatabaseAtV8.new,
+        createNew: v9.DatabaseAtV9.new,
+        openTestedDatabase: AppDatabase.new,
+        createItems: (batch, oldDb) {
+          batch.insert(
+            oldDb.appSettings,
+            const v8.AppSettingsCompanion(
+              id: Value(1),
+              hrMax: Value(185),
+              birthYear: Value(1990),
+              sex: Value('male'),
+              hrWarnBpm: Value(176),
+              hrPauseBpm: Value(105),
+            ),
+          );
+        },
+        validateItems: (newDb) async {
+          final s = (await newDb.select(newDb.appSettings).get()).single;
+          expect(
+            (s.hrMax, s.birthYear, s.sex, s.hrWarnBpm, s.hrPauseBpm),
+            (185, 1990, 'male', 176, 105),
+          );
+          // The LSHF cannot be derived from the maximum: entered anew.
+          expect(s.hrThreshold, null);
+        },
+      );
+    },
+  );
 
   test('after the upgrade the app reads the old data and can group', () async {
     final schema = await verifier.schemaAt(1);

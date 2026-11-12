@@ -33,6 +33,7 @@ final class AppSettings {
     this.hrDeviceId,
     this.hrDeviceName,
     this.hrMax,
+    this.hrThreshold,
     this.birthYear,
     this.sex,
     this.hrWarnBpm,
@@ -121,9 +122,15 @@ final class AppSettings {
   /// Its name as advertised, e.g. "Forerunner 255".
   final String? hrDeviceName;
 
-  /// Heart rate profile (1.6.0, Körper tab): maximum heart rate (Garmin's
-  /// ranges are shares of it), birth year and sex (calories).
+  /// Maximum heart rate of 1.6.0; unused since 1.6.1 (the zones follow the
+  /// lactate threshold), kept because the column stays (rule 4).
   final int? hrMax;
+
+  /// Heart rate profile (1.6.1, Körper tab): lactate threshold heart rate
+  /// ("LSHF" at Garmin); the zones are shares of it.
+  final int? hrThreshold;
+
+  /// Birth year and sex: only for the calorie estimate.
   final int? birthYear;
   final Sex? sex;
 
@@ -133,9 +140,11 @@ final class AppSettings {
   /// "Pause nach Puls" ends below this; null = top of range 1.
   final int? hrPauseBpm;
 
-  /// The pause limit in use: own value or 60 % of the maximum.
+  /// The pause limit in use: own value or the top of zone 1 (67 % of the
+  /// threshold − 1).
   int? get pauseBpm =>
-      hrPauseBpm ?? (hrMax == null ? null : (hrMax! * 0.6).round());
+      hrPauseBpm ??
+      (hrThreshold == null ? null : (hrThreshold! * 0.67).round() - 1);
 
   AppSettings copyWith({
     int? defaultSets,
@@ -166,6 +175,7 @@ final class AppSettings {
     Object? hrDeviceId = unset,
     Object? hrDeviceName = unset,
     Object? hrMax = unset,
+    Object? hrThreshold = unset,
     Object? birthYear = unset,
     Object? sex = unset,
     Object? hrWarnBpm = unset,
@@ -207,6 +217,7 @@ final class AppSettings {
       hrDeviceId: pick<String?>(hrDeviceId, this.hrDeviceId),
       hrDeviceName: pick<String?>(hrDeviceName, this.hrDeviceName),
       hrMax: pick<int?>(hrMax, this.hrMax),
+      hrThreshold: pick<int?>(hrThreshold, this.hrThreshold),
       birthYear: pick<int?>(birthYear, this.birthYear),
       sex: pick<Sex?>(sex, this.sex),
       hrWarnBpm: pick<int?>(hrWarnBpm, this.hrWarnBpm),
@@ -246,6 +257,7 @@ final class AppSettings {
       other.hrDeviceId == hrDeviceId &&
       other.hrDeviceName == hrDeviceName &&
       other.hrMax == hrMax &&
+      other.hrThreshold == hrThreshold &&
       other.birthYear == birthYear &&
       other.sex == sex &&
       other.hrWarnBpm == hrWarnBpm &&
@@ -282,6 +294,7 @@ final class AppSettings {
     hrDeviceId,
     hrDeviceName,
     hrMax,
+    hrThreshold,
     birthYear,
     sex,
     hrWarnBpm,

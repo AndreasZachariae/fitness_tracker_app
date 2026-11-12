@@ -234,8 +234,52 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Training: Bereichsfarben, Warnung, Pause nach Puls, Cardio-Timer
   - [x] Zusammenfassung/Verlauf/Statistik: Bereiche, Erholungspuls, Kalorien, Wochenbelastung
   - [x] Tests, CHANGELOG, Testliste
+- [x] 1.6.1 Bugfixes und Laktatschwellen-Zonen (`docs/ROADMAP.md`, 1.6.1+24)
+  - [x] Zonen nach Laktatschwellen-Puls (LSHF, Garmin %LSHF: 57/67/79/90/101–113 %), überall „Zone“; Schema 9 (additiv:
+        `app_settings.hr_threshold`); Info-i am Eingabefeld mit Garmin-Pfad und Umstellung auf %LSHF
+  - [x] Profil-Dialog: Vorschläge direkt eingetragen (mit i), „Pause endet wenn Puls unter“, Geschlecht wählbar und
+        optional, Speichern ohne Jahr/Geschlecht; Speicherfehler (Dialog nutzt eigenes `ref`)
+  - [x] Pausen-Alarm nach „Training beenden“ (Pausen vor dem Beenden stoppen, Alarm prüft laufendes Training)
+  - [x] Puls-Grafiken so breit wie die Kacheln; Violinplot mit Max-Puls; Erholungspuls robuster
+  - [x] Info-Texte überall kürzen
+  - [x] Körper: Einträge auf eigener Seite; Buchungsseite im Browser testen
+  - [x] Update-APK: Download in der App mit Fortschritt in „Downloads“ (Android-Download-Manager), alte APKs löschen,
+        Installieren weiter von Hand; Backup ohne Ordnerwahl direkt in „Downloads“ (Ort ändern bleibt möglich)
+  - [x] Tests, CHANGELOG, Testliste
 
 ## Annahmen
+- **1.6.1 Zonen nach Laktatschwelle (Entscheidung des Menschen):** Statt des Maximalpulses wird der
+  Laktatschwellen-Puls (LSHF) eingetragen; Zonen wie Garmin „%LSHF“: Untergrenzen 57/67/79/90/101 %, Zone 5 bis 113 %,
+  gerundet, Obergrenze = nächste Untergrenze − 1; überall „Zone“. Schema 9 fügt nur `app_settings.hr_threshold` hinzu;
+  `hr_max` bleibt ungenutzt stehen (keine destruktive Migration). Die LSHF lässt sich nicht aus dem Maximalpuls ableiten
+  und muss nach dem Update einmal eingetragen werden; bis dahin keine Zonen, Belastung oder Zonen-Pulsziele. Die
+  Spalte `exercises.hr_target_range` und der Backup-Schlüssel `hrTargetRange` behalten ihren Namen (bedeuten jetzt die
+  Zone). Backup-Format 9.
+- **1.6.1 Vorschläge:** Warnung 107 % der LSHF (≈ 95 % des Maximalpulses), Pause „endet wenn Puls unter“ = Ende Zone 1
+  (66 %). Werden beim Eintippen der LSHF direkt eingetragen und folgen einer geänderten LSHF, solange sie nicht von Hand
+  geändert wurden. Eine Pause gleich dem Vorschlag wird nicht gespeichert (folgt der LSHF).
+- **1.6.1 Erholungspuls:** Eine Uhr am Handgelenk misst verzögert; −6 bpm entstand, weil der Puls eine Minute nach dem
+  Satz noch höher war. Jetzt: Spitze bis 45 s nach dem Satz gesucht, nur Sätze ab Zone 3, nicht wenn der nächste Satz
+  innerhalb der Minute beginnt, und nicht wenn der Puls nach 60 s höher ist als die Spitze. Bereits gespeicherte Werte
+  bleiben (die Reihe ist gelöscht).
+- **1.6.1 Pausen-Alarm nach dem Beenden:** Ursache: Die Pausen wurden erst nach dem Beenden gestoppt, wenn die
+  Trainingsseite schon weg sein konnte; die verdeckte Pausenleiste meinte dann beim Wechsel in den Hintergrund, die
+  Pause laufe noch. Jetzt werden Pausen, Alarm und Sperrbildschirm-Countdown vor dem Beenden gestoppt, und ein Alarm
+  wird nur gestellt, wenn laut Datenbank ein Training läuft.
+- **1.6.1 Update-Download (auf Wunsch des Menschen, CLAUDE.md Regel 6 angepasst):** Androids Download-Manager lädt die
+  APK von github.com nach `Download/GymLog`; Fortschritt in der App, Benachrichtigung „Download abgeschlossen“. Vor
+  einem neuen Download werden alle früheren APK-Downloads von GymLog samt Datei entfernt, beim App-Start ohne neuere
+  Version ebenso. Installieren macht der Nutzer durch Antippen (Benachrichtigung oder „Downloads öffnen“) – kein
+  `REQUEST_INSTALL_PACKAGES`, kein Speicher-Recht. Die Hänger bei 25/25 MB kamen vom Browser; ob der Download-Manager sie
+  vermeidet, zeigt der Test am Handy. Fehlschlag → „Erneut versuchen“ oder wie bisher im Browser. Vor Android 10 landet
+  die Datei im App-Ordner (Anzeige nennt trotzdem Download/GymLog; das Handy des Menschen hat Android 12+).
+- **1.6.1 Backup:** „Backup erstellen“ speichert ohne Rückfrage per MediaStore in `Download/GymLog`
+  (`gymlog-backup-….json`, bleibt bei einer Deinstallation erhalten) und sagt, wo die Datei liegt. „Backup teilen oder
+  anderswo speichern“ bietet Teilen und „Speichern unter …“. Alte Backups werden nicht gelöscht (klein, mehrere Stände
+  sind sicherer). CSV-Export: Auswahl mit „In Downloads speichern“ zusätzlich.
+- **1.6.1 Körper:** Die Einträge stehen auf einer eigenen Seite (Kachel „N Einträge“ unter den Kennzahlen); dort Tippen
+  = bearbeiten, Wischen = löschen mit Rückgängig.
+- **1.6.1 Changelog:** 1.6.0 wurde nie veröffentlicht; ihr Inhalt (mit 1.5.0/1.5.1) steht in [1.6.1].
 - **1.6.0 Entscheidungen des Menschen:** keine RR-Intervalle von der Uhr, HRV entfällt; Warnung im Puls-Profil (Körper),
   rot + Vibration höchstens alle 2 min; Pause nach Puls: Puls oder Zeit, was zuerst kommt, Grenze im Profil (Ende
   Bereich 1); Cardio: Bereich = innerhalb, bpm = mindestens; Erholungspuls, Wochenbelastung und Kalorien in
@@ -863,6 +907,18 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.6.1 Bugfixes und Laktatschwellen-Zonen
+Nur, was live ausprobiert werden muss; Zonen, Vorschläge, Speichern, Backup-Ablauf und Download-Anzeige sind automatisch getestet.
+- [ ] Körper → Puls-Profil → Eintragen: LSHF über den Weg im i (am Feld) in Garmin Connect finden und eintragen; Warnung und Pause erscheinen sofort, nichts verspringt; Geschlecht antippen hebt die Auswahl hervor; Speichern klappt auch ohne Geburtsjahr.
+- [ ] Auf der Uhr „Basiert auf: %LSHF“ einstellen: Die Zonen in GymLog stimmen mit denen der Uhr überein, die Pulsfarbe im Training auch.
+- [ ] Training mit laufender Pause beenden, App verlassen und warten: Es vibriert nichts mehr, keine Pausen-Benachrichtigung.
+- [ ] Zusammenfassung: Pulskurve und Pulsverteilung so breit wie die Kacheln darüber; rote „max.“-Linie im Violinplot; Erholungspuls nach ein paar harten Sätzen plausibel (positiv).
+- [ ] Info-i: Texte kurz genug? (Stichproben: Puls, Pulsverteilung, Zonen, Kraftindex)
+- [ ] Körper: Keine Liste mehr auf der Seite; „N Einträge“ öffnet die Liste.
+- [ ] Einstellungen → Automatische Buchung: Knopf neben der Adresse öffnet die Seite im Browser.
+- [ ] Update (DEV-App, sobald eine neuere DEV-Version veröffentlicht ist): „APK herunterladen“ zeigt den Fortschritt bis zum Ende (kein Hänger bei 25/25 MB?), danach „Gespeichert: Download/GymLog/…“; Datei über die Benachrichtigung oder „Downloads öffnen“ antippen und installieren. Play Protect meldet nichts. Beim nächsten Update liegt nur noch eine APK im Ordner.
+- [ ] Einstellungen → Daten → „Backup erstellen“: kein Dialog, Meldung mit dem Ort; Datei liegt in Download/GymLog (Dateien-App). „Backup teilen oder anderswo speichern“ funktioniert wie bisher.
 
 ### 1.6.0 Pulsbereiche, Cardio und Auswertungen
 Nur, was live ausprobiert werden muss; Rechnen, Speichern und Abläufe sind automatisch getestet.

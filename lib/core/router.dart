@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/body/body_entries_page.dart';
 import '../features/body/body_page.dart';
 import '../features/history/history_page.dart';
 import '../features/history/session_detail_page.dart';
@@ -30,6 +31,7 @@ abstract final class AppRoutes {
   static String historyDetail(int sessionId) => '/history/$sessionId';
   static const stats = '/stats';
   static const body = '/body';
+  static const bodyEntries = '/body/entries';
 
   /// Settings live above the shell (no navigation bar).
   static const settings = '/settings';
@@ -104,6 +106,12 @@ GoRouter createRouter({String initialLocation = AppRoutes.training}) {
               GoRoute(
                 path: AppRoutes.body,
                 builder: (context, state) => const BodyPage(),
+                routes: [
+                  GoRoute(
+                    path: 'entries',
+                    builder: (context, state) => const BodyEntriesPage(),
+                  ),
+                ],
               ),
             ],
           ),

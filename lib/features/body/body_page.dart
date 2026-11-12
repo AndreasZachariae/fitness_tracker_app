@@ -1,10 +1,12 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/clock.dart';
 import '../../core/format/formatters.dart';
 import '../../core/l10n/strings_de.dart';
+import '../../core/router.dart';
 import '../../core/theme/gym_colors.dart';
 import '../../core/theme/typography.dart';
 import '../../data/providers.dart';
@@ -14,7 +16,6 @@ import '../../domain/models/models.dart';
 import '../../domain/period.dart';
 import '../../widgets/charts.dart';
 import '../../widgets/confirm_dialog.dart';
-import '../../widgets/number_input_dialog.dart';
 import '../../widgets/snackbars.dart';
 import '../../widgets/tab_page.dart';
 import 'heart_rate_profile_card.dart';
@@ -30,56 +31,13 @@ class BodyPage extends ConsumerStatefulWidget {
 class _BodyPageState extends ConsumerState<BodyPage> {
   StatsPeriod _period = StatsPeriod.threeMonths;
 
-  /// Deleted entries hidden at once until the stream catches up.
-  final _hidden = <int>{};
-
   LocalDate get _today => LocalDate.fromDateTime(ref.read(clockProvider).now());
-
-  Future<void> _delete(BodyWeightEntry entry) async {
-    setState(() => _hidden.add(entry.id));
-    final repo = ref.read(bodyWeightRepositoryProvider);
-    try {
-      await repo.delete(entry.id);
-      if (!mounted) return;
-      showMessage(
-        context,
-        S.entryDeleted(formatShortDate(entry.date.toLocalDateTime())),
-        onUndo: () => repo.restore(entry).catchError((Object e) {
-          if (mounted) showError(context, e);
-        }),
-      );
-    } on Object catch (e) {
-      if (mounted) showError(context, e);
-    } finally {
-      if (mounted) setState(() => _hidden.remove(entry.id));
-    }
-  }
-
-  Future<void> _edit(BodyWeightEntry entry) async {
-    final kg = await showNumberInputDialog<double>(
-      context,
-      title:
-          '${S.editEntry} · ${formatShortDate(entry.date.toLocalDateTime())}',
-      initialText: formatDecimal1(entry.weightKg),
-      decimal: true,
-      parse: _parseBodyWeight,
-    );
-    if (kg == null) return;
-    try {
-      await ref.read(bodyWeightRepositoryProvider).save(entry.date, kg);
-    } on Object catch (e) {
-      if (mounted) showError(context, e);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final all = ref.watch(bodyWeightsProvider).value;
     final today = LocalDate.fromDateTime(ref.watch(clockProvider).now());
-    final entries = [
-      for (final e in all ?? const <BodyWeightEntry>[])
-        if (!_hidden.contains(e.id)) e,
-    ];
+    final entries = all ?? const <BodyWeightEntry>[];
     final smoothed = movingAverage7(entries);
     final stats = bodyWeightStats(smoothed, _period, today);
     final inPeriod = [
@@ -91,51 +49,44 @@ class _BodyPageState extends ConsumerState<BodyPage> {
       title: S.tabBody,
       body: all == null
           ? const SizedBox.shrink()
-          : ListView.builder(
+          : ListView(
               padding: const EdgeInsets.only(bottom: 24),
-              itemCount: entries.length + 5,
-              itemBuilder: (context, i) => switch (i) {
-                0 => _InputCard(
+              children: [
+                _InputCard(
                   lastWeight: entries.isEmpty ? null : entries.first.weightKg,
                   today: _today,
                 ),
-                1 => Padding(
+                Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                   child: PeriodSelector(
                     value: _period,
                     onChanged: (p) => setState(() => _period = p),
                   ),
                 ),
-                2 => Column(
-                  children: [
-                    _WeightChart(data: inPeriod, hasAny: entries.isNotEmpty),
-                    if (entries.isNotEmpty) _StatsRow(stats: stats),
-                  ],
-                ),
-                // 1.6.0: maximum heart rate, ranges, warning, pause limit.
-                3 => const HeartRateProfileCard(),
-                4 =>
-                  entries.isEmpty
-                      ? const SizedBox.shrink()
-                      : Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                          child: Text(
-                            S.bodyEntries,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                _ => _EntryTile(
-                  entry: entries[i - 5],
-                  onDelete: _delete,
-                  onTap: _edit,
-                ),
-              },
+                _WeightChart(data: inPeriod, hasAny: entries.isNotEmpty),
+                if (entries.isNotEmpty) ...[
+                  _StatsRow(stats: stats),
+                  // 1.6.1: the entries on their own page.
+                  Card(
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: ListTile(
+                      key: const ValueKey('body-entries'),
+                      leading: const Icon(Icons.list_alt),
+                      title: Text(S.bodyEntriesCount(entries.length)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push(AppRoutes.bodyEntries),
+                    ),
+                  ),
+                ],
+                // 1.6.0: heart rate profile (1.6.1: zones after the LSHF).
+                const HeartRateProfileCard(),
+              ],
             ),
     );
   }
 }
 
-double? _parseBodyWeight(String text) {
+double? parseBodyWeight(String text) {
   final v = parseDecimal(text);
   if (v == null ||
       v < BodyWeightRepository.minKg ||
@@ -195,7 +146,7 @@ class _InputCardState extends ConsumerState<_InputCard> {
   }
 
   Future<void> _save() async {
-    final kg = _parseBodyWeight(_controller.text);
+    final kg = parseBodyWeight(_controller.text);
     if (kg == null) return setState(() => _error = S.errorBodyWeight);
     setState(() {
       _error = null;
@@ -449,48 +400,6 @@ class _Stat extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _EntryTile extends StatelessWidget {
-  const _EntryTile({
-    required this.entry,
-    required this.onDelete,
-    required this.onTap,
-  });
-
-  final BodyWeightEntry entry;
-  final ValueChanged<BodyWeightEntry> onDelete;
-  final ValueChanged<BodyWeightEntry> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Dismissible(
-      key: ValueKey(entry.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24),
-        color: theme.colorScheme.errorContainer,
-        child: Icon(
-          Icons.delete_outline,
-          color: theme.colorScheme.onErrorContainer,
-        ),
-      ),
-      onDismissed: (_) => onDelete(entry),
-      child: ListTile(
-        title: Text(
-          formatKg1(entry.weightKg),
-          style: NumberStyles.small.copyWith(
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        subtitle: Text(formatWeekdayDate(entry.date.toLocalDateTime())),
-        trailing: const Icon(Icons.edit_outlined, size: 20),
-        onTap: () => onTap(entry),
       ),
     );
   }

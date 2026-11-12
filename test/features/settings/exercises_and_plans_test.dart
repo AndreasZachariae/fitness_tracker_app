@@ -321,10 +321,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(info);
       await tester.pumpAndSettle();
-      expect(find.textContaining('auch rückwirkend'), findsOneWidget);
+      expect(find.textContaining('neu berechnet'), findsOneWidget);
       await tester.tap(find.text(S.ok));
       await tester.pumpAndSettle();
-      expect(find.textContaining('auch rückwirkend'), findsNothing);
+      expect(find.textContaining('neu berechnet'), findsNothing);
       await disposeApp(tester, db);
     });
 

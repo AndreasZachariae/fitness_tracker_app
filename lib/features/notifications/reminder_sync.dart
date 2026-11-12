@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/notifications.dart';
 import '../../core/router.dart';
 import '../../data/notifications/reminder_service.dart';
+import '../../data/notifications/update_checker.dart';
 import '../../data/providers.dart';
 import '../../domain/models/models.dart';
 
@@ -118,7 +119,12 @@ class _ReminderSyncState extends ConsumerState<ReminderSync>
       // A new version: notification and the blue dot on the gear; the
       // user opens the update page when it suits (1.3.1, before the page
       // opened by itself).
-      await ref.read(updateCheckerProvider).checkIfDue(force: appStarted);
+      final checker = ref.read(updateCheckerProvider);
+      await checker.checkIfDue(force: appStarted);
+      // Installed: the downloaded APK is not needed any more (1.6.1).
+      if (appStarted && await checker.lastResult() is UpToDate && mounted) {
+        await ref.read(apkDownloaderProvider).removeAll();
+      }
     } on Object catch (e) {
       debugPrint('Update check failed: $e');
     }

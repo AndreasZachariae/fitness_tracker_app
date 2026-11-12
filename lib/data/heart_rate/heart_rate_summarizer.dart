@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../domain/heart_rate.dart';
-import '../../domain/heart_rate_ranges.dart';
+import '../../domain/heart_rate_zones.dart';
 import '../../domain/models/models.dart';
 
 // Plain SQL on purpose: also used by the migration to schema 7, which must
@@ -16,8 +16,9 @@ DateTime _time(Object? value) => switch (value) {
 /// Turns the buffered heart rate of a finished training into what is kept
 /// (1.5.1): set, exercise and training summaries; then empties the buffer.
 /// Without samples nothing happens. [schema8]: also the heart rate recovery
-/// and the time in the warm-up target (1.6.0); false only in the migration
-/// to schema 7, before those columns exist.
+/// and the time in the warm-up target (1.6.0, zones after the threshold
+/// since 1.6.1); false only in the migration to schema 7, before those
+/// columns exist.
 Future<void> summarizeSessionHeartRate(
   DatabaseConnectionUser db,
   int sessionId, {
@@ -51,14 +52,14 @@ Future<void> summarizeSessionHeartRate(
   ].where((s) => end == null || !s.recordedAt.isAfter(end)).toList();
   if (samples.isNotEmpty) {
     // Heart rate profile and warm-up targets (1.6.0).
-    int? hrMax;
-    final targets = <int, ({int? range, int? bpm})>{};
+    int? threshold;
+    final targets = <int, ({int? zone, int? bpm})>{};
     if (schema8) {
-      hrMax =
+      threshold =
           (await db
-                  .customSelect('SELECT hr_max FROM app_settings LIMIT 1')
+                  .customSelect('SELECT hr_threshold FROM app_settings LIMIT 1')
                   .getSingleOrNull())
-              ?.readNullable<int>('hr_max');
+              ?.readNullable<int>('hr_threshold');
       for (final row
           in await db
               .customSelect(
@@ -69,10 +70,10 @@ Future<void> summarizeSessionHeartRate(
                 variables: [Variable.withInt(sessionId)],
               )
               .get()) {
-        final range = row.readNullable<int>('hr_target_range');
+        final zone = row.readNullable<int>('hr_target_range');
         final bpm = row.readNullable<int>('hr_target_bpm');
-        if (range != null || bpm != null) {
-          targets[row.read<int>('id')] = (range: range, bpm: bpm);
+        if (zone != null || bpm != null) {
+          targets[row.read<int>('id')] = (zone: zone, bpm: bpm);
         }
       }
     }
@@ -125,9 +126,9 @@ Future<void> summarizeSessionHeartRate(
                 samples,
                 from: end.subtract(Duration(seconds: sorted[i].durationSec!)),
                 to: end,
-                range: target.range,
+                zone: target.zone,
                 targetBpm: target.bpm,
-                hrMax: hrMax,
+                threshold: threshold,
               ),
               sorted[i].id,
             ],
@@ -159,7 +160,10 @@ Future<void> summarizeSessionHeartRate(
       if (schema8) {
         await db.customStatement(
           'UPDATE session_heart_rates SET recovery_bpm = ? WHERE session_id = ?',
-          [heartRateRecovery(samples, allWindows, hrMax: hrMax), sessionId],
+          [
+            heartRateRecovery(samples, allWindows, threshold: threshold),
+            sessionId,
+          ],
         );
       }
     }

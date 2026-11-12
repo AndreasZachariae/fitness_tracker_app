@@ -48,8 +48,9 @@ Version 1.0 der Spezifikation. Verbindlich für die Umsetzung. Abschnittsnummern
 - Debug-Signatur: Standard-Debug-Keystore unter `~/.android` (liegt im Docker-Volume).
 - Manifest: Permission `VIBRATE`; ab 1.0.1 zusätzlich `USE_EXACT_ALARM` und `SCHEDULE_EXACT_ALARM` (nur Android 12) für die
   Pausen-Vibration im Hintergrund (§6.2.1); ab 1.2.0 `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED` (Erinnerungen, nach
-  Neustart neu geplant) und `INTERNET` nur für die Abfrage der neuesten GitHub-Release (abschaltbar). Kein
-  `REQUEST_INSTALL_PACKAGES`: Eine App, die selbst APKs lädt und installiert, blockiert Play Protect als schädlich.
+  Neustart neu geplant) und `INTERNET` nur für die Abfrage der neuesten GitHub-Release (abschaltbar) und ab 1.6.1 den
+  angetippten APK-Download von github.com über Androids Download-Manager. Kein `REQUEST_INSTALL_PACKAGES` und kein
+  Speicher-Recht: Eine App, die selbst APKs installiert, blockiert Play Protect als schädlich.
 - Benachrichtigungen (ab 1.2.0, alle einzeln abschaltbar unter Einstellungen → Benachrichtigungen): Abend vorher (Standard
   20:00) mit Knopf „Slot buchen“ (öffnet die Buchungsseite im Browser), vor dem Training (Standard 60 min) mit
   Motivationsspruch, Pause als Countdown auf dem Sperrbildschirm, „Training noch offen“ 3 h nach dem letzten Satz,
@@ -242,27 +243,34 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
 - Backup-Format 7 mit Zusammenfassungen (und dem Puffer eines laufenden Trainings); CSV: `hr_avg_bpm`/`hr_peak_bpm` in
   `sets.csv`, `hr_avg_bpm`/`hr_max_bpm` in `sessions.csv`. Der gespeicherte Pulsmesser ist Gerätezustand, nicht im Backup.
 
-#### 6.2.0a Pulsbereiche, Cardio und Auswertungen (ab 1.6.0)
+#### 6.2.0a Pulszonen, Cardio und Auswertungen (ab 1.6.0, Zonen nach Laktatschwelle ab 1.6.1)
 
-- **Puls-Profil** im Tab Körper: Maximalpuls (Info-i: wo er in Garmin Connect steht), Geburtsjahr, Geschlecht,
-  „Warnung bei hohem Puls ab …“ (leer = aus, Vorschlag 95 %), „Pause nach Puls endet unter …“ (leer = Ende Bereich 1,
-  60 %). Daraus Garmins Pulsbereiche 1–5 (50/60/70/80/90 % des Maximalpulses) in Garmins Farben (grau, blau, grün,
-  orange, rot). Bewusst „Bereich“, nicht „Zone“: klassisches Zone-2-Training bezieht sich auf die erste Laktatschwelle.
-- **Training:** Pulsanzeige in der Farbe des Bereichs; ab der Warngrenze rot hinterlegt, Vibration (2 × lang),
+- **Puls-Profil** im Tab Körper (Dialog „Eintragen/Bearbeiten“): Laktatschwellen-Puls LSHF (Info-i im Feld: Weg in
+  Garmin Connect „Mehr › Garmin-Geräte › Uhr › Benutzerprofil › Herzfrequenz- und Leistungsbereiche › Herzfrequenz“
+  und Umstellung der Uhr auf „Basiert auf: %LSHF“), „Warnung ab“ (leer = aus, Vorschlag 107 % der LSHF), „Pause endet
+  wenn Puls unter“ (Vorschlag Ende Zone 1); beide Vorschläge werden beim Eintippen der LSHF direkt eingetragen (Info-i
+  mit dem Prozentsatz). Geburtsjahr und Geschlecht freiwillig (nur für Kalorien). Zonen 1–5 wie Garmin %LSHF:
+  Untergrenzen 57/67/79/90/101 %, Zone 5 bis 113 %, in Garmins Farben (grau, blau, grün, orange, rot). Alles heißt
+  „Zone“. Der Maximalpuls aus 1.6.0 (`hr_max`) wird nicht mehr genutzt.
+- **Training:** Pulsanzeige in der Farbe der Zone; ab der Warngrenze rot hinterlegt, Vibration (2 × lang),
   höchstens alle 2 Minuten.
 - **Pause nach Puls** (Haken je Übung): Die Pause endet, sobald der Puls unter die Grenze fällt (frühestens nach 30 s)
   oder die Pausenzeit abläuft; die Leiste zeigt „♥ < 111“. Im Hintergrund gilt nur die Zeit.
-- **Aufwärmen/Cardio:** Zeitübung mit Pulsziel (Bereich 1–5 oder mindestens X bpm) für X Minuten. Mit Pulsmesser zählt
-  ein eigener Timer nur die Zeit im Ziel (Bereich: innerhalb, bpm: mindestens), meldet „Ziel erreicht“, vibriert und
+- **Aufwärmen/Cardio:** Zeitübung mit Pulsziel (Zone 1–5 oder mindestens X bpm) für X Minuten. Mit Pulsmesser zählt
+  ein eigener Timer nur die Zeit im Ziel (Zone: innerhalb, bpm: mindestens), meldet „Ziel erreicht“, vibriert und
   übernimmt die Gesamtdauer; ohne Pulsmesser Countdown der Minuten. Beim Beenden wird die Zeit im Ziel je Satz
   gespeichert (`set_entries.hr_target_sec`). Kein eigener Typ und keine eigene Kategorie (Regel 4: die Werte von Typ
   und Kategorie sind in der Tabelle festgelegt).
-- **Zusammenfassung/Verlauf:** Zeit in Pulsbereichen (Balken und Liste), Erholungspuls (Ø-Abfall 60 s nach dem
-  Spitzenpuls harter Sätze, ab 70 % des Maximalpulses), Kalorien (Keytel et al. 2005: Ø-Puls, Dauer, Körpergewicht am
-  nächsten zum Trainingstag, Alter, Geschlecht), jeweils mit Info-i.
-- **Statistik → Gesamt:** Erholungspuls je Training, Wochenbelastung (Edwards-TRIMP: Σ Minuten in Bereich i × i),
+- **Zusammenfassung/Verlauf:** Zeit in Pulszonen (Balken und Liste), Pulsverteilung mit roter Linie am Maximalpuls des
+  Trainings, Erholungspuls (Ø-Abfall 60 s nach dem Spitzenpuls harter Sätze ab Zone 3; Spitze bis 45 s nach dem Satz,
+  ohne Sätze, deren nächster Satz innerhalb der Minute beginnt, und ohne Anstieg), Kalorien (Keytel et al. 2005: Ø-Puls, Dauer, Körpergewicht am
+  nächsten zum Trainingstag, Alter, Geschlecht; ohne Jahr/Geschlecht ein Hinweis), jeweils mit kurzem Info-i. Die
+  Grafiken sind so breit wie die Kacheln darüber.
+- **Statistik → Gesamt:** Erholungspuls je Training, Wochenbelastung (Edwards-TRIMP: Σ Minuten in Zone i × i),
   Kalorien je Woche – jeweils mit Info-i zu Berechnung und Aussage.
-- Backup-Format 8 enthält Profil, Übungsoptionen, Zeit im Ziel und Erholungspuls.
+- Backup-Format 8 enthält Profil, Übungsoptionen, Zeit im Ziel und Erholungspuls; Format 9 (Schema 9) zusätzlich die
+  LSHF (`hrThreshold`).
+- Info-Texte (ab 1.6.1) so kurz wie möglich: ein bis zwei Sätze, was der Wert zeigt.
 
 #### 6.2.1 Pausentimer
 
@@ -334,7 +342,8 @@ Der Zeitraum schneidet nur die Anzeige zu; Berechnungen nutzen immer die gesamte
   (Tap → DatePicker, keine Zukunft), Button „Speichern“. Existiert für das Datum ein Eintrag: „Eintrag vom 3.11. überschreiben?“
 - Diagramm: Messpunkte + Linie gleitender 7-Tage-Durchschnitt (§7.8), Zeitraum wie in 6.5.
   Kennzahlen: aktuell (Ø 7 Tage), Veränderung über 30 Tage, Minimum/Maximum im Zeitraum.
-- Liste der Einträge (neueste zuerst). Wisch → löschen mit „Rückgängig“, Tap → bearbeiten.
+- Ab 1.6.1 Kachel „N Einträge“ unter den Kennzahlen → eigene Seite mit der Liste der Einträge (neueste zuerst).
+  Wisch → löschen mit „Rückgängig“, Tap → bearbeiten. (Später kommen hier weitere Werte einer Körperwaage dazu.)
 
 ### 6.7 Einstellungen
 
@@ -355,7 +364,8 @@ der Startseite (nur wenn es Trainings gibt).
 - **Training:** Standard-Satzanzahl, Standard-Pause (s), Pausentimer an/aus, Vibration an/aus, Display anlassen,
   Nächste Übung automatisch aktivieren.
 - **Darstellung:** System / Hell / Dunkel.
-- **Daten:** „CSV exportieren“, „Backup erstellen“, „Backup wiederherstellen“, „Letztes Backup: 3.11.2026, 18:20“,
+- **Daten:** „CSV exportieren“, „Backup erstellen“ (ab 1.6.1 ohne Rückfrage nach `Download/GymLog`, Meldung mit dem
+  Ort), „Backup teilen oder anderswo speichern“ (Teilen, „Speichern unter …“), „Backup wiederherstellen“, „Letztes Backup: 3.11.2026, 18:20“,
   Backup-Erinnerung (Tage, 0 = aus). Ab 1.0.1 steht hier unter „Daten“ der gelbe Hinweis „Letztes Backup vor … Tagen“
   mit „Backup erstellen“, sobald die Erinnerung fällig ist.
 - **Über:** „Nach Updates suchen“ (ab 1.2.1, Antippen sucht sofort; neue Version → Hinweis und „Update ansehen“),
@@ -366,8 +376,12 @@ der Startseite (nur wenn es Trainings gibt).
   (verglichen über den Zähler in `X.Y.Z-dev.N`). Eine neue Version wird einmal gemeldet; solange sie bereitsteht, zeigen
   Zahnrad und „Über“ einen blauen Punkt. Die Seite öffnet sich ab 1.3.1 nicht mehr von selbst, sondern über die
   Benachrichtigung oder Einstellungen → Über („Update ansehen“). Die Seite
-  zeigt Version, Neuerungen (aufgeklappt), „APK herunterladen“ (öffnet die APK im Browser; installiert wird durch
-  Antippen der Datei) und „Auf GitHub ansehen“.
+  zeigt Version, Neuerungen (aufgeklappt), „APK herunterladen“ und „Auf GitHub ansehen“. Ab 1.6.1 lädt Androids
+  Download-Manager die APK nach `Download/GymLog` (vorher öffnete der Browser sie); die Seite zeigt den Fortschritt
+  („12,3 von 25,0 MB“), danach den Dateinamen und „Downloads öffnen“. Installiert wird durch Antippen der Datei
+  (Benachrichtigung oder Downloads). Frühere GymLog-APK-Downloads werden vor einem neuen Download und beim Start ohne
+  neuere Version gelöscht. Fehlschlag → „Erneut versuchen“ oder „Im Browser herunterladen“.
+- **Automatische Buchung:** Adresse der Buchungsseite, ab 1.6.1 mit Knopf „Im Browser öffnen“ zum Testen.
 - **Nur im Dev-Build** (`de.gymlog.app.dev`): „Demo-Daten erzeugen“ und „Alle Daten löschen“ (mit Bestätigung).
 
 ## 7. Logik und Formeln (Domain, reines Dart, mit Tabellentests)
@@ -433,7 +447,8 @@ Kopfzeile, Quoting nach RFC 4180, leeres Feld für null, Zeitpunkte ISO 8601 mit
 - `exercises.csv`: `exercise_id, name, type, category, increment_kg, include_in_strength_index, archived, notes` (ab 1.1.0
   zusätzlich `step_mode, increment_lbs, level_kg`)
 
-Nur abgeschlossene Sessions. Ausgabe über das Teilen-Menü; zusätzlich „Speichern unter …“ über den System-Dateidialog.
+Nur abgeschlossene Sessions. Ausgabe über das Teilen-Menü; zusätzlich „Speichern unter …“ über den System-Dateidialog
+und ab 1.6.1 „In Downloads speichern“ (`Download/GymLog`).
 
 ### 8.2 JSON-Backup
 Datei `gymlog-backup-YYYY-MM-DD-HHmm.json`:

@@ -23,6 +23,7 @@ import '../../../widgets/snackbars.dart';
 import '../../../widgets/ticker.dart';
 import '../../settings/exercises/exercise_form_page.dart';
 import '../exercise_picker_sheet.dart';
+import 'background_timer.dart';
 import 'rest_timer_bar.dart';
 import 'session_tiles.dart';
 import 'set_edit_dialog.dart';
@@ -313,10 +314,15 @@ class _SessionViewState extends ConsumerState<SessionView>
   WeightStep _stepOf(Exercise e) =>
       weightStepOf(e, ref.read(settingsProvider).value ?? AppSettings.defaults);
 
-  /// No rest bar or rest vibration after the training ends (1.0.1).
-  void _stopRest(List<SessionExerciseDetail> details) => ref
-      .read(restTimerProvider.notifier)
-      .skipAll([for (final d in details) ...d.sets.map((s) => s.id)]);
+  /// No rest bar or rest vibration after the training ends (1.0.1). Called
+  /// before the training ends, while this view is still alive (1.6.1); also
+  /// removes a rest alarm already handed to Android.
+  void _stopRest(List<SessionExerciseDetail> details) {
+    ref.read(restTimerProvider.notifier).skipAll([
+      for (final d in details) ...d.sets.map((s) => s.id),
+    ]);
+    unawaited(takeTimerBack(ref, restNotificationIds));
+  }
 
   /// "Beenden" (SPEC §6.3).
   Future<void> _finish(List<SessionExerciseDetail> details) async {
@@ -349,8 +355,8 @@ class _SessionViewState extends ConsumerState<SessionView>
     }
     setState(() => _finishing = true);
     try {
-      await repo.finishSession(_session.id);
       _stopRest(details);
+      await repo.finishSession(_session.id);
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         await context.push(AppRoutes.summary(_session.id));

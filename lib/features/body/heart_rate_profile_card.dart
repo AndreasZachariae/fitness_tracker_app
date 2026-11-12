@@ -5,14 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/clock.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../data/providers.dart';
-import '../../domain/heart_rate_ranges.dart';
+import '../../domain/heart_rate_zones.dart';
 import '../../domain/models/models.dart';
 import '../../widgets/info_button.dart';
 import '../../widgets/settings_section.dart';
-import '../heart_rate/range_colors.dart';
+import '../heart_rate/zone_colors.dart';
 
-/// Körper → "Puls-Profil" (1.6.0): maximum heart rate with Garmin's ranges,
-/// birth year and sex (calories), warning and pause limit.
+/// Körper → "Puls-Profil" (1.6.0; 1.6.1: zones after the lactate threshold
+/// heart rate): zones, warning and pause limit, birth year and sex.
 class HeartRateProfileCard extends ConsumerWidget {
   const HeartRateProfileCard({super.key});
 
@@ -24,7 +24,7 @@ class HeartRateProfileCard extends ConsumerWidget {
     final muted = theme.textTheme.bodyMedium?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
-    final hrMax = s.hrMax;
+    final threshold = s.hrThreshold;
     final now = ref.watch(clockProvider).now();
 
     Widget row(String label, String value) => Padding(
@@ -50,22 +50,28 @@ class HeartRateProfileCard extends ConsumerWidget {
                 Expanded(
                   child: Text(S.hrProfile, style: theme.textTheme.titleMedium),
                 ),
-                const InfoButton(title: S.hrMax, text: S.hrMaxInfo),
                 TextButton(
-                  onPressed: () => showHeartRateProfileDialog(context, ref, s),
-                  child: Text(hrMax == null ? S.hrProfileSet : S.hrProfileEdit),
+                  // The dialog uses its own ref: this card may leave the
+                  // screen (and be disposed) while the keyboard is open.
+                  onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => const HeartRateProfileDialog(),
+                  ),
+                  child: Text(
+                    threshold == null ? S.hrProfileSet : S.hrProfileEdit,
+                  ),
                 ),
               ],
             ),
             Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: hrMax == null
+              child: threshold == null
                   ? Text(S.hrProfileEmpty, style: muted)
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        row(S.hrMax, '$hrMax ${S.unitBpm}'),
-                        for (final r in garminRanges(hrMax).reversed)
+                        row(S.hrThreshold, '$threshold ${S.unitBpm}'),
+                        for (final z in heartRateZones(threshold).reversed)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 2),
                             child: Row(
@@ -74,14 +80,14 @@ class HeartRateProfileCard extends ConsumerWidget {
                                   width: 12,
                                   height: 12,
                                   decoration: BoxDecoration(
-                                    color: rangeColor(r.number),
+                                    color: zoneColor(z.number),
                                     borderRadius: BorderRadius.circular(3),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Expanded(child: Text(S.hrRange(r.number))),
+                                Expanded(child: Text(S.hrZone(z.number))),
                                 Text(
-                                  S.hrRangeBpm(r.from, r.to),
+                                  S.hrZoneBpm(z.from, z.to),
                                   style: const TextStyle(
                                     fontFeatures: [
                                       FontFeature.tabularFigures(),
@@ -96,7 +102,7 @@ class HeartRateProfileCard extends ConsumerWidget {
                           S.hrWarn,
                           s.hrWarnBpm == null
                               ? S.hrWarnOff
-                              : S.hrWarnAbove(s.hrWarnBpm!),
+                              : '${s.hrWarnBpm} ${S.unitBpm}',
                         ),
                         row(S.hrPause, '${s.pauseBpm} ${S.unitBpm}'),
                         row(
@@ -117,45 +123,51 @@ class HeartRateProfileCard extends ConsumerWidget {
   }
 }
 
-/// The profile form.
-Future<void> showHeartRateProfileDialog(
-  BuildContext context,
-  WidgetRef ref,
-  AppSettings s,
-) => showDialog<void>(
-  context: context,
-  builder: (_) => _ProfileDialog(initial: s, ref: ref),
-);
-
-class _ProfileDialog extends StatefulWidget {
-  const _ProfileDialog({required this.initial, required this.ref});
-
-  final AppSettings initial;
-  final WidgetRef ref;
+/// The profile form. Warning and pause limit are filled with the
+/// suggestions as soon as the threshold is known (and not changed by hand).
+class HeartRateProfileDialog extends ConsumerStatefulWidget {
+  const HeartRateProfileDialog({super.key});
 
   @override
-  State<_ProfileDialog> createState() => _ProfileDialogState();
+  ConsumerState<HeartRateProfileDialog> createState() =>
+      _HeartRateProfileDialogState();
 }
 
-class _ProfileDialogState extends State<_ProfileDialog> {
-  late final _max = TextEditingController(
-    text: widget.initial.hrMax?.toString() ?? '',
+class _HeartRateProfileDialogState
+    extends ConsumerState<HeartRateProfileDialog> {
+  late final AppSettings _initial =
+      ref.read(settingsProvider).value ?? AppSettings.defaults;
+  late final _threshold = TextEditingController(
+    text: _initial.hrThreshold?.toString() ?? '',
   );
   late final _birth = TextEditingController(
-    text: widget.initial.birthYear?.toString() ?? '',
+    text: _initial.birthYear?.toString() ?? '',
   );
   late final _warn = TextEditingController(
-    text: widget.initial.hrWarnBpm?.toString() ?? '',
+    text:
+        (_initial.hrWarnBpm ??
+                (_initial.hrThreshold == null
+                    ? null
+                    : defaultWarnBpm(_initial.hrThreshold!)))
+            ?.toString() ??
+        '',
   );
   late final _pause = TextEditingController(
-    text: widget.initial.hrPauseBpm?.toString() ?? '',
+    text: _initial.pauseBpm?.toString() ?? '',
   );
-  late Sex? _sex = widget.initial.sex;
+  late Sex? _sex = _initial.sex;
   bool _tried = false;
+  bool _saving = false;
+
+  /// The suggestions last filled in; replaced while not edited by hand.
+  late String? _warnSuggested = _warn.text.isEmpty ? null : _warn.text;
+  late String? _pauseSuggested = _initial.hrPauseBpm == null
+      ? _pause.text
+      : null;
 
   @override
   void dispose() {
-    _max.dispose();
+    _threshold.dispose();
     _birth.dispose();
     _warn.dispose();
     _pause.dispose();
@@ -165,10 +177,25 @@ class _ProfileDialogState extends State<_ProfileDialog> {
   int? _int(TextEditingController c) => int.tryParse(c.text.trim());
   bool _empty(TextEditingController c) => c.text.trim().isEmpty;
 
-  String? get _maxError {
-    final v = _int(_max);
-    if (_empty(_max)) return null;
-    return v == null || v < 100 || v > 250 ? S.errorHrMax : null;
+  void _onThreshold(String _) {
+    final t = _int(_threshold);
+    if (t != null && t >= 80 && t <= 230) {
+      final warn = '${defaultWarnBpm(t)}';
+      final pause = '${defaultPauseBpm(t)}';
+      if (_empty(_warn) || _warn.text == _warnSuggested) _warn.text = warn;
+      if (_empty(_pause) || _pause.text == _pauseSuggested) {
+        _pause.text = pause;
+      }
+      _warnSuggested = warn;
+      _pauseSuggested = pause;
+    }
+    setState(() {});
+  }
+
+  String? get _thresholdError {
+    final v = _int(_threshold);
+    if (_empty(_threshold)) return null;
+    return v == null || v < 80 || v > 230 ? S.errorHrThreshold : null;
   }
 
   String? get _birthError {
@@ -177,28 +204,34 @@ class _ProfileDialogState extends State<_ProfileDialog> {
     return v == null || v < 1900 || v > 2100 ? S.errorBirthYear : null;
   }
 
-  String? _bpmError(TextEditingController c, int min) {
+  String? _bpmError(TextEditingController c, int min, int max) {
     final v = _int(c);
     if (_empty(c)) return null;
-    return v == null || v < min || v > 250 ? S.errorBpm : null;
+    return v == null || v < min || v > max ? S.errorBpm : null;
   }
 
   bool get _valid =>
-      _maxError == null &&
+      _thresholdError == null &&
       _birthError == null &&
-      _bpmError(_warn, 60) == null &&
-      _bpmError(_pause, 40) == null;
+      _bpmError(_warn, 60, 250) == null &&
+      _bpmError(_pause, 40, 220) == null;
 
   Future<void> _save() async {
     setState(() => _tried = true);
-    if (!_valid) return;
-    await settingsUpdater(context, widget.ref)(
+    if (!_valid || _saving) return;
+    setState(() => _saving = true);
+    final threshold = _int(_threshold);
+    final pause = _int(_pause);
+    await settingsUpdater(context, ref)(
       (s) => s.copyWith(
-        hrMax: _int(_max),
+        hrThreshold: threshold,
         birthYear: _int(_birth),
         sex: _sex,
         hrWarnBpm: _int(_warn),
-        hrPauseBpm: _int(_pause),
+        // The suggestion is not stored: it follows a changed threshold.
+        hrPauseBpm: threshold != null && pause == defaultPauseBpm(threshold)
+            ? null
+            : pause,
       ),
     );
     if (mounted) Navigator.pop(context);
@@ -206,16 +239,18 @@ class _ProfileDialogState extends State<_ProfileDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final max = _int(_max);
     final digits = [FilteringTextInputFormatter.digitsOnly];
-    InputDecoration deco(String label, {String? hint, String? error}) =>
-        InputDecoration(
-          labelText: label,
-          helperText: hint,
-          helperMaxLines: 2,
-          errorText: _tried ? error : null,
-          suffixText: label == S.hrBirthYear ? null : S.unitBpm,
-        );
+    InputDecoration deco(
+      String label, {
+      String? error,
+      Widget? info,
+      bool bpm = true,
+    }) => InputDecoration(
+      labelText: label,
+      errorText: _tried ? error : null,
+      suffixText: bpm ? S.unitBpm : null,
+      suffixIcon: info,
+    );
     return AlertDialog(
       title: const Text(S.hrProfile),
       scrollable: true,
@@ -224,12 +259,19 @@ class _ProfileDialogState extends State<_ProfileDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
-            key: const ValueKey('hr-max'),
-            controller: _max,
+            key: const ValueKey('hr-threshold'),
+            controller: _threshold,
             keyboardType: TextInputType.number,
             inputFormatters: digits,
-            decoration: deco(S.hrMax, error: _maxError),
-            onChanged: (_) => setState(() {}),
+            decoration: deco(
+              S.hrThreshold,
+              error: _thresholdError,
+              info: const InfoButton(
+                title: S.hrThreshold,
+                text: S.hrThresholdInfo,
+              ),
+            ),
+            onChanged: _onThreshold,
           ),
           const SizedBox(height: 8),
           TextField(
@@ -239,10 +281,11 @@ class _ProfileDialogState extends State<_ProfileDialog> {
             inputFormatters: digits,
             decoration: deco(
               S.hrWarn,
-              hint: max == null || max < 100
-                  ? null
-                  : S.hrWarnHint(defaultWarnBpm(max)),
-              error: _bpmError(_warn, 60),
+              error: _bpmError(_warn, 60, 250),
+              info: InfoButton(
+                title: S.hrWarn,
+                text: S.hrWarnInfo((warnShare * 100).round()),
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -253,10 +296,8 @@ class _ProfileDialogState extends State<_ProfileDialog> {
             inputFormatters: digits,
             decoration: deco(
               S.hrPause,
-              hint: max == null || max < 100
-                  ? null
-                  : S.hrPauseHint(defaultPauseBpm(max)),
-              error: _bpmError(_pause, 40),
+              error: _bpmError(_pause, 40, 220),
+              info: const InfoButton(title: S.hrPause, text: S.hrPauseInfo),
             ),
           ),
           const SizedBox(height: 8),
@@ -265,19 +306,23 @@ class _ProfileDialogState extends State<_ProfileDialog> {
             controller: _birth,
             keyboardType: TextInputType.number,
             inputFormatters: digits,
-            decoration: deco(S.hrBirthYear, error: _birthError),
+            decoration: deco(S.hrBirthYear, error: _birthError, bpm: false),
           ),
           const SizedBox(height: 12),
           Text(S.hrSex, style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 4),
-          SegmentedButton<Sex?>(
+          // Optional: no selection = no answer.
+          SegmentedButton<Sex>(
+            key: const ValueKey('hr-sex'),
             segments: [
-              for (final v in [null, Sex.male, Sex.female])
+              for (final v in Sex.values)
                 ButtonSegment(value: v, label: Text(S.hrSexLabel(v))),
             ],
-            selected: {_sex},
+            selected: {?_sex},
+            emptySelectionAllowed: true,
             showSelectedIcon: false,
-            onSelectionChanged: (v) => setState(() => _sex = v.first),
+            onSelectionChanged: (v) =>
+                setState(() => _sex = v.isEmpty ? null : v.first),
           ),
           const SizedBox(height: 8),
           Text(
@@ -291,7 +336,10 @@ class _ProfileDialogState extends State<_ProfileDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text(S.cancel),
         ),
-        FilledButton(onPressed: _save, child: const Text(S.save)),
+        FilledButton(
+          onPressed: _saving ? null : _save,
+          child: const Text(S.save),
+        ),
       ],
     );
   }

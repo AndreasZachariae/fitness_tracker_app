@@ -19,7 +19,7 @@ final class Exercise {
     this.levelKg,
     this.timerCountdown = false,
     this.restByHeartRate = false,
-    this.hrTargetRange,
+    this.hrTargetZone,
     this.hrTargetBpm,
     this.hrTargetMinutes,
   });
@@ -53,8 +53,8 @@ final class Exercise {
   final bool restByHeartRate;
 
   /// Warm-up / cardio (timed exercises, 1.6.0): hold Garmin range
-  /// [hrTargetRange] or at least [hrTargetBpm] for [hrTargetMinutes].
-  final int? hrTargetRange;
+  /// [hrTargetZone] or at least [hrTargetBpm] for [hrTargetMinutes].
+  final int? hrTargetZone;
   final int? hrTargetBpm;
   final int? hrTargetMinutes;
 
@@ -62,7 +62,7 @@ final class Exercise {
   bool get hasHeartRateTarget =>
       type == ExerciseType.timed &&
       hrTargetMinutes != null &&
-      (hrTargetRange != null || hrTargetBpm != null);
+      (hrTargetZone != null || hrTargetBpm != null);
 
   /// Overrides the default rest time; `null` = use the default.
   final int? restSec;
@@ -89,7 +89,7 @@ final class Exercise {
     Object? levelKg = unset,
     bool? timerCountdown,
     bool? restByHeartRate,
-    Object? hrTargetRange = unset,
+    Object? hrTargetZone = unset,
     Object? hrTargetBpm = unset,
     Object? hrTargetMinutes = unset,
   }) {
@@ -110,7 +110,7 @@ final class Exercise {
       levelKg: pick<double?>(levelKg, this.levelKg),
       timerCountdown: timerCountdown ?? this.timerCountdown,
       restByHeartRate: restByHeartRate ?? this.restByHeartRate,
-      hrTargetRange: pick<int?>(hrTargetRange, this.hrTargetRange),
+      hrTargetZone: pick<int?>(hrTargetZone, this.hrTargetZone),
       hrTargetBpm: pick<int?>(hrTargetBpm, this.hrTargetBpm),
       hrTargetMinutes: pick<int?>(hrTargetMinutes, this.hrTargetMinutes),
     );
@@ -134,7 +134,7 @@ final class Exercise {
       other.levelKg == levelKg &&
       other.timerCountdown == timerCountdown &&
       other.restByHeartRate == restByHeartRate &&
-      other.hrTargetRange == hrTargetRange &&
+      other.hrTargetZone == hrTargetZone &&
       other.hrTargetBpm == hrTargetBpm &&
       other.hrTargetMinutes == hrTargetMinutes;
 
@@ -155,7 +155,7 @@ final class Exercise {
     levelKg,
     timerCountdown,
     restByHeartRate,
-    hrTargetRange,
+    hrTargetZone,
     hrTargetBpm,
     hrTargetMinutes,
   );
@@ -178,7 +178,7 @@ final class ExerciseDraft {
     this.incrementLbs = Exercise.defaultIncrementLbs,
     this.levelKg,
     this.restByHeartRate = false,
-    this.hrTargetRange,
+    this.hrTargetZone,
     this.hrTargetBpm,
     this.hrTargetMinutes,
   }) : includeInStrengthIndex =
@@ -201,7 +201,7 @@ final class ExerciseDraft {
 
   /// 1.6.0, see [Exercise].
   final bool restByHeartRate;
-  final int? hrTargetRange;
+  final int? hrTargetZone;
   final int? hrTargetBpm;
   final int? hrTargetMinutes;
 }

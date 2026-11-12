@@ -99,6 +99,9 @@ String formatKg1(double kg) => '${_oneDecimal.format(kg)} kg';
 /// Number with one decimal without unit: `81,5`.
 String formatDecimal1(double value) => _oneDecimal.format(value);
 
+/// "12,3" (MB) for download progress (1.6.1).
+String formatMegabytes(int bytes) => formatDecimal1(bytes / (1024 * 1024));
+
 /// Signed change with one decimal: `+0,4 kg`, `−1,2 kg`, `±0,0 kg`.
 String formatSignedKg1(double kg) {
   final rounded = (kg * 10).round() / 10;

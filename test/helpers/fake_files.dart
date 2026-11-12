@@ -10,6 +10,7 @@ final class FakeFileGateway implements FileGateway {
   final Directory documents;
   final shared = <(String, Uint8List)>[];
   final saved = <(String, Uint8List)>[];
+  final downloads = <(String, Uint8List)>[];
   Uint8List? nextPick;
   bool dismissShare = false;
 
@@ -18,6 +19,16 @@ final class FakeFileGateway implements FileGateway {
     if (dismissShare) return false;
     shared.add((fileName, bytes));
     return true;
+  }
+
+  @override
+  Future<String> saveToDownloads(
+    Uint8List bytes,
+    String fileName,
+    String mimeType,
+  ) async {
+    downloads.add((fileName, bytes));
+    return 'Download/GymLog/$fileName';
   }
 
   @override
