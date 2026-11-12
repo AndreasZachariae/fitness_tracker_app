@@ -84,8 +84,7 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
-        <!-- 1.6.2: open Download/GymLog for the update APK, preferably in Files by Google. -->
-        <package android:name="com.google.android.apps.nbu.files"/>
+        <!-- 1.6.2: open Download/GymLog for the update APK in "Dateien", else the download list. -->
         <intent>
             <action android:name="android.intent.action.VIEW"/>
             <data android:mimeType="vnd.android.document/directory"/>

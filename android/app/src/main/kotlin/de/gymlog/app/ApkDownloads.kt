@@ -121,9 +121,6 @@ object ApkDownloads {
         if (ids.isNotEmpty()) dm.remove(*ids.toLongArray())
     }
 
-    /** Files by Google: the nicer view (1.6.2, wish of the human); otherwise the system's "Dateien". */
-    private const val FILES_BY_GOOGLE = "com.google.android.apps.nbu.files"
-
     /** The folder Download/GymLog as a document URI. */
     private fun folderView(): Intent {
         val uri = DocumentsContract.buildDocumentUri(
@@ -136,18 +133,16 @@ object ApkDownloads {
     }
 
     /**
-     * Where the user taps the APK (1.6.2), the first that exists: the folder in Files by Google, its downloads
-     * (the newest file on top), the folder in "Dateien", the system list of downloads.
+     * Where the user taps the APK (1.6.2): the folder in the system's "Dateien", which opens it directly (Files by
+     * Google cannot open a subfolder, tested by the human); without it the system list of downloads.
      */
     fun folderIntent(context: Context): Intent {
-        val downloads = Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)
-        val candidates = listOf(
-            folderView().setPackage(FILES_BY_GOOGLE),
-            Intent(downloads).setPackage(FILES_BY_GOOGLE),
-            folderView(),
-        )
-        val pm = context.packageManager
-        val chosen = candidates.firstOrNull { it.resolveActivity(pm) != null } ?: downloads
+        val folder = folderView()
+        val chosen = if (folder.resolveActivity(context.packageManager) != null) {
+            folder
+        } else {
+            Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)
+        }
         return chosen.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 

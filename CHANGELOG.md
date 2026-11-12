@@ -18,7 +18,7 @@ Enthält die nie einzeln veröffentlichten Versionen 1.5.0, 1.5.1, 1.6.0 und 1.6
 - **Nach dem Training:** Pulskurve, Pulsverteilung als Boxplot (Median, Quartile, Min/Max, Ausreißer) im Vergleich zu deinen bisherigen Trainings desselben Plans, Zeit in den Pulszonen, Erholungspuls, Kalorien und Spitzenpuls je Übung.
 - **Statistik:** Trainingspuls, Puls je Übung, Erholungspuls, Wochenbelastung und Kalorien je Woche.
 - Neuer Bereich **Einstellungen → Pulsmesser** zum Suchen, Testen und Entfernen.
-- **Updates in der App laden:** „APK herunterladen“ zeigt den Fortschritt und legt die Datei in „Download/GymLog“; die vorige APK wird dabei gelöscht. Danach öffnet die Benachrichtigung „Update geladen“ oder der Knopf „Ordner GymLog öffnen“ den Ordner (in Files by Google, sonst in „Dateien“) – dort die Datei antippen und installieren. Beim ersten Mal muss die Dateien-App das Installieren einmal erlauben.
+- **Updates in der App laden:** „APK herunterladen“ zeigt den Fortschritt und legt die Datei in „Download/GymLog“; die vorige APK wird dabei gelöscht. Danach öffnet die Benachrichtigung „Update geladen“ oder der Knopf „Ordner GymLog öffnen“ den Ordner in der App „Dateien“ – dort die Datei antippen und installieren. Beim ersten Mal muss die Dateien-App das Installieren einmal erlauben.
 - Die Buchungsseite lässt sich in den Einstellungen mit einem Knopf direkt im Browser öffnen.
 
 ### Geändert

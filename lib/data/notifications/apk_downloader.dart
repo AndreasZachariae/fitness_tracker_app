@@ -34,8 +34,8 @@ abstract interface class ApkDownloader {
   /// Removes all GymLog APK downloads with their files.
   Future<void> removeAll();
 
-  /// Opens the folder Download/GymLog, preferably in Files by Google
-  /// (1.6.2), else in "Dateien" or the downloads.
+  /// Opens the folder Download/GymLog in "Dateien" (1.6.2), else the
+  /// download list.
   Future<void> openFolder();
 }
 

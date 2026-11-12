@@ -261,10 +261,9 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   (`com.android.providers.media`), dem man das nicht erlauben kann. Deshalb zeigt der Download-Manager nur noch den
   Fortschritt; am Ende zeigt GymLog eine eigene Benachrichtigung „Update geladen“ (Empfänger für
   `DOWNLOAD_COMPLETE`, nur vom System-Download-Dienst zustellbar), die – wie „Ordner GymLog öffnen“ – den Ordner
-  `Download/GymLog` öffnet: auf Wunsch des Menschen zuerst in Files by Google (der Ordner, falls Files by Google ihn
-  direkt öffnen kann, sonst seine Downloads mit der neuesten Datei oben), sonst im Ordner in „Dateien“, sonst die
-  Download-Liste. Dafür stehen Files by Google und die beiden Ansichten unter `<queries>` im Manifest (keine
-  Berechtigung). Der Dateimanager muss das Installieren einmal erlauben; ein Satz auf der Update-Seite sagt das (der
+  `Download/GymLog` in der System-App „Dateien“ öffnet (sie zeigt den Unterordner direkt; Files by Google kann das
+  nicht, vom Menschen getestet, daher weggelassen), ohne sie die Download-Liste. Dafür stehen beide Ansichten unter
+  `<queries>` im Manifest (keine Berechtigung). Kachel- oder Listenansicht stellt der Nutzer in „Dateien“ ein. Der Dateimanager muss das Installieren einmal erlauben; ein Satz auf der Update-Seite sagt das (der
   eigene Einstellungs-Knopf entfiel auf Wunsch).
 - **1.6.2 Info zum Boxplot:** Ausnahme von den kurzen Info-Texten – auf Wunsch ausführlicher (Kasten, Median,
   Whisker, Ausreißer, min./max., Vergleich). Die Texte der Benachrichtigung kommen beim Start des Downloads aus Dart (`strings_de.dart`).
@@ -937,8 +936,8 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 Nur, was live ausprobiert werden muss; Boxplot-Werte, Farben und die Download-Seite sind automatisch getestet.
 - [ ] Puls-Profil: Das gewählte Geschlecht ist blau hervorgehoben (ebenso Zeitraum in Körper/Statistik).
 - [ ] Zusammenfassung: Pulsverteilung als Boxplot – Kasten, Median, Whisker, evtl. Ausreißer-Punkte, „max.“ (rot) und „min.“ passend zu Kurve und Ø/Max; daneben „Ø bisher“. Ausführlicher i-Text verständlich?
-- [ ] Update (nach dem nächsten DEV-Release): Download läuft mit Fortschritt; am Ende Benachrichtigung „Update geladen“ – Antippen öffnet Files by Google (bitte melden: direkt der Ordner GymLog oder die Downloads?); „Ordner GymLog öffnen“ in der App ebenso. Kein großer Einstellungs-Knopf mehr, nur der Hinweis.
-- [ ] APK antippen: Android fragt einmal, ob Files by Google installieren darf → erlauben → Installation klappt, Trainings bleiben erhalten. Keine Meldung „unbekannte Quelle com.android.providers.media“ mehr.
+- [ ] Update (nach dem nächsten DEV-Release): Download läuft mit Fortschritt; am Ende Benachrichtigung „Update geladen“ – Antippen öffnet den Ordner GymLog in „Dateien“; „Ordner GymLog öffnen“ in der App ebenso. Kein großer Einstellungs-Knopf mehr, nur der Hinweis.
+- [ ] APK antippen: Android fragt einmal, ob „Dateien“ installieren darf → erlauben → Installation klappt, Trainings bleiben erhalten. Keine Meldung „unbekannte Quelle com.android.providers.media“ mehr.
 
 ### 1.6.1 Bugfixes und Laktatschwellen-Zonen
 Nur, was live ausprobiert werden muss; Zonen, Vorschläge, Speichern, Backup-Ablauf und Download-Anzeige sind automatisch getestet.
