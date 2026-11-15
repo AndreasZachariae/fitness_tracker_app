@@ -151,6 +151,39 @@ Version 1.7.1 (Bugfixes)
 STATUS: FINISHED
     - Statt Beim Update "Ordner GymLog öffnen" sowas wie "Zur .apk"
     - Beim eintragen der weiteren Werte zB Körperfett kommt die tastatur hoch, das ist richtig, aber es kommt auch eine graues panel noch höher, dass alles etwas nach oben verschiebt und den großteil des bildschirms verdeckt. Please fix
+Version 1.8.0 (Feedback über Google-Formular, Vorschlag von Claude)
+STATUS: PLANNED
+    - Ziel: Nutzer melden Bugs und wünschen Funktionen direkt aus der App, ohne GitHub-Konto. Nichts geht automatisch in die Entwicklung: Claude bereitet die Meldungen mit Optionen auf, der Mensch entscheidet je Punkt, erst dann kommt er auf die Roadmap.
+    - Grundsätze: Die App selbst geht dafür nicht ins Netz (der Browser sendet, CLAUDE.md Regel 6 bleibt unverändert). Kein Token, keine Secrets in der App. Rohdaten der Nutzer werden nie committet (das Repo ist öffentlich).
+    - Teil 1 – Google-Formular (einmalig, der Mensch in seinem Google-Konto):
+        - Felder: „Art“ (Auswahl: Bug / Funktionswunsch), „Beschreibung“ (Absatz, Pflicht), „App-Version“ (Kurzantwort, z. B. 1.8.0 oder 1.8.0-dev.70), „Kanal“ (Release / DEV), „Android-Version“ (Kurzantwort, optional).
+        - Einstellungen: keine Anmeldung nötig, keine E-Mail-Adressen erfassen, mehrere Antworten erlaubt.
+        - Antworten in eine Google-Tabelle; dort „Im Web veröffentlichen“ → nur das Antwortblatt als CSV. Das ergibt eine feste Adresse, die immer den aktuellen Stand liefert.
+        - Für die App: die Formular-ID und die „entry.…“-Nummern der Felder aus „Vorausgefüllten Link abrufen“. Die sind nicht geheim (das Formular ist ohnehin öffentlich).
+        - Die CSV-Adresse ist halb geheim (wer sie kennt, liest alle Antworten): Sie liegt nur auf dem PC in `~/.config/gymlog/feedback-csv-url`, nie im Repo und nie im Container.
+    - Teil 2 – In der App: Einstellungen → Über → „Feedback geben“:
+        - Eigene Seite: Auswahl Bug / Funktionswunsch (SegmentedButton), mehrzeiliges Textfeld (höchstens ca. 1.500 Zeichen, weil die Adresse eine Längengrenze hat), kurzer Hinweis „Bitte keine persönlichen Daten“.
+        - Version, Kanal (DEV/Release) und Android-Version werden automatisch eingetragen und vor dem Absenden angezeigt; ein Schalter erlaubt, Version und Android-Version wegzulassen.
+        - „Im Browser absenden“ öffnet den vorausgefüllten Formular-Link (`…/viewform?usp=pp_url&entry.…=…`); der Nutzer prüft und tippt dort auf „Senden“. Ohne Netz sagt der Browser das selbst.
+        - Der Entwurf bleibt lokal gespeichert, bis abgesendet wurde (z. B. beim Zurückkehren aus dem Browser fragen „Abgesendet? Entwurf löschen“).
+        - Technisch: nur `url_launcher` (schon vorhanden, `https`-VIEW steht im Manifest). Keine neue Berechtigung, keine neue Abhängigkeit, keine Datenbank-Migration (Entwurf in den Einstellungen oder als Datei).
+        - Tests: Link-Aufbau (Kodierung, Umlaute, Zeilenumbrüche, Kürzen bei Überlänge) als reines Dart; Widget-Test der Seite; Architekturtest „App spricht weiterhin nur GitHub an“.
+    - Teil 3 – Abholen auf dem PC: `scripts/feedback-pull.sh` (nur der Mensch startet es, wie release.sh):
+        - Liest die Adresse aus `~/.config/gymlog/feedback-csv-url`, lädt die CSV mit curl nach `docs/feedback/inbox.csv`.
+        - Merkt sich den Zeitstempel der letzten verarbeiteten Antwort (`docs/feedback/last-processed.txt`) und meldet „N neue Meldungen“.
+        - `docs/feedback/` steht in `.gitignore`: Die Rohtexte der Nutzer verlassen den Rechner nicht.
+    - Teil 4 – Aufbereitung durch Claude (auf „Werte das Feedback aus“):
+        - Liest nur die neuen Zeilen aus `docs/feedback/inbox.csv`, fasst Doppeltes zusammen, verwirft Leeres und Spam.
+        - Schreibt `docs/feedback/FEEDBACK.md` (ebenfalls nicht committet). Je Punkt: Nummer und Datum, Art, Kurzfassung in eigenen Worten (ohne persönliche Angaben), betroffene Version, Einschätzung (machbar / nur teilweise / nicht machbar – mit Grund, z. B. „bräuchte eine neue Berechtigung, Regel 6“).
+        - Dazu zwei bis drei Umsetzungsoptionen, die sich in Umfang und Funktionen unterscheiden, z. B. A = kleinste Lösung, B = empfohlen, C = ausgebaut. Je Option: was sich für den Nutzer ändert, welche Bereiche im Code, ob Datenbank-Migration oder Backup-Format betroffen sind, neue Berechtigungen/Pakete, Aufwand (S/M/L), Risiken.
+        - Am Ende jedes Punkts ein Entscheidungsfeld: „[ ] A  [ ] B  [ ] C  [ ] nicht umsetzen  – Anmerkung: …“.
+    - Teil 5 – Entscheidung und Roadmap:
+        - Der Mensch kreuzt je Punkt an (in der Datei oder im Chat) und ergänzt bei Bedarf.
+        - Claude legt daraus eine neue Version in `docs/ROADMAP.md` an (STATUS: PLANNED), mit der gewählten Ausprägung je Punkt in eigenen Worten, und vermerkt in `FEEDBACK.md`, was übernommen bzw. abgelehnt wurde.
+        - Umsetzung erst nach „Setze Version X um“, wie bisher (Plan, Tests, Testliste, CHANGELOG, Stopp). Im CHANGELOG optional „Danke für eure Meldungen“.
+        - Optional: In der Google-Tabelle eine Spalte „Status“ (neu / übernommen in 1.9.0 / abgelehnt) zum eigenen Überblick; das Skript liest sie nicht.
+    - Erweiterungen für später (nicht Teil dieser Version): Benachrichtigung per E-Mail bei neuen Antworten (Google Forms bietet das an); direktes Senden aus der App ohne Browser (bräuchte Netzzugriff auf Google, Regel 6 – nur mit Freigabe); Screenshot anhängen (Google Forms erlaubt Datei-Uploads nur mit Google-Anmeldung, daher eher nicht).
+    - Offene Entscheidungen vor der Umsetzung: Ort der Seite (Über oder eigener Eintrag in den Einstellungen)? Soll es das auch in der echten App geben oder nur in der DEV-App? Version/Android immer mitsenden oder nur mit Schalter? Text der Hinweise.
 Version 2.X.0 (Personality)
 STATUS: PLANNED
     - Give the app more individual personality like e.g. Duolingo. The theme should be a little robot.
