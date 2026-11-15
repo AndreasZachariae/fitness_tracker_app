@@ -4,7 +4,7 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.7.1] – unveröffentlicht
+## [1.7.1] – 2026-11-15
 
 Enthält die nie einzeln veröffentlichten Versionen 1.6.3 und 1.7.0.
 
@@ -21,6 +21,23 @@ Enthält die nie einzeln veröffentlichten Versionen 1.6.3 und 1.7.0.
 ### Behoben
 - Die normale App fragte nicht nach der Berechtigung „Geräte in der Nähe“ für den Pulsmesser. GymLog fragt jetzt selbst; wurde sie dauerhaft abgelehnt, führt ein Knopf zu den App-Einstellungen.
 - Bei offener Tastatur schrumpfte die Seite doppelt – über der Tastatur lag ein leerer Streifen in Tastaturhöhe, und man konnte nur noch in einem schmalen Bereich scrollen. Jetzt reicht die Seite bis an die Tastatur.
+
+<details>
+<summary>Commits seit v1.6.2 (für Entwickler)</summary>
+
+#### Features
+- exercise records, clearer progression, vibration strength, own BLE permission request (1.6.3) (`3834c5c`)
+- more body values and a training view for device mounts (1.7.0) (`bf061cd`)
+
+#### Fehlerbehebungen
+- no autofill panel over the body value fields, "Zur APK" (1.7.1) (`7436648`)
+- keyboard height taken off the pages only once (1.7.1) (`5291355`)
+- drop the hint text under "Weitere Werte" (1.7.1) (`b979d75`)
+
+#### Tests
+- more headroom for the timing tests on a slow host (`0e2a64f`)
+
+</details>
 
 ## [1.6.2] – 2026-11-12
 
