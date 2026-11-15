@@ -987,10 +987,10 @@ abstract final class S {
       'Zum Installieren im Ordner GymLog die Datei antippen. Beim ersten Mal '
       'fragt Android, ob die Dateien-App Apps installieren darf: einmal '
       'erlauben, danach genügt das Antippen.';
-  static const updateOpenFolder = 'Ordner GymLog öffnen';
+  static const updateOpenFolder = 'Zur APK';
   static const updateDownloadedTitle = 'Update geladen';
   static const updateDownloadedBody =
-      'Antippen öffnet den Ordner GymLog. Dort die Datei antippen und '
+      'Antippen führt zur APK im Ordner GymLog. Dort die Datei antippen und '
       'installieren.';
   static const updateDownloadFailed = 'Der Download hat nicht geklappt.';
   static String updateDownloadStale(String found) =>

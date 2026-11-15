@@ -4,9 +4,9 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.7.0] – unveröffentlicht
+## [1.7.1] – unveröffentlicht
 
-Enthält die nie einzeln veröffentlichte Version 1.6.3.
+Enthält die nie einzeln veröffentlichten Versionen 1.6.3 und 1.7.0.
 
 ### Neu
 - **Mehr Körperdaten:** Neben dem Gewicht lassen sich über „Weitere Werte“ Muskelanteil, Körperfett, Körperwasser und Knochenmasse von einer Körperwaage eintragen – alles freiwillig. Über dem Diagramm wählst du, welcher Wert angezeigt wird.
@@ -15,6 +15,7 @@ Enthält die nie einzeln veröffentlichte Version 1.6.3.
 - **Vibrationsstärke:** In Einstellungen → Training regelt ein Schieber die Stärke aller Vibrationen (0 = aus); beim Loslassen kommt ein kurzer Testpuls.
 
 ### Geändert
+- Nach dem Update-Download heißt der Knopf jetzt „Zur APK“.
 - **Steigerungsvorschlag:** Er kommt jetzt auch, wenn du letztes Mal alle Sätze mit demselben Gewicht und denselben Wiederholungen geschafft hast – ohne Ziel im Plan. Darunter steht immer, warum, z. B. „Letztes Mal 3 × 10 mit 60 kg geschafft“.
 
 ### Behoben

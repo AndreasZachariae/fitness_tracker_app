@@ -273,7 +273,16 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Training: zweite Ansicht „Optimiert für Trainingsgerätehalterung“ (Pause oben, „Satz speichern“ oben in der
         Übung), Standard bleibt unverändert; Umschalter in Einstellungen → Training
   - [x] Tests, CHANGELOG, Testliste
+- [x] 1.7.1 Bugfixes (`docs/ROADMAP.md`, 1.7.1+28)
+  - [x] Update: Knopf „Zur APK“ statt „Ordner GymLog öffnen“
+  - [x] Körper: graues Feld über der Tastatur bei den weiteren Werten (Android-Autofill aus)
+  - [x] Tests, CHANGELOG, Testliste
 ## Annahmen
+- **1.7.1 Graues Feld über der Tastatur:** In Flutter 3.47 ist Autofill für jedes `TextField` an (`autofillHints`
+  standardmäßig `[]`). Mit den vier weiteren Zahlenfeldern sieht Android ein Formular und blendet das Autofill-/
+  Vorschlagsfeld über der Tastatur ein. Abgeschaltet (`autofillHints: null`, keine Vorschläge, keine Autokorrektur)
+  für die Zahlenfelder im Tab Körper und im Puls-Profil. Ohne Gerät nicht am Bildschirm geprüft – falls es bleibt, bitte
+  einen Screenshot.
 - **1.7.0 Körperwerte:** Muskelanteil, Körperfett und Körperwasser in % (wie die Waage sie zeigt, „Anteil“), Knochenmasse
   in kg; je Tag am Gewichtseintrag (Gewicht bleibt Pflicht, eine Waage misst es immer mit). Plausibel: 1–99 % bzw.
   0,1–20 kg, eine Nachkommastelle. „Weitere Werte“ ist zugeklappt (Standard nur Gewicht); zugeklappt speichern lässt
@@ -996,6 +1005,10 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.7.1 Bugfixes
+- [ ] Körper → „Weitere Werte“ → z. B. Körperfett antippen: nur die Tastatur, kein graues Feld darüber; das Feld bleibt sichtbar.
+- [ ] Nach einem Update-Download heißt der Knopf „Zur APK“ und öffnet den Ordner mit der Datei.
 
 ### 1.7.0 Mehr Körperdaten, Ansicht für die Gerätehalterung
 Nur, was live ausprobiert werden muss; Speichern, Umschalten, Reihenfolge und Backup sind automatisch getestet.

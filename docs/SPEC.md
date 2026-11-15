@@ -350,6 +350,7 @@ Der Zeitraum schneidet nur die Anzeige zu; Berechnungen nutzen immer die gesamte
   Kennzahlen: aktuell (Ø 7 Tage), Veränderung über 30 Tage, Minimum/Maximum im Zeitraum.
 - **Weitere Werte (ab 1.7.0):** Unter dem Gewicht „Weitere Werte“ klappt vier optionale Felder einer Körperwaage auf:
   Muskelanteil, Körperfett, Körperwasser (je %, 1–99) und Knochenmasse (kg, 0,1–20), vorbefüllt mit dem letzten Eintrag.
+  Zahlenfelder ohne Android-Autofill und ohne Vorschläge (1.7.1: sonst erschien ein graues Feld über der Tastatur).
   Zugeklappt bleiben gespeicherte Werte des Tages erhalten; aufgeklappt ersetzen die Felder sie (leer = nicht gemessen).
   Über dem Diagramm wählen Chips den angezeigten Wert (nur Werte mit Messungen; Gewicht immer); Kennzahlen dazu ohne
   7-Tage-Durchschnitt. Die Einträge-Seite zeigt die Werte unter dem Datum.
@@ -391,7 +392,7 @@ der Startseite (nur wenn es Trainings gibt).
   Benachrichtigung oder Einstellungen → Über („Update ansehen“). Die Seite
   zeigt Version, Neuerungen (aufgeklappt), „APK herunterladen“ und „Auf GitHub ansehen“. Ab 1.6.1 lädt Androids
   Download-Manager die APK nach `Download/GymLog` (vorher öffnete der Browser sie); die Seite zeigt den Fortschritt
-  („12,3 von 25,0 MB“), danach den Dateinamen, „Ordner GymLog öffnen“ (App „Dateien“, sonst die Download-Liste) und den
+  („12,3 von 25,0 MB“), danach den Dateinamen, „Zur APK“ (ab 1.7.1; öffnet den Ordner in der App „Dateien“, sonst die Download-Liste) und den
   Hinweis, dass der Dateimanager das Installieren einmal erlauben muss. Dateiname mit Version (`gymlog-1.6.2-dev.53.apk`), damit eine neue DEV-Version nicht als schon geladen gilt;
   geladen wird über die Asset-Adresse der GitHub-API (neu je Upload), und nach dem Download wird die Version in der APK
   geprüft (falsche Version → Datei gelöscht, Hinweis „erneut versuchen“). Ab 1.6.2 zeigt der Download-Manager nur den Fortschritt; am

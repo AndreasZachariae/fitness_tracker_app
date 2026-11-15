@@ -269,6 +269,12 @@ class _InputCardState extends ConsumerState<_InputCard> {
               children: [
                 Expanded(
                   child: TextField(
+                    // 1.7.1: no Android autofill / suggestion strip – with
+                    // several number fields it opened a grey panel above
+                    // the keyboard.
+                    autofillHints: null,
+                    enableSuggestions: false,
+                    autocorrect: false,
                     controller: _controller,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -324,6 +330,12 @@ class _InputCardState extends ConsumerState<_InputCard> {
                     SizedBox(
                       width: 150,
                       child: TextField(
+                        // 1.7.1: no Android autofill / suggestion strip – with
+                        // several number fields it opened a grey panel above
+                        // the keyboard.
+                        autofillHints: null,
+                        enableSuggestions: false,
+                        autocorrect: false,
                         key: ValueKey('body-${m.name}'),
                         controller: c,
                         keyboardType: const TextInputType.numberWithOptions(

@@ -147,6 +147,10 @@ Version 1.7.0 (Mehr Körperdaten)
 STATUS: FINISHED
     - Neben dem Gewicht möchte ich auch bei Körper weitere Daten tracken die mir meine smarte waage anzeigt. Aber nicht jeder hat so eine waage deshalb sollte nur das gewicht default sein. Aber auf einem button in de rnähe soll man auhc die anderen Daten eingeben können. So kann man auch bei dem graph als verlauf oben switchen welche daten man sich anzeigen möchte ähnlich wie bei dem statistik screen. Ich möchte die Daten: Muskekmasse anteil, Körperfettanteil, Körperwasseranteil, Knochenmasse
     - Übungsanzeige während dem Training neu designen. Das Handy steht in einer Halterung direkt am Trainingsgerät bei dem dann unten Zwei-drei Zentimeter verdeckt sind. Genau die Pause und der Button zum Speichern des Satzes. Die anderen Sachen sind während dem Training nicht so wichtig wie ganz unten die tabs wie Statistiken und Köper oder der zusätzliche Satz usw. Aber die Pause könnte zB ganz oben unter dem Timer sein. Der Satz speichenr Knopf könnte weiter oben im Übungs chip sein. DIe anderen buttons wie +1 Satz oder Übung beenden sind nicht so wichtig und könnten unten bleiben. Belasse die bisherige ansicht genauso wie sie war. FÜge die neue umgestaltete Version zusätzlich hinzu. Füge in den Einstellungen unter Training eine Option hinzu um die Übungsansicht umzuschalten zwischen diesen beiden Optionen. STandard und "Optimiert für Traininsgerätehalterung"
+Version 1.7.1 (Bugfixes)
+STATUS: FINISHED
+    - Statt Beim Update "Ordner GymLog öffnen" sowas wie "Zur .apk"
+    - Beim eintragen der weiteren Werte zB Körperfett kommt die tastatur hoch, das ist richtig, aber es kommt auch eine graues panel noch höher, dass alles etwas nach oben verschiebt und den großteil des bildschirms verdeckt. Please fix
 Version 2.X.0 (Personality)
 STATUS: PLANNED
     - Give the app more individual personality like e.g. Duolingo. The theme should be a little robot.

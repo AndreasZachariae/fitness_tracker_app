@@ -171,6 +171,18 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('body-more')));
     await tester.pumpAndSettle();
+    // 1.7.1: no Android autofill (its grey panel covered the screen).
+    for (final f in [
+      weightField(),
+      find.byKey(const ValueKey('body-fat')),
+      find.byKey(const ValueKey('body-bone')),
+    ]) {
+      final field = tester.widget<TextField>(f);
+      expect(
+        (field.autofillHints, field.enableSuggestions, field.autocorrect),
+        (null, false, false),
+      );
+    }
     await tester.enterText(weightField(), '80,4');
     await tester.enterText(find.byKey(const ValueKey('body-fat')), '18,5');
     await tester.enterText(find.byKey(const ValueKey('body-bone')), '25');

@@ -259,6 +259,10 @@ class _HeartRateProfileDialogState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
+            // 1.7.1: no autofill panel above the keyboard (see Körper).
+            autofillHints: null,
+            enableSuggestions: false,
+            autocorrect: false,
             key: const ValueKey('hr-threshold'),
             controller: _threshold,
             keyboardType: TextInputType.number,
@@ -275,6 +279,10 @@ class _HeartRateProfileDialogState
           ),
           const SizedBox(height: 8),
           TextField(
+            // 1.7.1: no autofill panel above the keyboard (see Körper).
+            autofillHints: null,
+            enableSuggestions: false,
+            autocorrect: false,
             key: const ValueKey('hr-warn'),
             controller: _warn,
             keyboardType: TextInputType.number,
@@ -290,6 +298,10 @@ class _HeartRateProfileDialogState
           ),
           const SizedBox(height: 8),
           TextField(
+            // 1.7.1: no autofill panel above the keyboard (see Körper).
+            autofillHints: null,
+            enableSuggestions: false,
+            autocorrect: false,
             key: const ValueKey('hr-pause'),
             controller: _pause,
             keyboardType: TextInputType.number,
@@ -302,6 +314,10 @@ class _HeartRateProfileDialogState
           ),
           const SizedBox(height: 8),
           TextField(
+            // 1.7.1: no autofill panel above the keyboard (see Körper).
+            autofillHints: null,
+            enableSuggestions: false,
+            autocorrect: false,
             key: const ValueKey('hr-birth'),
             controller: _birth,
             keyboardType: TextInputType.number,
