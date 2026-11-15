@@ -259,7 +259,7 @@ class _HeartRateProfileDialogState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
-            // 1.7.1: no autofill panel above the keyboard (see Körper).
+            // Numbers: no autofill or word suggestions (1.7.1).
             autofillHints: null,
             enableSuggestions: false,
             autocorrect: false,
@@ -279,7 +279,7 @@ class _HeartRateProfileDialogState
           ),
           const SizedBox(height: 8),
           TextField(
-            // 1.7.1: no autofill panel above the keyboard (see Körper).
+            // Numbers: no autofill or word suggestions (1.7.1).
             autofillHints: null,
             enableSuggestions: false,
             autocorrect: false,
@@ -298,7 +298,7 @@ class _HeartRateProfileDialogState
           ),
           const SizedBox(height: 8),
           TextField(
-            // 1.7.1: no autofill panel above the keyboard (see Körper).
+            // Numbers: no autofill or word suggestions (1.7.1).
             autofillHints: null,
             enableSuggestions: false,
             autocorrect: false,
@@ -314,7 +314,7 @@ class _HeartRateProfileDialogState
           ),
           const SizedBox(height: 8),
           TextField(
-            // 1.7.1: no autofill panel above the keyboard (see Körper).
+            // Numbers: no autofill or word suggestions (1.7.1).
             autofillHints: null,
             enableSuggestions: false,
             autocorrect: false,

@@ -53,10 +53,16 @@ class HomeShell extends ConsumerWidget {
                   onTap: () => _goTo(_trainingBranch),
                 ),
               Expanded(
-                child: MediaQuery.removePadding(
-                  context: context,
-                  removeTop: showBar,
-                  child: RestBarAtTop(top: restAtTop, child: navigationShell),
+                // 1.7.1: the context INSIDE the Scaffold. With the shell's
+                // own context this put the keyboard height back, which the
+                // Scaffold had already taken off – every page shrank twice
+                // and a keyboard-high empty band covered the screen.
+                child: Builder(
+                  builder: (inner) => MediaQuery.removePadding(
+                    context: inner,
+                    removeTop: showBar,
+                    child: RestBarAtTop(top: restAtTop, child: navigationShell),
+                  ),
                 ),
               ),
             ],

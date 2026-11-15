@@ -20,6 +20,7 @@ Enthält die nie einzeln veröffentlichten Versionen 1.6.3 und 1.7.0.
 
 ### Behoben
 - Die normale App fragte nicht nach der Berechtigung „Geräte in der Nähe“ für den Pulsmesser. GymLog fragt jetzt selbst; wurde sie dauerhaft abgelehnt, führt ein Knopf zu den App-Einstellungen.
+- Bei offener Tastatur schrumpfte die Seite doppelt – über der Tastatur lag ein leerer Streifen in Tastaturhöhe, und man konnte nur noch in einem schmalen Bereich scrollen. Jetzt reicht die Seite bis an die Tastatur.
 
 ## [1.6.2] – 2026-11-12
 

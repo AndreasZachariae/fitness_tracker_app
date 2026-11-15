@@ -269,9 +269,7 @@ class _InputCardState extends ConsumerState<_InputCard> {
               children: [
                 Expanded(
                   child: TextField(
-                    // 1.7.1: no Android autofill / suggestion strip – with
-                    // several number fields it opened a grey panel above
-                    // the keyboard.
+                    // Numbers: no autofill or word suggestions (1.7.1).
                     autofillHints: null,
                     enableSuggestions: false,
                     autocorrect: false,
@@ -330,9 +328,7 @@ class _InputCardState extends ConsumerState<_InputCard> {
                     SizedBox(
                       width: 150,
                       child: TextField(
-                        // 1.7.1: no Android autofill / suggestion strip – with
-                        // several number fields it opened a grey panel above
-                        // the keyboard.
+                        // Numbers: no autofill or word suggestions (1.7.1).
                         autofillHints: null,
                         enableSuggestions: false,
                         autocorrect: false,

@@ -278,11 +278,13 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Körper: graues Feld über der Tastatur bei den weiteren Werten (Android-Autofill aus)
   - [x] Tests, CHANGELOG, Testliste
 ## Annahmen
-- **1.7.1 Graues Feld über der Tastatur:** In Flutter 3.47 ist Autofill für jedes `TextField` an (`autofillHints`
-  standardmäßig `[]`). Mit den vier weiteren Zahlenfeldern sieht Android ein Formular und blendet das Autofill-/
-  Vorschlagsfeld über der Tastatur ein. Abgeschaltet (`autofillHints: null`, keine Vorschläge, keine Autokorrektur)
-  für die Zahlenfelder im Tab Körper und im Puls-Profil. Ohne Gerät nicht am Bildschirm geprüft – falls es bleibt, bitte
-  einen Screenshot.
+- **1.7.1 Graues Feld über der Tastatur (Ursache gefunden mit den Screenshots des Menschen):** Kein Autofill, sondern
+  ein Layoutfehler: `HomeShell` legte `MediaQuery.removePadding` mit dem Kontext *außerhalb* seines Scaffolds um die
+  Tabs. Das brachte die Tastaturhöhe (`viewInsets`) zurück, die der Scaffold schon abgezogen hatte; jede Seite darin
+  (Körper, Training, Verlauf …) schrumpfte ein zweites Mal um die Tastaturhöhe – ein leerer Streifen über der Tastatur,
+  bei allen Eingaben, wohl seit dem „Training läuft“-Balken (1.0.x). Behoben mit einem `Builder` (Kontext im Scaffold);
+  Regressionstest mit simulierter Tastatur. Der erste Versuch (Autofill und Vorschläge in Zahlenfeldern aus) bleibt,
+  schadet nicht, war aber nicht die Ursache.
 - **1.7.0 Körperwerte:** Muskelanteil, Körperfett und Körperwasser in % (wie die Waage sie zeigt, „Anteil“), Knochenmasse
   in kg; je Tag am Gewichtseintrag (Gewicht bleibt Pflicht, eine Waage misst es immer mit). Plausibel: 1–99 % bzw.
   0,1–20 kg, eine Nachkommastelle. „Weitere Werte“ ist zugeklappt (Standard nur Gewicht); zugeklappt speichern lässt
@@ -1007,7 +1009,8 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
 
 ### 1.7.1 Bugfixes
-- [ ] Körper → „Weitere Werte“ → z. B. Körperfett antippen: nur die Tastatur, kein graues Feld darüber; das Feld bleibt sichtbar.
+- [ ] Körper → „Weitere Werte“ → z. B. Körperfett antippen: die Seite reicht bis direkt an die Tastatur, kein leerer Streifen darüber; scrollen über die ganze Höhe.
+- [ ] Ebenso bei Notiz zur Übung, Gewicht-/Wdh-Dialog im Training und im Puls-Profil: hinter dem Dialog ist die Seite bis zur Tastatur zu sehen.
 - [ ] Nach einem Update-Download heißt der Knopf „Zur APK“ und öffnet den Ordner mit der Datei.
 
 ### 1.7.0 Mehr Körperdaten, Ansicht für die Gerätehalterung
