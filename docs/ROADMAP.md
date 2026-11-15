@@ -161,7 +161,8 @@ STATUS: PLANNED
         - Antworten in eine Google-Tabelle; dort „Im Web veröffentlichen“ → nur das Antwortblatt als CSV. Das ergibt eine feste Adresse, die immer den aktuellen Stand liefert.
         - Für die App: die Formular-ID und die „entry.…“-Nummern der Felder aus „Vorausgefüllten Link abrufen“. Die sind nicht geheim (das Formular ist ohnehin öffentlich).
         - Stand 15.11.2026: Formular „GymLog Feedback“ angelegt (öffentlich, ohne Anmeldung erreichbar): https://docs.google.com/forms/d/e/1FAIpQLSd82s3DDN66toHKX6fiwdhDY5c5QiDEOJ_1_qZXbwxTKEz95g/viewform – enthält aber erst eine unbenannte Platzhalterfrage; die Felder oben fehlen noch, danach die entry-Nummern neu auslesen. Die Tabelle ist angelegt; ihr Link steht absichtlich nicht hier (siehe CSV-Adresse).
-        - Die CSV-Adresse ist halb geheim (wer sie kennt, liest alle Antworten): Sie liegt nur auf dem PC in `~/.config/gymlog/feedback-csv-url`, nie im Repo und nie im Container.
+        - Die CSV-Adresse ist halb geheim (wer sie kennt, liest alle Antworten): Sie liegt in `.local/feedback-csv-url` im Projekt (in `.gitignore`, also nie im öffentlichen Repo; der Container darf sie lesen – Entscheidung des Menschen, 15.11.2026). Nicht in `.secrets/` (Regel 3, dort liegt der Keystore). Eingerichtet und geprüft: Export als CSV ohne Anmeldung.
+    - Vereinfachung (Vorschlag, 15.11.2026): Die App braucht kein eigenes Textfeld. Zwei Knöpfe „Bug melden“ / „Funktion wünschen“ öffnen das Formular mit vorausgefüllter Art, App-Version, Kanal und Android-Version; die Beschreibung tippt der Nutzer direkt im Formular. Vorteile: keine Längengrenze der Adresse, kein Entwurf in der App, weniger Code. Nachteil: Schreiben im Browser statt in der App. Entscheidung bei der Umsetzung; sonst gilt Teil 2 wie folgt.
     - Teil 2 – In der App: Einstellungen → Über → „Feedback geben“:
         - Eigene Seite: Auswahl Bug / Funktionswunsch (SegmentedButton), mehrzeiliges Textfeld (höchstens ca. 1.500 Zeichen, weil die Adresse eine Längengrenze hat), kurzer Hinweis „Bitte keine persönlichen Daten“.
         - Version, Kanal (DEV/Release) und Android-Version werden automatisch eingetragen und vor dem Absenden angezeigt; ein Schalter erlaubt, Version und Android-Version wegzulassen.
@@ -169,8 +170,8 @@ STATUS: PLANNED
         - Der Entwurf bleibt lokal gespeichert, bis abgesendet wurde (z. B. beim Zurückkehren aus dem Browser fragen „Abgesendet? Entwurf löschen“).
         - Technisch: nur `url_launcher` (schon vorhanden, `https`-VIEW steht im Manifest). Keine neue Berechtigung, keine neue Abhängigkeit, keine Datenbank-Migration (Entwurf in den Einstellungen oder als Datei).
         - Tests: Link-Aufbau (Kodierung, Umlaute, Zeilenumbrüche, Kürzen bei Überlänge) als reines Dart; Widget-Test der Seite; Architekturtest „App spricht weiterhin nur GitHub an“.
-    - Teil 3 – Abholen auf dem PC: `scripts/feedback-pull.sh` (nur der Mensch startet es, wie release.sh):
-        - Liest die Adresse aus `~/.config/gymlog/feedback-csv-url`, lädt die CSV mit curl nach `docs/feedback/inbox.csv`.
+    - Teil 3 – Abholen: `scripts/feedback-pull.sh` (im Container; Claude darf es ausführen, es spricht nur Google an, nicht GitHub):
+        - Liest die Adresse aus `.local/feedback-csv-url`, lädt die CSV mit curl nach `docs/feedback/inbox.csv`.
         - Merkt sich den Zeitstempel der letzten verarbeiteten Antwort (`docs/feedback/last-processed.txt`) und meldet „N neue Meldungen“.
         - `docs/feedback/` steht in `.gitignore`: Die Rohtexte der Nutzer verlassen den Rechner nicht.
     - Teil 4 – Aufbereitung durch Claude (auf „Werte das Feedback aus“):
