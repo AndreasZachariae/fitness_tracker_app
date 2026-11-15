@@ -160,6 +160,7 @@ STATUS: PLANNED
         - Einstellungen: keine Anmeldung nötig, keine E-Mail-Adressen erfassen, mehrere Antworten erlaubt.
         - Antworten in eine Google-Tabelle; dort „Im Web veröffentlichen“ → nur das Antwortblatt als CSV. Das ergibt eine feste Adresse, die immer den aktuellen Stand liefert.
         - Für die App: die Formular-ID und die „entry.…“-Nummern der Felder aus „Vorausgefüllten Link abrufen“. Die sind nicht geheim (das Formular ist ohnehin öffentlich).
+        - Stand 15.11.2026: Formular „GymLog Feedback“ angelegt (öffentlich, ohne Anmeldung erreichbar): https://docs.google.com/forms/d/e/1FAIpQLSd82s3DDN66toHKX6fiwdhDY5c5QiDEOJ_1_qZXbwxTKEz95g/viewform – enthält aber erst eine unbenannte Platzhalterfrage; die Felder oben fehlen noch, danach die entry-Nummern neu auslesen. Die Tabelle ist angelegt; ihr Link steht absichtlich nicht hier (siehe CSV-Adresse).
         - Die CSV-Adresse ist halb geheim (wer sie kennt, liest alle Antworten): Sie liegt nur auf dem PC in `~/.config/gymlog/feedback-csv-url`, nie im Repo und nie im Container.
     - Teil 2 – In der App: Einstellungen → Über → „Feedback geben“:
         - Eigene Seite: Auswahl Bug / Funktionswunsch (SegmentedButton), mehrzeiliges Textfeld (höchstens ca. 1.500 Zeichen, weil die Adresse eine Längengrenze hat), kurzer Hinweis „Bitte keine persönlichen Daten“.
