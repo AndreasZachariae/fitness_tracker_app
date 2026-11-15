@@ -315,11 +315,7 @@ class _InputCardState extends ConsumerState<_InputCard> {
               ),
             ),
             if (_showMore) ...[
-              Text(
-                S.bodyMoreValuesHint,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Wrap(
                 spacing: 12,
                 runSpacing: 8,

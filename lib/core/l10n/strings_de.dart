@@ -626,8 +626,6 @@ abstract final class S {
     BodyMetric.bone => 'Knochen',
   };
   static const bodyMoreValues = 'Weitere Werte';
-  static const bodyMoreValuesHint =
-      'Von einer Körperwaage, alle freiwillig. Leer = nicht gemessen.';
   static const errorBodyPercent = 'Ein Wert zwischen 1 und 99 %.';
   static const errorBoneKg = 'Ein Wert zwischen 0,1 und 20 kg.';
   static const unitPercent = '%';
