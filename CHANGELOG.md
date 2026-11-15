@@ -4,13 +4,29 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.8.0] – unveröffentlicht
+## [1.8.0] – 2026-11-15
 
 ### Neu
 - **Feedback geben:** Unter Einstellungen → „Version, Updates und Feedback“ kannst du jetzt direkt einen Bug melden oder dir eine Funktion wünschen – Text eintippen, „Senden“, fertig. Ohne Konto und ohne Anmeldung; mitgeschickt werden nur App-Version und Android-Version. Ohne Netz bleibt der Text gespeichert, bis er angekommen ist.
 
 ### Geändert
 - Aus „Über“ wird „Version, Updates und Feedback“ – dort findest du jetzt auch „Feedback geben“, so bleiben die Einstellungen übersichtlich.
+
+<details>
+<summary>Commits seit v1.7.1 (für Entwickler)</summary>
+
+#### Features
+- feedback from the app to a Google form (1.8.0) (`b8537bd`)
+- merge feedback into "Version, Updates und Feedback" (1.8.0) (`c7d9403`)
+
+#### Dokumentation
+- plan feedback via a Google Form (1.8.0, planned) (`847384a`)
+- note the feedback form (1.8.0, planned) (`ecd3e37`)
+- feedback CSV address in the ignored .local folder (1.8.0, planned) (`eb422ae`)
+- feedback form fields and test run (1.8.0, planned) (`6bf7dd2`)
+- feedback sent from the app, new response table (1.8.0, planned) (`1272fd1`)
+
+</details>
 
 ## [1.7.1] – 2026-11-15
 
