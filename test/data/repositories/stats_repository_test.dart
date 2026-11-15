@@ -41,7 +41,7 @@ void main() {
     );
   });
 
-  test('one year of demo data: all statistics well below 50 ms', () async {
+  test('one year of demo data: all statistics well below 100 ms', () async {
     await MaintenanceRepository(db)
         .replaceAll(generateDemoData(now: testNow, weeks: 52));
     final data = await StatsRepository(db).load();
@@ -66,6 +66,8 @@ void main() {
     final perRun = watch.elapsedMilliseconds / 5;
     // ignore: avoid_print
     print('statistics with 1 year of data: ${perRun.toStringAsFixed(1)} ms');
-    expect(perRun, lessThan(50));
+    // Typically 10–20 ms; headroom for a slow host (on battery, parallel
+    // tests; 1.7.0).
+    expect(perRun, lessThan(100));
   });
 }
