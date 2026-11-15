@@ -383,14 +383,16 @@ der Startseite (nur wenn es Trainings gibt).
   Ort), „Backup teilen oder anderswo speichern“ (Teilen, „Speichern unter …“), „Backup wiederherstellen“, „Letztes Backup: 3.11.2026, 18:20“,
   Backup-Erinnerung (Tage, 0 = aus). Ab 1.0.1 steht hier unter „Daten“ der gelbe Hinweis „Letztes Backup vor … Tagen“
   mit „Backup erstellen“, sobald die Erinnerung fällig ist.
-- **Feedback geben (ab 1.8.0):** Auswahl „Bug“ / „Funktionswunsch“, Textfeld (höchstens 2.000 Zeichen, Hinweis „Bitte
+- **Feedback geben (ab 1.8.0, erreichbar über „Version, Updates und Feedback“):** Auswahl „Bug“ / „Funktionswunsch“, Textfeld (höchstens 2.000 Zeichen, Hinweis „Bitte
   keine persönlichen Daten“), darunter sichtbar, was mitgeht: App-Version, Kanal (DEV/Release), Android-Version.
   „Senden“ schickt die Felder per HTTPS-POST an das öffentliche Google-Formular „GymLog Feedback“ (kein Konto, keine
   Anmeldung, kein Token); angekommen = HTTP 200 → „Danke!“, Entwurf gelöscht, zurück. Sonst Hinweis, der Text bleibt (auch
   nach dem Schließen gespeichert, Datei im App-Ordner), dazu „Im Browser öffnen“ mit vorausgefülltem Formular. Die
   Antworten landen in einer Google-Tabelle; `scripts/feedback-pull.sh` holt sie für die Auswertung (CLAUDE.md,
   Arbeitsweise 6).
-- **Über:** „Nach Updates suchen“ (ab 1.2.1, Antippen sucht sofort; neue Version → Hinweis und „Update ansehen“),
+- **Version, Updates und Feedback** (bis 1.7.1 „Über“; 1.8.0 zusammengelegt, damit die Einstellungen kurz bleiben):
+  „Nach Updates suchen“, Neuerungen, „Feedback geben“ (eigene Seite, s. o.), App-Version, Build, Schema, Lizenzen.
+  Bisher: „Nach Updates suchen“ (ab 1.2.1, Antippen sucht sofort; neue Version → Hinweis und „Update ansehen“),
   „Neuerungen der neuesten Version“ zum Aufklappen (1.2.2; in der DEV-App „Testliste und Änderungen“), App-Version,
   Build-Nummer, Datenbank-Schemaversion, Lizenzen.
 - **Update-Seite (1.2.2):** GymLog sucht bei jedem Start und beim Zurückkehren (höchstens einmal pro Minute, mit ETag)

@@ -796,7 +796,7 @@ abstract final class S {
   static const sectionTraining = 'Training';
   static const sectionAppearance = 'Darstellung';
   static const sectionData = 'Daten';
-  static const sectionAbout = 'Über';
+  static const sectionAbout = 'Version, Updates und Feedback';
   static const settingDefaultSets = 'Standard-Satzanzahl';
   static const settingDefaultRest = 'Standard-Pause';
   static const settingDefaultStep = 'Standard-Steigerung';
@@ -1030,7 +1030,8 @@ abstract final class S {
       'öffnet.';
   static const settingsAppearanceSubtitle = 'System, hell oder dunkel';
   static const settingsDataSubtitle = 'Backup, Wiederherstellen, CSV-Export';
-  static const settingsAboutSubtitle = 'Version, nach Updates suchen';
+  static const settingsAboutSubtitle =
+      'Nach Updates suchen, Bug melden, Funktion wünschen';
   // Feedback (1.8.0)
   static const feedbackTitle = 'Feedback geben';
   static const settingsFeedbackSubtitle = 'Bug melden oder Funktion wünschen';

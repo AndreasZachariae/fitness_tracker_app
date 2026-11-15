@@ -91,13 +91,6 @@ class SettingsPage extends ConsumerWidget {
             S.settingsDataSubtitle,
             AppRoutes.dataSettings,
           ),
-          // 1.8.0: report bugs and wishes from the app.
-          entry(
-            Icons.feedback_outlined,
-            S.feedbackTitle,
-            S.settingsFeedbackSubtitle,
-            AppRoutes.feedback,
-          ),
           entry(
             Icons.info_outline,
             S.sectionAbout,

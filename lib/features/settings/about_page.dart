@@ -25,6 +25,15 @@ class AboutPage extends ConsumerWidget {
         children: [
           const UpdateCheckTile(),
           const LatestNotesTile(),
+          // 1.8.0: feedback lives here, so the settings stay short.
+          ListTile(
+            key: const ValueKey('about-feedback'),
+            leading: const Icon(Icons.feedback_outlined),
+            title: const Text(S.feedbackTitle),
+            subtitle: const Text(S.settingsFeedbackSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRoutes.feedback),
+          ),
           const Divider(),
           ListTile(
             title: const Text(S.appVersion),

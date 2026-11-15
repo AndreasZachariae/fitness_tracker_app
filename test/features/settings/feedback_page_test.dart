@@ -28,10 +28,15 @@ void main() {
     await pumpApp(tester, db: db, feedbackSender: sender, feedbackDraft: draft);
     await tester.tap(find.byTooltip(S.openSettings));
     await settle(tester);
-    final entry = find.text(S.feedbackTitle);
-    await tester.ensureVisible(entry);
+    // Since the merge: Einstellungen → Version, Updates und Feedback →
+    // Feedback geben.
+    expect(find.text(S.feedbackTitle), findsNothing);
+    final about = find.text(S.sectionAbout);
+    await tester.ensureVisible(about);
     await tester.pumpAndSettle();
-    await tester.tap(entry);
+    await tester.tap(about);
+    await settle(tester);
+    await tester.tap(find.text(S.feedbackTitle));
     await settle(tester);
   }
 
@@ -73,7 +78,7 @@ void main() {
     ));
     expect(draft.draft, isNull, reason: 'arrived: draft gone');
     expect(find.text(S.feedbackThanks), findsOneWidget);
-    expect(find.text(S.settings), findsWidgets, reason: 'back in settings');
+    expect(find.text(S.sectionAbout), findsWidgets, reason: 'back on the page');
     await disposeApp(tester, db);
   });
 

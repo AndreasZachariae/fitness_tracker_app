@@ -7,7 +7,10 @@ Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code h
 ## [1.8.0] – unveröffentlicht
 
 ### Neu
-- **Feedback geben:** In den Einstellungen kannst du jetzt direkt einen Bug melden oder dir eine Funktion wünschen – Text eintippen, „Senden“, fertig. Ohne Konto und ohne Anmeldung; mitgeschickt werden nur App-Version und Android-Version. Ohne Netz bleibt der Text gespeichert, bis er angekommen ist.
+- **Feedback geben:** Unter Einstellungen → „Version, Updates und Feedback“ kannst du jetzt direkt einen Bug melden oder dir eine Funktion wünschen – Text eintippen, „Senden“, fertig. Ohne Konto und ohne Anmeldung; mitgeschickt werden nur App-Version und Android-Version. Ohne Netz bleibt der Text gespeichert, bis er angekommen ist.
+
+### Geändert
+- Aus „Über“ wird „Version, Updates und Feedback“ – dort findest du jetzt auch „Feedback geben“, so bleiben die Einstellungen übersichtlich.
 
 ## [1.7.1] – 2026-11-15
 

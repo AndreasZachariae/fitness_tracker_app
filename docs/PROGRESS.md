@@ -291,7 +291,8 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   `docs.google.com/forms/d/e/<ID>/formResponse` (öffentliches Formular „GymLog Feedback“, Felder im Code in
   `lib/domain/feedback.dart`; nicht geheim). Angekommen = HTTP 200 (fehlendes Pflichtfeld oder geändertes Formular gibt
   400). Inoffizieller, aber stabiler Weg; Rückfall „Im Browser öffnen“ (vorausgefüllt, Text auf 1.200 Zeichen gekürzt).
-  Entscheidungen: eigener Eintrag „Feedback geben“ in den Einstellungen (nicht unter Über, leichter zu finden); in der
+  Entscheidungen: „Feedback geben“ auf der Seite „Version, Updates und Feedback“ (vorher „Über“; auf Wunsch des
+  Menschen zusammengelegt, damit es nicht noch eine Einstellungsseite gibt); in der
   echten und der DEV-App; App-Version, Kanal und Android-Version gehen immer mit und stehen sichtbar darüber (keine
   persönlichen Daten, für die Auswertung nötig). Entwurf als kleine JSON-Datei im App-Dokumentenordner (keine
   Datenbank-Migration), gelöscht nach Ankommen. Text höchstens 2.000 Zeichen. Abholen: `scripts/feedback-pull.sh`
@@ -1029,7 +1030,7 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 
 ### 1.8.0 Feedback aus der App
 Nur, was live ausprobiert werden muss; Felder, Senden, Fehlerfall und Entwurf sind automatisch getestet.
-- [ ] Einstellungen → „Feedback geben“: Bug bzw. Funktionswunsch eintippen und senden → „Danke!“; ein paar Sekunden später steht die Antwort in der Google-Tabelle (Version, Kanal, Android richtig). Danach mir Bescheid geben, dann teste ich „Werte das Feedback aus“.
+- [ ] Einstellungen → „Version, Updates und Feedback“ → „Feedback geben“: Bug bzw. Funktionswunsch eintippen und senden → „Danke!“; ein paar Sekunden später steht die Antwort in der Google-Tabelle (Version, Kanal, Android richtig). Danach mir Bescheid geben, dann teste ich „Werte das Feedback aus“.
 - [ ] Flugmodus an, senden → Hinweis „hat nicht geklappt“, Text bleibt; App schließen und wieder öffnen → Text ist noch da; „Im Browser öffnen“ zeigt das ausgefüllte Formular.
 - [ ] Danach die Test-Antworten in Formular und Tabelle löschen.
 
