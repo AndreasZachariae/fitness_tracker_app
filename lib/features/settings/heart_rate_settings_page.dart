@@ -40,11 +40,30 @@ class _HeartRateSettingsPageState extends ConsumerState<HeartRateSettingsPage> {
   Future<bool> _ready() async {
     final monitor = ref.read(heartRateMonitorProvider);
     var availability = await monitor.availability();
-    if (availability == HeartRateAvailability.noPermission &&
-        await monitor.requestPermission()) {
-      availability = await monitor.availability();
+    var blocked = false;
+    if (availability == HeartRateAvailability.noPermission) {
+      switch (await monitor.requestPermission()) {
+        case HeartRatePermission.granted:
+          availability = await monitor.availability();
+        case HeartRatePermission.blocked:
+          blocked = true;
+        case HeartRatePermission.denied:
+          break;
+      }
     }
     if (!mounted) return false;
+    // 1.6.3: Android no longer asks – allow it in the app settings.
+    if (blocked) {
+      showMessage(
+        context,
+        S.heartRatePermissionBlocked,
+        action: (
+          label: S.openSettings,
+          onPressed: () => unawaited(monitor.openAppSettings()),
+        ),
+      );
+      return false;
+    }
     final problem = switch (availability) {
       HeartRateAvailability.ready => null,
       HeartRateAvailability.unsupported => S.heartRateUnsupported,

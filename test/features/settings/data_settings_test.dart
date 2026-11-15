@@ -13,6 +13,7 @@ import 'package:gymlog/data/repositories/settings_repository.dart';
 import 'package:gymlog/domain/models/models.dart';
 import 'package:gymlog/domain/serialization/backup.dart';
 
+import '../../helpers/fake_device.dart';
 import '../../helpers/fake_files.dart';
 import '../../helpers/pump_app.dart';
 import '../../helpers/seed.dart';
@@ -23,9 +24,11 @@ void main() {
   late AppDatabase db;
   late Directory tmp;
   late FakeFileGateway files;
+  late FakeFeedback feedback;
 
   setUp(() {
     db = newTestDatabase();
+    feedback = FakeFeedback();
     tmp = Directory.systemTemp.createTempSync('gymlog-ui');
     files = FakeFileGateway(tmp);
   });
@@ -35,7 +38,7 @@ void main() {
     tester.view.physicalSize = const Size(1080, 2340);
     tester.view.devicePixelRatio = 2.75;
     addTearDown(tester.view.reset);
-    await pumpApp(tester, db: db, files: files);
+    await pumpApp(tester, db: db, files: files, feedback: feedback);
     await tester.tap(find.byTooltip(S.openSettings));
     await settle(tester);
   }
@@ -103,17 +106,30 @@ void main() {
     var s = await settings(tester);
     expect((s.defaultStep, s.defaultStepUnit), (19.5, WeightUnit.kg));
 
-    for (final t in [S.settingVibration, S.settingAutoActivate]) {
-      await tester.ensureVisible(find.text(t));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(t));
-    }
+    await tester.ensureVisible(find.text(S.settingAutoActivate));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.settingAutoActivate));
+    // 1.6.3: vibration strength as a slider; 0 = off, a test pulse on
+    // release.
+    final slider = find.byKey(const ValueKey('vibration-strength'));
+    await tester.ensureVisible(slider);
+    await tester.pumpAndSettle();
+    await tester.drag(slider, const Offset(-1000, 0));
     await settle(tester);
+    expect(find.text(S.vibrationStrength(0)), findsOneWidget);
+    expect(feedback.calls, isEmpty, reason: 'no pulse at 0');
     s = await settings(tester);
     expect(
-      (s.defaultSets, s.defaultRestSec, s.vibrationEnabled, s.autoActivateNext),
+      (s.defaultSets, s.defaultRestSec, s.vibrates, s.autoActivateNext),
       (4, 75, false, true),
     );
+    expect(s.vibrationEnabled, isFalse, reason: 'kept in step');
+    await tester.drag(slider, const Offset(1000, 0));
+    await settle(tester);
+    s = await settings(tester);
+    expect((s.vibrationStrength, s.vibrationEnabled), (100, true));
+    expect(feedback.calls, ['testPulse']);
+    expect(feedback.strengths, [100]);
 
     await leavePage(tester);
     await openArea(tester, S.sectionAppearance);
@@ -132,9 +148,8 @@ void main() {
     await openSettings(tester);
     await openArea(tester, S.sectionAbout);
     expect(find.text('0.9.0'), findsOneWidget);
-    // Build 9 and schema version 9.
-    expect(AppDatabase.currentSchemaVersion, 9);
-    expect(find.text('9'), findsNWidgets(2));
+    expect(find.text('9'), findsOneWidget, reason: 'build');
+    expect(find.text('${AppDatabase.currentSchemaVersion}'), findsOneWidget);
     await disposeApp(tester, db);
   });
 

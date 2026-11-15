@@ -38,6 +38,7 @@ final class AppSettings {
     this.sex,
     this.hrWarnBpm,
     this.hrPauseBpm,
+    this.vibrationStrength = 100,
   });
 
   /// Booking page of the user's gym (1.2.0); changeable in the settings.
@@ -55,7 +56,16 @@ final class AppSettings {
   final int defaultSets;
   final int defaultRestSec;
   final bool restTimerEnabled;
+
+  /// Legacy switch (before 1.6.3), kept in step with [vibrationStrength]
+  /// for older backups and app versions; read [vibrates] instead.
   final bool vibrationEnabled;
+
+  /// Strength of every vibration in % (1.6.3); 0 = off.
+  final int vibrationStrength;
+
+  /// Whether GymLog vibrates at all.
+  bool get vibrates => vibrationStrength > 0;
   final bool keepScreenOn;
   final bool autoActivateNext;
   final ThemePreference themeMode;
@@ -150,7 +160,7 @@ final class AppSettings {
     int? defaultSets,
     int? defaultRestSec,
     bool? restTimerEnabled,
-    bool? vibrationEnabled,
+    int? vibrationStrength,
     bool? keepScreenOn,
     bool? autoActivateNext,
     ThemePreference? themeMode,
@@ -186,7 +196,10 @@ final class AppSettings {
       defaultSets: defaultSets ?? this.defaultSets,
       defaultRestSec: defaultRestSec ?? this.defaultRestSec,
       restTimerEnabled: restTimerEnabled ?? this.restTimerEnabled,
-      vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
+      vibrationEnabled: vibrationStrength == null
+          ? vibrationEnabled
+          : vibrationStrength > 0,
+      vibrationStrength: vibrationStrength ?? this.vibrationStrength,
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       autoActivateNext: autoActivateNext ?? this.autoActivateNext,
       themeMode: themeMode ?? this.themeMode,
@@ -261,7 +274,8 @@ final class AppSettings {
       other.birthYear == birthYear &&
       other.sex == sex &&
       other.hrWarnBpm == hrWarnBpm &&
-      other.hrPauseBpm == hrPauseBpm;
+      other.hrPauseBpm == hrPauseBpm &&
+      other.vibrationStrength == vibrationStrength;
 
   @override
   int get hashCode => Object.hashAll([
@@ -298,6 +312,7 @@ final class AppSettings {
     birthYear,
     sex,
     hrWarnBpm,
+    vibrationStrength,
     hrPauseBpm,
   ]);
 }

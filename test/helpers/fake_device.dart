@@ -11,21 +11,44 @@ import 'package:gymlog/domain/heart_rate.dart';
 final class FakeFeedback implements DeviceFeedback {
   final calls = <String>[];
 
-  @override
-  Future<void> restOver() async => calls.add('restOver');
+  /// The strength of each call, in order (1.6.3).
+  final strengths = <int>[];
 
   @override
-  Future<void> heartRateWarning() async => calls.add('heartRateWarning');
+  Future<void> restOver(int strength) async {
+    calls.add('restOver');
+    strengths.add(strength);
+  }
+
+  @override
+  Future<void> heartRateWarning(int strength) async {
+    calls.add('heartRateWarning');
+    strengths.add(strength);
+  }
+
+  @override
+  Future<void> record(int strength) async {
+    calls.add('record');
+    strengths.add(strength);
+  }
+
+  @override
+  Future<void> testPulse(int strength) async {
+    calls.add('testPulse');
+    strengths.add(strength);
+  }
 }
 
 /// Records scheduled and cancelled rest alarms.
 final class FakeRestAlarm implements RestAlarm {
   final calls = <String>[];
   DateTime? scheduledAt;
+  int? strength;
 
   @override
-  Future<void> schedule(DateTime at) async {
+  Future<void> schedule(DateTime at, int strength) async {
     scheduledAt = at;
+    this.strength = strength;
     calls.add('schedule');
   }
 
@@ -194,6 +217,10 @@ final class FakeApkDownloader implements ApkDownloader {
 final class FakeHeartRateMonitor implements HeartRateMonitor {
   HeartRateAvailability state = HeartRateAvailability.ready;
   bool grantOnRequest = true;
+
+  /// Answer when not granted: denied or blocked for good (1.6.3).
+  HeartRatePermission refusal = HeartRatePermission.denied;
+  int settingsOpened = 0;
   final devices = <HeartRateDevice>[];
   final connects = <String>[];
   int permissionRequests = 0;
@@ -216,11 +243,14 @@ final class FakeHeartRateMonitor implements HeartRateMonitor {
   Future<HeartRateAvailability> availability() async => state;
 
   @override
-  Future<bool> requestPermission() async {
+  Future<HeartRatePermission> requestPermission() async {
     permissionRequests++;
     if (grantOnRequest) state = HeartRateAvailability.ready;
-    return grantOnRequest;
+    return grantOnRequest ? HeartRatePermission.granted : refusal;
   }
+
+  @override
+  Future<void> openAppSettings() async => settingsOpened++;
 
   @override
   Stream<HeartRateDevice> scan() => Stream.fromIterable(devices);

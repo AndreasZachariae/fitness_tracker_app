@@ -50,7 +50,7 @@ class AppDatabase extends _$AppDatabase {
   final Clock? libraryClock;
 
   /// Current schema version. Changes only via migration (CLAUDE.md, rule 4).
-  static const currentSchemaVersion = 9;
+  static const currentSchemaVersion = 10;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -184,6 +184,17 @@ class AppDatabase extends _$AppDatabase {
       // 1.6.1: zones after the lactate threshold (the maximum stays unused).
       from8To9: (m, schema) async {
         await m.addColumn(schema.appSettings, schema.appSettings.hrThreshold);
+      },
+      // 1.6.3: vibration strength; the old switch "off" becomes 0 %.
+      from9To10: (m, schema) async {
+        await m.addColumn(
+          schema.appSettings,
+          schema.appSettings.vibrationStrength,
+        );
+        await customStatement(
+          'UPDATE app_settings SET vibration_strength = '
+          'CASE WHEN vibration_enabled = 1 THEN 100 ELSE 0 END',
+        );
       },
     ),
     beforeOpen: (details) async {

@@ -4,6 +4,18 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
+## [1.6.3] – unveröffentlicht
+
+### Neu
+- **Rekord für die ganze Übung:** Statt einzelner Sätze zählt jetzt die ganze Übung – das Volumen (Gewicht × Wdh), bei Körpergewicht die Wiederholungen, bei Zeitübungen die Gesamtzeit. Während des Trainings steht da, wie viel noch bis zum Rekord fehlt; der Satz, der ihn knackt, leuchtet rot und vibriert einmal.
+- **Vibrationsstärke:** In Einstellungen → Training regelt ein Schieber die Stärke aller Vibrationen (0 = aus); beim Loslassen kommt ein kurzer Testpuls.
+
+### Geändert
+- **Steigerungsvorschlag:** Er kommt jetzt auch, wenn du letztes Mal alle Sätze mit demselben Gewicht und denselben Wiederholungen geschafft hast – ohne Ziel im Plan. Darunter steht immer, warum, z. B. „Letztes Mal 3 × 10 mit 60 kg geschafft“.
+
+### Behoben
+- Die normale App fragte nicht nach der Berechtigung „Geräte in der Nähe“ für den Pulsmesser. GymLog fragt jetzt selbst; wurde sie dauerhaft abgelehnt, führt ein Knopf zu den App-Einstellungen.
+
 ## [1.6.2] – 2026-11-12
 
 Enthält die nie einzeln veröffentlichten Versionen 1.5.0, 1.5.1, 1.6.0 und 1.6.1.

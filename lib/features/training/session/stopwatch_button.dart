@@ -129,8 +129,10 @@ class _StopwatchButtonState extends ConsumerState<StopwatchButton>
         lifecycle == null || lifecycle == AppLifecycleState.resumed;
     final settings = ref.read(settingsProvider).value ?? AppSettings.defaults;
     // In the background the alarm vibrates.
-    if (foreground && settings.vibrationEnabled) {
-      unawaited(ref.read(deviceFeedbackProvider).restOver());
+    if (foreground && settings.vibrates) {
+      unawaited(
+        ref.read(deviceFeedbackProvider).restOver(settings.vibrationStrength),
+      );
     }
   }
 

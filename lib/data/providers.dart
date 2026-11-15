@@ -138,9 +138,9 @@ final sessionSupersetsProvider =
           ref.watch(sessionRepositoryProvider).watchSupersets(sessionId),
     );
 
-/// Record sets of a session by set id.
+/// Exercise record per session exercise of a session (1.6.3).
 final sessionRecordsProvider =
-    StreamProvider.family<Map<int, List<RecordKind>>, int>(
+    StreamProvider.family<Map<int, ExerciseRecordStatus>, int>(
       (ref, sessionId) =>
           ref.watch(sessionRepositoryProvider).watchSessionRecords(sessionId),
     );

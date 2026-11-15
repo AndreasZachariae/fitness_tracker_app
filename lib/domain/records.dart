@@ -34,35 +34,95 @@ double? recordValue(RecordKind kind, SetEntry set) => switch (kind) {
 /// A set of one exercise together with its session.
 typedef HistorySet = ({SetEntry set, int sessionId});
 
-/// Which sets of ONE exercise set new records, given all its sets in
-/// chronological order (SPEC §7.7): strictly greater than every earlier
-/// working set, including earlier sets of the same session. Sets of the
-/// very first session of the exercise never count as records.
-Map<int, List<RecordKind>> detectRecords(
+// Exercise record (1.6.3): the whole exercise of a training, not one set.
+
+/// What the exercise record measures: volume (kg × reps), total reps or
+/// total time.
+enum ExerciseTotalKind { volume, reps, duration }
+
+ExerciseTotalKind exerciseTotalKind(ExerciseType type) => switch (type) {
+  ExerciseType.weightReps => ExerciseTotalKind.volume,
+  ExerciseType.bodyweight => ExerciseTotalKind.reps,
+  ExerciseType.timed => ExerciseTotalKind.duration,
+};
+
+/// The total of [sets] (working sets only): Σ weight × reps, Σ reps or
+/// Σ seconds.
+double exerciseTotal(ExerciseType type, Iterable<SetEntry> sets) {
+  var total = 0.0;
+  for (final s in sets) {
+    if (s.isWarmup) continue;
+    total += switch (exerciseTotalKind(type)) {
+      ExerciseTotalKind.volume => (s.weightKg ?? 0) * (s.reps ?? 0),
+      ExerciseTotalKind.reps => (s.reps ?? 0).toDouble(),
+      ExerciseTotalKind.duration => (s.durationSec ?? 0).toDouble(),
+    };
+  }
+  return total;
+}
+
+/// An exercise in one training: its [total] and the [best] total of the
+/// trainings before (null: no earlier training, so no record yet).
+typedef ExerciseRecordStatus = ({double total, double? best});
+
+extension ExerciseRecordStatusX on ExerciseRecordStatus {
+  /// Strictly more than every earlier training.
+  bool get isRecord => best != null && total > best!;
+
+  /// How much is missing to the record (0 when reached).
+  double get missing => best == null || total > best! ? 0 : best! - total;
+}
+
+/// Totals per training of ONE exercise from its sets in chronological
+/// order, in the order of the trainings (working sets only).
+List<({int sessionId, double total})> _totalsPerSession(
   ExerciseType type,
   List<HistorySet> chronological,
 ) {
-  final working = [
-    for (final h in chronological)
-      if (!h.set.isWarmup) h,
+  final order = <int>[];
+  final sets = <int, List<SetEntry>>{};
+  for (final h in chronological) {
+    if (h.set.isWarmup) continue;
+    if (!sets.containsKey(h.sessionId)) order.add(h.sessionId);
+    sets.putIfAbsent(h.sessionId, () => []).add(h.set);
+  }
+  return [
+    for (final id in order)
+      (sessionId: id, total: exerciseTotal(type, sets[id]!)),
   ];
-  if (working.isEmpty) return const {};
-  final firstSession = working.first.sessionId;
-  final kinds = recordKindsFor(type);
-  final best = <RecordKind, double>{};
-  final result = <int, List<RecordKind>>{};
-  for (final h in working) {
-    final hit = <RecordKind>[];
-    for (final kind in kinds) {
-      final value = recordValue(kind, h.set);
-      if (value == null) continue;
-      final previous = best[kind];
-      if (h.sessionId != firstSession && previous != null && value > previous) {
-        hit.add(kind);
-      }
-      if (previous == null || value > previous) best[kind] = value;
+}
+
+/// The record status of the exercise in training [sessionId]: compared with
+/// the trainings before it. A training without sets yet (just started)
+/// compares with all others.
+ExerciseRecordStatus exerciseRecordStatus(
+  ExerciseType type,
+  List<HistorySet> chronological,
+  int sessionId,
+) {
+  double? best;
+  var total = 0.0;
+  for (final t in _totalsPerSession(type, chronological)) {
+    if (t.sessionId == sessionId) {
+      total = t.total;
+      break;
     }
-    if (hit.isNotEmpty) result[h.set.id] = hit;
+    if (best == null || t.total > best) best = t.total;
+  }
+  return (total: total, best: best);
+}
+
+/// The trainings in which ONE exercise set a record: more than in every
+/// training before. The first training never counts.
+Set<int> exerciseRecordSessions(
+  ExerciseType type,
+  List<HistorySet> chronological,
+) {
+  final result = <int>{};
+  double? best;
+  for (final t in _totalsPerSession(type, chronological)) {
+    if (best != null && t.total > best) result.add(t.sessionId);
+    if (best == null || t.total > best) best = t.total;
   }
   return result;
 }

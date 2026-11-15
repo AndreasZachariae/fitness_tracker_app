@@ -16,7 +16,7 @@ import '../../../data/repositories/repository_exceptions.dart';
 import '../../../data/repositories/session_repository.dart';
 import '../../../domain/metrics.dart';
 import '../../../domain/models/models.dart';
-import '../../../domain/weight_steps.dart';
+import '../../../domain/records.dart';
 import '../../../widgets/name_dialog.dart';
 import '../../../widgets/snackbars.dart';
 import '../../heart_rate/heart_rate_widgets.dart';
@@ -289,8 +289,11 @@ class _SummaryBody extends StatelessWidget {
               leading: Icon(Icons.emoji_events, color: gym.record),
               title: Text(r.exercise.name),
               subtitle: Text(
-                '${S.recordKind(r.kind)}: '
-                '${formatRecordValue(r.kind, r.value, levels: levelsOf(r.exercise))}',
+                S.exerciseRecordSummary(
+                  S.exerciseTotalKind(exerciseTotalKind(r.exercise.type)),
+                  formatExerciseTotal(r.exercise, r.total),
+                  formatExerciseTotal(r.exercise, r.previous),
+                ),
               ),
             ),
         ],

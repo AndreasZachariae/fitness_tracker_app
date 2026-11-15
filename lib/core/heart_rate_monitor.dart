@@ -17,6 +17,10 @@ enum HeartRateAvailability {
   ready,
 }
 
+/// Answer to the request for "Geräte in der Nähe" (1.6.3). [blocked]:
+/// denied for good, Android does not ask again – only the app settings help.
+enum HeartRatePermission { granted, denied, blocked }
+
 /// A heart rate monitor found nearby.
 typedef HeartRateDevice = ({String id, String name});
 
@@ -25,8 +29,11 @@ typedef HeartRateDevice = ({String id, String name});
 abstract interface class HeartRateMonitor {
   Future<HeartRateAvailability> availability();
 
-  /// Asks for the Bluetooth permissions (no location); true if granted.
-  Future<bool> requestPermission();
+  /// Asks for the Bluetooth permissions (no location).
+  Future<HeartRatePermission> requestPermission();
+
+  /// Android's settings of GymLog, to allow a blocked permission (1.6.3).
+  Future<void> openAppSettings();
 
   /// Monitors nearby until the subscription is cancelled.
   Stream<HeartRateDevice> scan();
@@ -58,9 +65,8 @@ final class BluetoothHeartRateMonitor implements HeartRateMonitor {
   Future<HeartRateAvailability> availability() async {
     if (await _sdkInt() < 31) return HeartRateAvailability.unsupported;
     try {
-      if (!await UniversalBle.hasPermissions()) {
-        return HeartRateAvailability.noPermission;
-      }
+      // 1.6.3: checked by GymLog itself, not by the plugin.
+      if (!await _granted()) return HeartRateAvailability.noPermission;
       return switch (await UniversalBle.getBluetoothAvailabilityState()) {
         AvailabilityState.poweredOn => HeartRateAvailability.ready,
         AvailabilityState.unauthorized => HeartRateAvailability.noPermission,
@@ -73,17 +79,34 @@ final class BluetoothHeartRateMonitor implements HeartRateMonitor {
     }
   }
 
-  @override
-  Future<bool> requestPermission() async {
+  Future<bool> _granted() async {
     try {
-      await UniversalBle.requestPermissions();
+      return await _device.invokeMethod<bool>('bluetoothGranted') ?? false;
+    } on MissingPluginException {
+      return UniversalBle.hasPermissions();
+    }
+  }
+
+  /// 1.6.3: requested through MainActivity. In the shrunk release app the
+  /// plugin never showed Android's dialog (works in the DEV app).
+  @override
+  Future<HeartRatePermission> requestPermission() async {
+    try {
+      return HeartRatePermission.values.byName(
+        await _device.invokeMethod<String>('requestBluetooth') ?? 'denied',
+      );
     } on Object catch (e) {
       debugPrint('Bluetooth permission: $e');
+      return HeartRatePermission.denied;
     }
+  }
+
+  @override
+  Future<void> openAppSettings() async {
     try {
-      return await UniversalBle.hasPermissions();
-    } on Object {
-      return false;
+      await _device.invokeMethod<void>('openAppSettings');
+    } on Object catch (e) {
+      debugPrint('App settings: $e');
     }
   }
 

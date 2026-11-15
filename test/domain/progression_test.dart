@@ -21,6 +21,22 @@ ProgressionSuggestion? suggest(
   int? reps = 10,
   int? duration = 45,
   WeightStep step = const KgStep(2.5),
+}) => progression(
+  type,
+  last,
+  sets: sets,
+  reps: reps,
+  duration: duration,
+  step: step,
+)?.suggestion;
+
+Progression? progression(
+  ExerciseType type,
+  List<SetEntry> last, {
+  int sets = 3,
+  int? reps = 10,
+  int? duration = 45,
+  WeightStep step = const KgStep(2.5),
 }) => suggestProgression(
   type: type,
   step: step,
@@ -81,7 +97,22 @@ void main() {
     ),
     ('no reps target', w, hit, 3, null, 45),
     ('no history', w, <SetEntry>[], 3, 10, 45),
-    ('no duration target', t, [s(d: 60)], 1, 10, null),
+    (
+      'different weights, no target',
+      w,
+      [s(w: 60, r: 10), s(w: 62.5, r: 10), s(w: 60, r: 10)],
+      3,
+      null,
+      45,
+    ),
+    (
+      'no duration target, different times',
+      t,
+      [s(d: 60), s(d: 50)],
+      2,
+      10,
+      null,
+    ),
     (
       'warm-ups do not count as sets',
       w,
@@ -99,6 +130,29 @@ void main() {
       );
     });
   }
+
+  test('1.6.3: the same sets last time → step up, also without target', () {
+    final same = [s(w: 60, r: 8), s(w: 60, r: 8), s(w: 60, r: 8)];
+    final p = progression(w, same, reps: null)!;
+    expect(p.suggestion, isA<AddWeight>());
+    final reason = p.reason as SameSets;
+    expect((reason.sets, reason.weightKg, reason.reps), (3, 60, 8));
+    // Below the target, but all the same: still a step (the user's rule).
+    expect(progression(w, same, reps: 10)!.reason, isA<SameSets>());
+    // Target reached with different reps: the target is the reason.
+    final target = progression(w, hit)!.reason as TargetReached;
+    expect((target.sets, target.target), (3, 10));
+    // Timed: same time and weight.
+    final timed = progression(
+      t,
+      [s(d: 60), s(d: 60)],
+      sets: 2,
+      duration: null,
+    )!;
+    expect((timed.reason as SameSets).durationSec, 60);
+    // Zero reps do not count as "the same".
+    expect(progression(w, [s(w: 60, r: 0)], sets: 1, reps: null), isNull);
+  });
 
   test('bodyweight without added weight → +1 rep', () {
     final p = suggest(b, [s(w: 0, r: 10), s(w: 0, r: 12), s(w: 0, r: 10)]);

@@ -27,7 +27,7 @@ void main() {
   test('header fields (SPEC §8.2)', () {
     final json = jsonDecode(encodeBackup(backup)) as Map<String, Object?>;
     expect(json['format'], 'gymlog-backup');
-    expect(json['formatVersion'], 9);
+    expect(json['formatVersion'], 10);
     expect(json['schemaVersion'], 1);
     expect(json['appVersion'], '1.0.0+12');
     expect(json['exportedAt'], isA<String>());
@@ -425,6 +425,27 @@ void main() {
     expect(old.settings.hrWarnBpm, 182, reason: 'known since format 8');
   });
 
+  test('1.6.3: vibration strength; before format 10 from on/off', () {
+    final data = BackupData(
+      dataset: demo,
+      settings: settings.copyWith(vibrationStrength: 60),
+      schemaVersion: 10,
+      appVersion: '1.6.3+27',
+      exportedAt: testNow,
+    );
+    final text = encodeBackup(data);
+    final s = decodeBackup(text).settings;
+    expect((s.vibrationStrength, s.vibrationEnabled), (60, true));
+    final j = jsonDecode(text) as Map<String, Object?>;
+    j['formatVersion'] = 9;
+    final settingsJson =
+        (j['data']! as Map<String, Object?>)['settings']!
+            as Map<String, Object?>;
+    expect(decodeBackup(jsonEncode(j)).settings.vibrationStrength, 100);
+    settingsJson['vibrationEnabled'] = false;
+    expect(decodeBackup(jsonEncode(j)).settings.vibrationStrength, 0);
+  });
+
   test('training days: round trip and validation (1.2.0)', () {
     final planId = demo.plans.first.id;
     final withDays = BackupData(
@@ -507,7 +528,7 @@ void main() {
       (
         'newer version',
         () {
-          final j = json()..['formatVersion'] = 10;
+          final j = json()..['formatVersion'] = 11;
           return jsonEncode(j);
         },
         BackupError.newerVersion,

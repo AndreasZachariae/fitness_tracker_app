@@ -136,6 +136,16 @@ STATUS: FINISHED
     - Der Dateibrowser der sich öffnet um die apk zu laden lädt nicht direkt den richtigen unterordner GymLog. Das sollte direkt der richtige Ordner sein in dem die apk liegt.
     - Problem: Wenn ich auf die apk klicke kann ich sie nciht installieren weil Files by Google nicht dazu berechtigt ist. Scheinbar ist die app von files by google abgespeichert worden? oder Nur weil ich sie von dort öffnen möchte? Das sollte so wie vorher durch klicken funktionieren.
     - Auch bei der Benachrichtigung zum download der apk die dort kommt steht unbekannte quelle com.android.providers.media
+Version 1.6.3 (Bugfixes)
+STATUS: FINISHED
+    - App fragt nicht nach Geräte in der Nähe Berechtigung. Bei der Dev app geht das dort wird die berechtigung angefragt. aber die finale app fragt gar nicht.
+    - Während Garmin auf broadcast heart rate ist kommen die Benachrichtigungen zu Pause vorbei nicht mehr auf der Uhr an. Aber es kann sein, dass es dafür keine lösung gibt und die notifications während der broadcast app einfach stumm sind.
+    - Rekorde nicht pro Satz sondern für die ganze Übung zB über gesamtes Volumen der übung. Der Rekord soll motivieren sich zu steigern und aber auch bei den letzten sätzen noch alles geben.
+    - Vorschläge sind nicht eindeutig. Was ist die Regel für den Vorschlag? Meine Idee ist zB wenn man das letzte mal alle sätze mit der selben Wiederholung und Gewicht geschafft hat sollte man eins aufsteigen. Gib mir dazu ein paar Vorschläge 
+    - Slider für stärke der Vibration in Einstellungen Training. Evtl gar kein toggle sondern wenn Slider 0 ist aus. Beim slider loslassen einen kurzen test in der stärke nur ein Puls ausgeben.
+Version 1.7.0 (Mehr Körperdaten)
+    - Neben dem Gewicht möchte ich auch bei Körper weitere Daten tracken die mir meine smarte waage anzeigt. Aber nicht jeder hat so eine waage deshalb sollte nur das gewicht default sein. Aber auf einem button in de rnähe soll man auhc die anderen Daten eingeben können. So kann man auch bei dem graph als verlauf oben switchen welche daten man sich anzeigen möchte ähnlich wie bei dem statistik screen. Ich möchte die Daten: Muskekmasse anteil, Körperfettanteil, Körperwasseranteil, Knochenmasse
+    - Übungsanzeige während dem Training neu designen. Das Handy steht in einer Halterung direkt am Trainingsgerät bei dem dann unten Zwei-drei Zentimeter verdeckt sind. Genau die Pause und der Button zum Speichern des Satzes. Die anderen Sachen sind während dem Training nicht so wichtig wie ganz unten die tabs wie Statistiken und Köper oder der zusätzliche Satz usw. Aber die Pause könnte zB ganz oben unter dem Timer sein. Der Satz speichenr Knopf könnte weiter oben im Übungs chip sein. DIe anderen buttons wie +1 Satz oder Übung beenden sind nicht so wichtig und könnten unten bleiben. Belasse die bisherige ansicht genauso wie sie war. FÜge die neue umgestaltete Version zusätzlich hinzu. Füge in den Einstellungen unter Training eine Option hinzu um die Übungsansicht umzuschalten zwischen diesen beiden Optionen. STandard und "Optimiert für Traininsgerätehalterung"
 Version 2.X.0 (Personality)
 STATUS: PLANNED
     - Give the app more individual personality like e.g. Duolingo. The theme should be a little robot.

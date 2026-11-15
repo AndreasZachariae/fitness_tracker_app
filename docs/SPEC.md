@@ -226,7 +226,8 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
 
 - Ein Bluetooth-Pulsmesser (Standard-Herzfrequenzdienst 0x180D: Brustgurt oder Uhr mit „Herzfrequenz übertragen“, z. B.
   Garmin Forerunner 255, epix Pro Gen 2) wird unter Einstellungen → Pulsmesser gesucht, gespeichert, getestet (mit
-  Hinweis, ob RR-Intervalle kommen) und entfernt. Nur ab Android 12 (Rechte „Geräte in der Nähe“ ohne Standort).
+  Hinweis, ob RR-Intervalle kommen) und entfernt. Nur ab Android 12 (Rechte „Geräte in der Nähe“ ohne Standort; ab 1.6.3 fragt
+  GymLog selbst über `MainActivity`, bei dauerhafter Ablehnung Hinweis mit Knopf zu den App-Einstellungen).
 - Läuft ein Training und ist ein Pulsmesser gespeichert, verbindet GymLog sich automatisch und zeigt „♥ 128“ groß und
   rechtsbündig in der aktiven Übung vor dem Griff („♥ –“ grau beim Verbinden oder nach einem Abbruch; neuer Versuch alle
   5 s). Nach dem Training wird getrennt.
@@ -362,7 +363,9 @@ der Startseite (nur wenn es Trainings gibt).
   übernehmen“) → „Importieren“ legt in einer Transaktion Übungen, Plan (Gruppen mit „Rotate“ → Wechsel, mit „Set“ →
   Superset) und optional das beendete Training an und öffnet die Plan-Seite für die Trainingstage. Sätze mit
   0 Wiederholungen werden weggelassen, lbs in kg umgerechnet.
-- **Training:** Standard-Satzanzahl, Standard-Pause (s), Pausentimer an/aus, Vibration an/aus, Display anlassen,
+- **Training:** Standard-Satzanzahl, Standard-Pause (s), Pausentimer an/aus, Vibration (ab 1.6.3 Stärke 0–100 % in
+  10er-Schritten als Regler, 0 = aus, beim Loslassen ein kurzer Testpuls; gilt für alle Vibrationen inkl. Alarm im
+  Hintergrund), Display anlassen,
   Nächste Übung automatisch aktivieren.
 - **Darstellung:** System / Hell / Dunkel.
 - **Daten:** „CSV exportieren“, „Backup erstellen“ (ab 1.6.1 ohne Rückfrage nach `Download/GymLog`, Meldung mit dem
@@ -398,8 +401,11 @@ Arbeitssätze = Sätze mit `isWarmup == false`. Alle Berechnungen nutzen nur Arb
 3. Sonst: Wdh = `targetReps`, Dauer = `targetDurationSec`, Gewicht leer (`weight_reps`) bzw. 0 (`bodyweight`).
 
 ### 7.2 Steigerungsvorschlag (nur für Satz 1)
-- Bedingung: Ziel (`targetReps` bzw. `targetDurationSec`) ist gesetzt, und in der letzten Session mit dieser Übung wurden
-  mindestens `targetSets` Arbeitssätze erfasst, die alle das Ziel erreicht haben.
+- Bedingung (ab 1.6.3): In der letzten Session mit dieser Übung wurden mindestens `targetSets` Arbeitssätze erfasst, und
+  entweder waren alle gleich (gleiches Gewicht und gleiche Wdh bzw. Dauer, > 0) – auch ohne Ziel – oder ein Ziel
+  (`targetReps` bzw. `targetDurationSec`) ist gesetzt und alle haben es erreicht.
+- Unter dem Vorschlag steht die Begründung: „Letztes Mal 3 × 10 mit 60 kg geschafft“ bzw. „Letztes Mal alle 3 Sätze
+  mit mind. 10 Wdh geschafft“.
 - Vorschlag: `weight_reps` → ein Gewichtsschritt mehr (nächste Scheibe bzw. Stufe, ab 1.1.0) · `bodyweight` → mit Zusatzgewicht > 0: ein Schritt mehr, sonst Wdh + 1 ·
   `timed` → Dauer + 5 s.
 - Der Vorschlag wird nur angeboten (Chip), nie automatisch übernommen.
@@ -427,12 +433,14 @@ Arbeitssätze = Sätze mit `isWarmup == false`. Alle Berechnungen nutzen nur Arb
 Σ (Gewicht × Wdh) über Arbeitssätze von `weight_reps`-Übungen. Pro Training (bis 1.3.0 in der Statistik pro ISO-Woche).
 
 ### 7.7 Rekorde
-- `weight_reps`: höchstes e1RM, höchstes Gewicht.
-- `bodyweight`: meiste Wdh in einem Satz, höchstes Zusatzgewicht.
-- `timed`: längste Dauer.
-- **Live-Erkennung** beim Speichern eines Satzes: Rekord, wenn der Wert strikt größer ist als alle früheren Arbeitssätze dieser
-  Übung (inklusive früherer Sätze derselben Session). In der allerersten Session einer Übung werden keine Rekorde gemeldet.
-  Anzeige: kurzes rotes Aufleuchten der Kachel, Rekord-Label am Satz, mittlere Haptik.
+- **Übungs-Rekord (ab 1.6.3, ersetzt die Satz-Rekorde im Training):** Summe einer Übung in einer Session über die
+  Arbeitssätze – `weight_reps`: Volumen Σ Gewicht × Wdh; `bodyweight`: Σ Wdh; `timed`: Σ Dauer. Rekord, wenn strikt größer
+  als in jeder früheren Session dieser Übung; die erste Session zählt nie.
+- Anzeige in der aktiven Übung: „Rekord 1.800 kg · noch 150 kg“; der Satz, der den Rekord überschreitet, lässt die Kachel
+  rot aufleuchten und vibriert einmal (Stärke aus den Einstellungen); danach „Neuer Rekord: 1.850 kg (vorher 1.800 kg)“
+  mit Rekord-Label, ebenso in erledigten Übungen, im Verlauf und in der Zusammenfassung („Volumen: … (vorher …)“).
+- **Tab Rekorde** (Statistik) zeigt weiter die Bestwerte je Satz: `weight_reps` höchstes e1RM und Gewicht, `bodyweight`
+  meiste Wdh und höchstes Zusatzgewicht, `timed` längste Dauer.
 
 ### 7.8 Gleitender Durchschnitt Körpergewicht
 Für jeden Eintrag mit Datum d: Mittelwert aller Einträge im Intervall [d − 6 Tage, d].

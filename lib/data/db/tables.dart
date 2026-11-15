@@ -387,6 +387,11 @@ class AppSettingsTable extends Table {
   // Schema 9 (1.6.1): zones after the lactate threshold heart rate.
   IntColumn get hrThreshold =>
       integer().nullable().check(hrThreshold.isBetweenValues(80, 230))();
+  // Schema 10 (1.6.3): strength of the vibration in %, 0 = off;
+  // vibration_enabled is kept in step.
+  IntColumn get vibrationStrength => integer()
+      .withDefault(const Constant(100))
+      .check(vibrationStrength.isBetweenValues(0, 100))();
 
   @override
   Set<Column> get primaryKey => {id};

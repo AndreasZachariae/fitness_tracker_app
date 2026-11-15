@@ -105,6 +105,36 @@ void main() {
     await disposeApp(tester, db);
   });
 
+  testWidgets('1.6.3: permission blocked for good → to the app settings', (
+    tester,
+  ) async {
+    monitor
+      ..state = HeartRateAvailability.noPermission
+      ..grantOnRequest = false
+      ..refusal = HeartRatePermission.blocked;
+    await open(tester);
+    await openPage(tester);
+    await tester.tap(find.text(S.heartRateSearch).last);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(S.heartRatePermissionBlocked), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 500)); // slide in
+    await tester.tap(find.widgetWithText(SnackBarAction, S.openSettings));
+    await tester.pump();
+    expect(monitor.settingsOpened, 1);
+
+    // Only denied (Android asks again next time): the usual hint.
+    monitor.refusal = HeartRatePermission.denied;
+    await tester.pump(const Duration(seconds: 6));
+    await tester.tap(find.text(S.heartRateSearch).last);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(S.heartRatePermission), findsOneWidget);
+    expect(monitor.permissionRequests, 2);
+    await settle(tester);
+    await disposeApp(tester, db);
+  });
+
   testWidgets('settings: explains an old Android and Bluetooth off', (
     tester,
   ) async {

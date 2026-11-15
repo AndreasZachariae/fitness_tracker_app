@@ -8,8 +8,14 @@ void showMessage(
   BuildContext context,
   String message, {
   VoidCallback? onUndo,
+  ({String label, VoidCallback onPressed})? action,
   Duration duration = const Duration(seconds: 4),
 }) {
+  final button = onUndo != null
+      ? SnackBarAction(label: S.undo, onPressed: onUndo)
+      : action == null
+      ? null
+      : SnackBarAction(label: action.label, onPressed: action.onPressed);
   // SnackBar measures the action without the text scale; with large system
   // fonts the action would squeeze the message (words broken mid-word), so
   // it goes to its own line then (M10).
@@ -20,13 +26,11 @@ void showMessage(
       SnackBar(
         content: Text(message),
         actionOverflowThreshold: largeText ? 0 : null,
-        duration: onUndo == null ? duration : const Duration(seconds: 5),
+        duration: button == null ? duration : const Duration(seconds: 5),
         // With an action Flutter keeps the snackbar until it is swiped away;
         // it covered the app (1.0.1). It always disappears on its own.
         persist: false,
-        action: onUndo == null
-            ? null
-            : SnackBarAction(label: S.undo, onPressed: onUndo),
+        action: button,
       ),
     );
 }

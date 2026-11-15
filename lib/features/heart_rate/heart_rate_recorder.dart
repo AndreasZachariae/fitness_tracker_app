@@ -180,8 +180,12 @@ class _HeartRateRecorderState extends ConsumerState<HeartRateRecorder>
     final last = _lastWarning;
     if (last != null && now.difference(last) < warnEvery) return;
     _lastWarning = now;
-    if (settings.vibrationEnabled) {
-      unawaited(ref.read(deviceFeedbackProvider).heartRateWarning());
+    if (settings.vibrates) {
+      unawaited(
+        ref
+            .read(deviceFeedbackProvider)
+            .heartRateWarning(settings.vibrationStrength),
+      );
     }
   }
 

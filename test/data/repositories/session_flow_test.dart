@@ -320,31 +320,47 @@ void main() {
     }
   });
 
-  test('saveSet reports records, but not in the first session', () async {
+  test('1.6.3: exercise record – only the crossing set, never in the first '
+      'session', () async {
     final first = await startSession(sets: 3);
     final a = await seId(first, 0);
-    final s1 = await repo.saveSet(a, w60);
+    final s1 = await repo.saveSet(a, w60); // 600
     final s2 = await repo.saveSet(a, const SetValues(weightKg: 70, reps: 10));
-    expect(s1.records, isEmpty);
-    expect(s2.records, isEmpty, reason: 'first session of the exercise');
-    await repo.finishSession(first);
+    expect((s1.exerciseRecord, s2.exerciseRecord), (false, false));
+    expect(
+      (await repo.watchSessionRecords(first).first)[a]!.best,
+      isNull,
+      reason: 'first session of the exercise',
+    );
+    await repo.finishSession(first); // 1300 kg
 
     clock.advance(const Duration(days: 2));
     final second = await startSession(sets: 3);
     final b = await seId(second, 0);
+    // Before the first set: the record to beat.
+    final start = (await repo.watchSessionRecords(second).first)[b]!;
+    expect((start.total, start.best, start.missing), (0, 1300, 1300));
     final s3 = await repo.saveSet(b, const SetValues(weightKg: 70, reps: 10));
-    expect(s3.records, isEmpty, reason: 'equal is not a record');
-    final s4 = await repo.saveSet(b, const SetValues(weightKg: 72.5, reps: 3));
-    expect(s4.records, [RecordKind.weight]);
-    final s5 = await repo.saveSet(b, const SetValues(weightKg: 72.5, reps: 4));
-    expect(s5.records, isEmpty, reason: 'e1RM 82.2 < 93.3, weight equal');
+    final s4 = await repo.saveSet(b, const SetValues(weightKg: 60, reps: 10));
+    expect((s3.exerciseRecord, s4.exerciseRecord), (false, false));
+    expect(
+      (await repo.watchSessionRecords(second).first)[b]!.isRecord,
+      isFalse,
+    );
+    // 1300 equal → no record; the next one crosses.
+    final s5 = await repo.saveSet(b, const SetValues(weightKg: 10, reps: 1));
+    expect(s5.exerciseRecord, isTrue);
+    final status = (await repo.watchSessionRecords(second).first)[b]!;
+    expect((status.total, status.best, status.isRecord), (1310, 1300, true));
+    final records = await repo.sessionRecords(second);
+    expect(records.map((r) => (r.total, r.previous)), [(1310.0, 1300.0)]);
 
-    final flagged = await repo.watchSessionRecords(second).first;
-    expect(flagged.keys, [s4.set.id]);
-
-    // Undo removes the record set; the flags follow.
+    // Undo takes the record back.
     await repo.undoSave(s5);
-    await repo.undoSave(s4);
-    expect(await repo.watchSessionRecords(second).first, isEmpty);
+    expect(
+      (await repo.watchSessionRecords(second).first)[b]!.isRecord,
+      isFalse,
+    );
+    expect(await repo.sessionRecords(second), isEmpty);
   });
 }

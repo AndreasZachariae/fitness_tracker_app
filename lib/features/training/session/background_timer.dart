@@ -32,8 +32,10 @@ Future<void> handTimerToAndroid(
   required bool countDown,
 }) async {
   final notifications = ref.read(notificationGatewayProvider);
-  if (countDown && settings.vibrationEnabled) {
-    unawaited(ref.read(restAlarmProvider).schedule(at));
+  if (countDown && settings.vibrates) {
+    unawaited(
+      ref.read(restAlarmProvider).schedule(at, settings.vibrationStrength),
+    );
   }
   if (!settings.notifyRest) return;
   await notifications.showTimer(

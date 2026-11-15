@@ -4215,6 +4215,19 @@ class $AppSettingsTableTable extends AppSettingsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _vibrationStrengthMeta = const VerificationMeta(
+    'vibrationStrength',
+  );
+  @override
+  late final GeneratedColumn<int> vibrationStrength = GeneratedColumn<int>(
+    'vibration_strength',
+    aliasedName,
+    false,
+    check: () => ComparableExpr(vibrationStrength).isBetweenValues(0, 100),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(100),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4251,6 +4264,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     hrWarnBpm,
     hrPauseBpm,
     hrThreshold,
+    vibrationStrength,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4522,6 +4536,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('vibration_strength')) {
+      context.handle(
+        _vibrationStrengthMeta,
+        vibrationStrength.isAcceptableOrUnknown(
+          data['vibration_strength']!,
+          _vibrationStrengthMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4673,6 +4696,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.int,
         data['${effectivePrefix}hr_pause_bpm'],
       ),
+      vibrationStrength: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}vibration_strength'],
+      )!,
     );
   }
 
@@ -4725,6 +4752,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
   final Value<int?> hrWarnBpm;
   final Value<int?> hrPauseBpm;
   final Value<int?> hrThreshold;
+  final Value<int> vibrationStrength;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
     this.defaultSets = const Value.absent(),
@@ -4760,6 +4788,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     this.hrWarnBpm = const Value.absent(),
     this.hrPauseBpm = const Value.absent(),
     this.hrThreshold = const Value.absent(),
+    this.vibrationStrength = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
     this.id = const Value.absent(),
@@ -4796,6 +4825,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     this.hrWarnBpm = const Value.absent(),
     this.hrPauseBpm = const Value.absent(),
     this.hrThreshold = const Value.absent(),
+    this.vibrationStrength = const Value.absent(),
   });
   static Insertable<AppSettings> custom({
     Expression<int>? id,
@@ -4832,6 +4862,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     Expression<int>? hrWarnBpm,
     Expression<int>? hrPauseBpm,
     Expression<int>? hrThreshold,
+    Expression<int>? vibrationStrength,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -4870,6 +4901,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
       if (hrWarnBpm != null) 'hr_warn_bpm': hrWarnBpm,
       if (hrPauseBpm != null) 'hr_pause_bpm': hrPauseBpm,
       if (hrThreshold != null) 'hr_threshold': hrThreshold,
+      if (vibrationStrength != null) 'vibration_strength': vibrationStrength,
     });
   }
 
@@ -4908,6 +4940,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     Value<int?>? hrWarnBpm,
     Value<int?>? hrPauseBpm,
     Value<int?>? hrThreshold,
+    Value<int>? vibrationStrength,
   }) {
     return AppSettingsTableCompanion(
       id: id ?? this.id,
@@ -4944,6 +4977,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
       hrWarnBpm: hrWarnBpm ?? this.hrWarnBpm,
       hrPauseBpm: hrPauseBpm ?? this.hrPauseBpm,
       hrThreshold: hrThreshold ?? this.hrThreshold,
+      vibrationStrength: vibrationStrength ?? this.vibrationStrength,
     );
   }
 
@@ -5060,6 +5094,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     if (hrThreshold.present) {
       map['hr_threshold'] = Variable<int>(hrThreshold.value);
     }
+    if (vibrationStrength.present) {
+      map['vibration_strength'] = Variable<int>(vibrationStrength.value);
+    }
     return map;
   }
 
@@ -5099,7 +5136,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
           ..write('sex: $sex, ')
           ..write('hrWarnBpm: $hrWarnBpm, ')
           ..write('hrPauseBpm: $hrPauseBpm, ')
-          ..write('hrThreshold: $hrThreshold')
+          ..write('hrThreshold: $hrThreshold, ')
+          ..write('vibrationStrength: $vibrationStrength')
           ..write(')'))
         .toString();
   }
@@ -5145,6 +5183,7 @@ class _$AppSettingsInsertable implements Insertable<AppSettings> {
       hrWarnBpm: Value(_object.hrWarnBpm),
       hrPauseBpm: Value(_object.hrPauseBpm),
       hrThreshold: Value(_object.hrThreshold),
+      vibrationStrength: Value(_object.vibrationStrength),
     ).toColumns(false);
   }
 }
@@ -11098,6 +11137,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<int?> hrWarnBpm,
       Value<int?> hrPauseBpm,
       Value<int?> hrThreshold,
+      Value<int> vibrationStrength,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
     AppSettingsTableCompanion Function({
@@ -11135,6 +11175,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<int?> hrWarnBpm,
       Value<int?> hrPauseBpm,
       Value<int?> hrThreshold,
+      Value<int> vibrationStrength,
     });
 
 final class $$AppSettingsTableTableReferences
@@ -11340,6 +11381,11 @@ class $$AppSettingsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get vibrationStrength => $composableBuilder(
+    column: $table.vibrationStrength,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$PlansTableFilterComposer get lastSelectedPlanId {
     final $$PlansTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -11538,6 +11584,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get vibrationStrength => $composableBuilder(
+    column: $table.vibrationStrength,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PlansTableOrderingComposer get lastSelectedPlanId {
     final $$PlansTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -11725,6 +11776,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get vibrationStrength => $composableBuilder(
+    column: $table.vibrationStrength,
+    builder: (column) => column,
+  );
+
   $$PlansTableAnnotationComposer get lastSelectedPlanId {
     final $$PlansTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -11813,6 +11869,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int?> hrWarnBpm = const Value.absent(),
                 Value<int?> hrPauseBpm = const Value.absent(),
                 Value<int?> hrThreshold = const Value.absent(),
+                Value<int> vibrationStrength = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
                 defaultSets: defaultSets,
@@ -11848,6 +11905,7 @@ class $$AppSettingsTableTableTableManager
                 hrWarnBpm: hrWarnBpm,
                 hrPauseBpm: hrPauseBpm,
                 hrThreshold: hrThreshold,
+                vibrationStrength: vibrationStrength,
               ),
           createCompanionCallback:
               ({
@@ -11885,6 +11943,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int?> hrWarnBpm = const Value.absent(),
                 Value<int?> hrPauseBpm = const Value.absent(),
                 Value<int?> hrThreshold = const Value.absent(),
+                Value<int> vibrationStrength = const Value.absent(),
               }) => AppSettingsTableCompanion.insert(
                 id: id,
                 defaultSets: defaultSets,
@@ -11920,6 +11979,7 @@ class $$AppSettingsTableTableTableManager
                 hrWarnBpm: hrWarnBpm,
                 hrPauseBpm: hrPauseBpm,
                 hrThreshold: hrThreshold,
+                vibrationStrength: vibrationStrength,
               ),
           withReferenceMapper: (p0) => p0
               .map(

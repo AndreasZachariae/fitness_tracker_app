@@ -25,16 +25,19 @@ object RestAlarm {
     val PATTERN = longArrayOf(0, 300, 250, 300, 250, 300)
     val AMPLITUDES = intArrayOf(0, 255, 0, 255, 0, 255)
 
-    private fun intent(context: Context): PendingIntent = PendingIntent.getBroadcast(
+    /** Strength of the buzzes, 1–255 (1.6.3, setting "Vibration"). */
+    const val EXTRA_AMPLITUDE = "amplitude"
+
+    private fun intent(context: Context, amplitude: Int = 255): PendingIntent = PendingIntent.getBroadcast(
         context,
         0,
-        Intent(context, RestAlarmReceiver::class.java),
+        Intent(context, RestAlarmReceiver::class.java).putExtra(EXTRA_AMPLITUDE, amplitude),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
-    fun schedule(context: Context, atMillis: Long) {
+    fun schedule(context: Context, atMillis: Long, amplitude: Int = 255) {
         val alarms = context.getSystemService(AlarmManager::class.java) ?: return
-        val pending = intent(context)
+        val pending = intent(context, amplitude.coerceIn(1, 255))
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarms.canScheduleExactAlarms()) {
             alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pending)
         } else {
@@ -63,8 +66,10 @@ class RestAlarmReceiver : BroadcastReceiver() {
             vibrator.vibrate(RestAlarm.PATTERN, -1, audio)
             return
         }
+        val amplitude = intent.getIntExtra(RestAlarm.EXTRA_AMPLITUDE, 255).coerceIn(1, 255)
+        val amplitudes = RestAlarm.AMPLITUDES.map { if (it == 0) 0 else amplitude }.toIntArray()
         val effect = if (vibrator.hasAmplitudeControl()) {
-            VibrationEffect.createWaveform(RestAlarm.PATTERN, RestAlarm.AMPLITUDES, -1)
+            VibrationEffect.createWaveform(RestAlarm.PATTERN, amplitudes, -1)
         } else {
             VibrationEffect.createWaveform(RestAlarm.PATTERN, -1)
         }

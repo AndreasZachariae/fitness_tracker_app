@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/device.dart';
 import '../../core/format/exercise_format.dart';
 import '../../core/format/formatters.dart';
 import '../../core/l10n/strings_de.dart';
@@ -76,11 +77,10 @@ class TrainingSettingsPage extends ConsumerWidget {
                   onChanged: (v) =>
                       update((s) => s.copyWith(restTimerEnabled: v)),
                 ),
-                SwitchListTile(
-                  title: const Text(S.settingVibration),
-                  value: settings.vibrationEnabled,
-                  onChanged: (v) =>
-                      update((s) => s.copyWith(vibrationEnabled: v)),
+                // 1.6.3: strength instead of on/off; 0 = off.
+                _VibrationStrength(
+                  strength: settings.vibrationStrength,
+                  update: update,
                 ),
                 SwitchListTile(
                   title: const Text(S.settingKeepScreenOn),
@@ -102,6 +102,72 @@ class TrainingSettingsPage extends ConsumerWidget {
 
 /// "Standard-Steigerung": value and kg/lbs (1.1.0). Steps of 0,5 kg or
 /// 5 lbs.
+/// "Vibration" as a slider in steps of 10 % (1.6.3): 0 = off; on release
+/// one short test pulse in the chosen strength.
+class _VibrationStrength extends ConsumerStatefulWidget {
+  const _VibrationStrength({required this.strength, required this.update});
+
+  final int strength;
+  final SettingsUpdate update;
+
+  @override
+  ConsumerState<_VibrationStrength> createState() => _VibrationStrengthState();
+}
+
+class _VibrationStrengthState extends ConsumerState<_VibrationStrength> {
+  /// The value while dragging; null = the stored one.
+  double? _dragging;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final value = (_dragging ?? widget.strength.toDouble()).round();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  S.settingVibration,
+                  style: theme.textTheme.bodyLarge,
+                ),
+              ),
+              Text(
+                S.vibrationStrength(value),
+                key: const ValueKey('vibration-strength-value'),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          Slider(
+            key: const ValueKey('vibration-strength'),
+            value: value.toDouble(),
+            max: 100,
+            divisions: 10,
+            label: S.vibrationStrength(value),
+            onChanged: (v) => setState(() => _dragging = v),
+            onChangeEnd: (v) async {
+              final strength = v.round();
+              setState(() => _dragging = null);
+              await widget.update(
+                (s) => s.copyWith(vibrationStrength: strength),
+              );
+              if (strength > 0) {
+                await ref.read(deviceFeedbackProvider).testPulse(strength);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DefaultStep extends StatelessWidget {
   const _DefaultStep({required this.settings, required this.update});
 

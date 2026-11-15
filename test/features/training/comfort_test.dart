@@ -14,7 +14,6 @@ import 'package:gymlog/domain/models/models.dart';
 import 'package:gymlog/domain/records.dart';
 import 'package:gymlog/domain/reminders.dart';
 import 'package:gymlog/features/training/session/rest_timer_bar.dart';
-import 'package:gymlog/features/training/session/session_tiles.dart';
 
 import '../../helpers/fake_device.dart';
 import '../../helpers/pump_app.dart';
@@ -210,6 +209,8 @@ void main() {
       await lifecycle(tester, toBackground);
       expect(alarm.calls, ['schedule']);
       expect(alarm.scheduledAt, testNow.add(const Duration(seconds: 90)));
+      // 1.6.3: in the chosen strength.
+      expect(alarm.strength, 100);
       // Countdown on the lock screen (1.2.0).
       final countdown = notifications.shown.single;
       expect(countdown.id, ReminderIds.rest);
@@ -257,7 +258,7 @@ void main() {
         tester,
         () =>
             SettingsRepository(db)
-                .update((s) => s.copyWith(vibrationEnabled: false)),
+                .update((s) => s.copyWith(vibrationStrength: 0)),
       );
       await tapSave(tester);
       await lifecycle(tester, toBackground);
@@ -326,7 +327,7 @@ void main() {
         tester,
         () =>
             SettingsRepository(db)
-                .update((s) => s.copyWith(vibrationEnabled: false)),
+                .update((s) => s.copyWith(vibrationStrength: 0)),
       );
       await open(tester);
       await tapSave(tester);
@@ -454,57 +455,55 @@ void main() {
     });
   });
 
-  group('records (SPEC §7.7)', () {
-    testWidgets('new record: label, medium haptic, summary', (tester) async {
+  group('records (SPEC §7.7, 1.6.3: the whole exercise)', () {
+    testWidgets('exercise record: progress, crossing set flashes and '
+        'vibrates once, summary', (tester) async {
+      // Last time 3 × 10 with 60 kg = 1.800 kg.
       final id = await seed(tester);
       await open(tester);
+      expect(
+        find.text(S.exerciseRecordProgress('1.800 kg', '1.800 kg')),
+        findsOneWidget,
+      );
+      // 1.6.3: the suggestion says why.
+      expect(
+        find.text(S.suggestionBecauseSame(3, '10', '60 kg')),
+        findsOneWidget,
+      );
       await tester.tap(find.text(S.suggestion('+2,5 kg')));
       await tester.pump();
+      await tapSave(tester); // 625
+      expect(
+        find.text(S.exerciseRecordProgress('1.800 kg', '1.175 kg')),
+        findsOneWidget,
+      );
+      expect(feedback.calls, isEmpty, reason: 'no vibration per set');
+      await tapSave(tester); // 1.250
       await tester.ensureVisible(find.text(S.saveSet));
-      await tester.tap(find.text(S.saveSet));
+      await tester.tap(find.text(S.saveSet)); // 1.875 > 1.800
       for (var i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 20));
       }
-      // Red flash right after the record …
-      expect(
-        tester
-            .widget<ActiveExerciseCard>(find.byType(ActiveExerciseCard))
-            .highlight,
-        isTrue,
-      );
+      // The crossing set: red flash and one vibration in the strength.
+      expect(feedback.calls, ['record']);
+      expect(feedback.strengths, [100]);
       await settle(tester);
       await tester.pump(const Duration(seconds: 1));
-      // … and gone again shortly after.
-      expect(
-        tester
-            .widget<ActiveExerciseCard>(find.byType(ActiveExerciseCard))
-            .highlight,
-        isFalse,
-      );
-
-      // Only timers vibrate (1.3.1).
-      expect(feedback.calls, isEmpty);
-      expect(find.text(S.record), findsOneWidget);
-
-      // Same values again: not strictly greater → no new record label.
-      await tapSave(tester);
-      expect(feedback.calls, isEmpty);
-      expect(find.text(S.record), findsOneWidget);
-
       final records = await dbWork(tester, () => r.sessions.sessionRecords(id));
-      expect(records.map((e) => e.kind), [
-        RecordKind.estimatedOneRepMax,
-        RecordKind.weight,
-      ]);
-      expect(records.last.value, 62.5);
+      expect(records.map((e) => (e.total, e.previous)), [(1875.0, 1800.0)]);
 
+      // All exercises done: no question before finishing.
       await tester.tap(find.text(S.finishTraining));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, S.finishTraining));
       await settle(tester);
       expect(find.text(S.newRecords), findsOneWidget);
       expect(
-        find.text('${S.recordKind(RecordKind.weight)}: 62,5 kg'),
+        find.text(
+          S.exerciseRecordSummary(
+            S.exerciseTotalKind(ExerciseTotalKind.volume),
+            '1.875 kg',
+            '1.800 kg',
+          ),
+        ),
         findsOneWidget,
       );
       await disposeApp(tester, db);
@@ -525,6 +524,7 @@ void main() {
       await tester.pump();
       await tapSave(tester);
       expect(find.text(S.record), findsNothing);
+      expect(find.byKey(const ValueKey('exercise-record')), findsNothing);
       expect(feedback.calls, isNot(contains('record')));
       await disposeApp(tester, db);
     });

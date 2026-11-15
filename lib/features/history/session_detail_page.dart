@@ -21,7 +21,7 @@ import '../../widgets/confirm_dialog.dart';
 import '../../widgets/exercise_type_icon.dart';
 import '../../widgets/snackbars.dart';
 import '../heart_rate/heart_rate_widgets.dart';
-import '../training/session/session_tiles.dart' show RecordLabel;
+import '../training/session/session_tiles.dart' show ExerciseRecordLine;
 import '../training/session/set_edit_dialog.dart';
 
 /// Details of a finished session (SPEC §6.4).
@@ -264,7 +264,7 @@ class _SessionDetailPageState extends ConsumerState<SessionDetailPage> {
                 for (final d in details)
                   _ExerciseCard(
                     detail: d,
-                    records: records,
+                    record: records[d.sessionExercise.id],
                     onEditSet: (set) => _editSet(d, set),
                     onRemove: () => _removeExercise(d),
                   ),
@@ -277,13 +277,15 @@ class _SessionDetailPageState extends ConsumerState<SessionDetailPage> {
 class _ExerciseCard extends StatelessWidget {
   const _ExerciseCard({
     required this.detail,
-    required this.records,
+    required this.record,
     required this.onEditSet,
     required this.onRemove,
   });
 
   final SessionExerciseDetail detail;
-  final Map<int, List<RecordKind>> records;
+
+  /// The exercise record of this training (1.6.3).
+  final ExerciseRecordStatus? record;
   final ValueChanged<SetEntry> onEditSet;
   final VoidCallback onRemove;
 
@@ -377,13 +379,17 @@ class _ExerciseCard extends StatelessWidget {
                         SetHeartRateLabel(peak: peak),
                         const SizedBox(width: 8),
                       ],
-                      if (records.containsKey(set.id)) const RecordLabel(),
                       const SizedBox(width: 12),
                       Icon(Icons.edit_outlined, size: 18, color: muted),
                       const SizedBox(width: 12),
                     ],
                   ),
                 ),
+              ),
+            if (record case final r? when r.isRecord)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, right: 12),
+                child: ExerciseRecordLine(exercise: e, record: r),
               ),
           ],
         ),

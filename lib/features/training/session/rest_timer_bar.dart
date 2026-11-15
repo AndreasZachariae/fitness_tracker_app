@@ -178,8 +178,8 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
       final lifecycle = WidgetsBinding.instance.lifecycleState;
       final foreground =
           lifecycle == null || lifecycle == AppLifecycleState.resumed;
-      if (settings.vibrationEnabled && foreground) {
-        ref.read(deviceFeedbackProvider).restOver();
+      if (settings.vibrates && foreground) {
+        ref.read(deviceFeedbackProvider).restOver(settings.vibrationStrength);
       }
     });
   }

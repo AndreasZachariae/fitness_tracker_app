@@ -204,6 +204,9 @@ abstract final class S {
   static const heartRatePermission =
       'GymLog braucht die Berechtigung „Geräte in der Nähe“, um den '
       'Pulsmesser zu finden. Den Standort braucht es nicht.';
+  static const heartRatePermissionBlocked =
+      '„Geräte in der Nähe“ ist abgelehnt. In den App-Einstellungen unter '
+      'Berechtigungen erlauben.';
   static const unitBpm = 'bpm';
   static const heartRate = 'Puls';
   static String heartRateSummary(int average, int max) =>
@@ -507,12 +510,34 @@ abstract final class S {
 
   // Progression suggestion (SPEC §7.2)
   static String suggestion(String delta) => 'Vorschlag: $delta';
+  // 1.6.3: the reason under the suggestion.
+  static String suggestionBecauseSame(int sets, String amount, String? load) =>
+      'Letztes Mal $sets × $amount${load == null ? '' : ' mit $load'} '
+      'geschafft';
+  static String suggestionBecauseTarget(int sets, String target) =>
+      'Letztes Mal alle $sets Sätze mit mind. $target geschafft';
   static const plusOneRep = '+1 Wdh';
   static const dismissSuggestion = 'Vorschlag verwerfen';
 
   // Records (SPEC §7.7)
   static const record = 'Rekord';
   static const newRecords = 'Neue Rekorde';
+  // Exercise record (1.6.3)
+  static String exerciseRecordProgress(String best, String missing) =>
+      'Rekord $best · noch $missing';
+  static String exerciseRecordNew(String total, String previous) =>
+      'Neuer Rekord: $total (vorher $previous)';
+  static String exerciseRecordSummary(
+    String kind,
+    String total,
+    String previous,
+  ) => '$kind: $total (vorher $previous)';
+  static String exerciseTotalKind(ExerciseTotalKind kind) => switch (kind) {
+    ExerciseTotalKind.volume => 'Volumen',
+    ExerciseTotalKind.reps => 'Wdh gesamt',
+    ExerciseTotalKind.duration => 'Zeit gesamt',
+  };
+  static const levelTimesReps = 'Stufe × Wdh';
   static String recordKind(RecordKind kind) => switch (kind) {
     RecordKind.estimatedOneRepMax => 'Geschätztes 1RM',
     RecordKind.weight => 'Höchstes Gewicht',
@@ -758,6 +783,8 @@ abstract final class S {
       '15-lbs-Scheiben. Angezeigt wird immer kg.';
   static const settingRestTimer = 'Pausentimer';
   static const settingVibration = 'Vibration';
+  static String vibrationStrength(int percent) =>
+      percent == 0 ? 'aus' : '$percent %';
   static const settingKeepScreenOn = 'Display anlassen';
   static const settingKeepScreenOnSubtitle = 'Während eines Trainings';
   static const settingAutoActivate = 'Nächste Übung automatisch aktivieren';

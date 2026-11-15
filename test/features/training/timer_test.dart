@@ -232,7 +232,7 @@ void main() {
       tester,
       () =>
           SettingsRepository(db)
-              .update((s) => s.copyWith(vibrationEnabled: false)),
+              .update((s) => s.copyWith(vibrationStrength: 0)),
     );
     await open(tester);
     await tapSave(tester);

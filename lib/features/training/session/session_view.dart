@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' hide Block;
 
+import '../../../core/device.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/l10n/strings_de.dart';
 import '../../../core/router.dart';
@@ -91,8 +92,16 @@ class _SessionViewState extends ConsumerState<SessionView>
       _guard(() async {
         final repo = ref.read(sessionRepositoryProvider);
         final saved = await repo.saveSet(detail.sessionExercise.id, values);
-        // A record flashes red; GymLog only vibrates for timers (1.3.1).
-        if (saved.records.isNotEmpty) _flash(detail.sessionExercise.id);
+        // 1.6.3: the set that lifts the exercise above its record flashes
+        // red and vibrates once (wish of the human).
+        if (saved.exerciseRecord) {
+          _flash(detail.sessionExercise.id);
+          final strength =
+              ref.read(settingsProvider).value?.vibrationStrength ?? 100;
+          if (strength > 0) {
+            unawaited(ref.read(deviceFeedbackProvider).record(strength));
+          }
+        }
       });
 
   @override
@@ -470,7 +479,7 @@ class _SessionViewState extends ConsumerState<SessionView>
     SessionExerciseDetail d,
     int index,
     Map<int, LastPerformance> last,
-    Map<int, List<RecordKind>> records,
+    Map<int, ExerciseRecordStatus> records,
     int? nextId,
   ) {
     final key = ValueKey(d.sessionExercise.id);
@@ -482,7 +491,7 @@ class _SessionViewState extends ConsumerState<SessionView>
         last: last[d.exercise.id],
         actions: this,
         step: _stepOf(d.exercise),
-        records: records,
+        record: records[d.sessionExercise.id],
         highlight: _flashId == d.sessionExercise.id,
         scrollIntoView: _scrollToId == d.sessionExercise.id,
         onScrolledIntoView: () => _scrollToId = null,
@@ -504,7 +513,7 @@ class _SessionViewState extends ConsumerState<SessionView>
           if (!_expanded.remove(id)) _expanded.add(id);
         }),
         actions: this,
-        records: records,
+        record: records[d.sessionExercise.id],
         highlight: _flashId == d.sessionExercise.id,
       ),
     };
@@ -513,7 +522,7 @@ class _SessionViewState extends ConsumerState<SessionView>
   Widget _buildList(
     List<SessionExerciseDetail> details,
     Map<int, LastPerformance> last,
-    Map<int, List<RecordKind>> records,
+    Map<int, ExerciseRecordStatus> records,
     Map<int, SessionSuperset> supersets,
     int? nextId,
   ) {

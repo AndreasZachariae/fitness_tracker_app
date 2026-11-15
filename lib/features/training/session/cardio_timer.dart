@@ -104,9 +104,13 @@ class _CardioTimerState extends ConsumerState<CardioTimer> {
       _stop();
       final settings = ref.read(settingsProvider).value;
       final lifecycle = WidgetsBinding.instance.lifecycleState;
-      if ((settings?.vibrationEnabled ?? true) &&
+      if ((settings?.vibrates ?? true) &&
           (lifecycle == null || lifecycle == AppLifecycleState.resumed)) {
-        unawaited(ref.read(deviceFeedbackProvider).restOver());
+        unawaited(
+          ref
+              .read(deviceFeedbackProvider)
+              .restOver(settings?.vibrationStrength ?? 100),
+        );
       }
       return;
     }

@@ -6,6 +6,7 @@ import 'package:gymlog/data/db/database.dart';
 
 import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
+import 'generated/schema_v10.dart' as v10;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v4.dart' as v4;
@@ -810,6 +811,36 @@ void main() {
       );
     },
   );
+
+  test('migration from v9 to v10: vibration off becomes 0 %, on 100 % '
+      '(1.6.3)', () async {
+    for (final (enabled, strength) in [(0, 0), (1, 100)]) {
+      await verifier.testWithDataIntegrity(
+        oldVersion: 9,
+        newVersion: 10,
+        createOld: v9.DatabaseAtV9.new,
+        createNew: v10.DatabaseAtV10.new,
+        openTestedDatabase: AppDatabase.new,
+        createItems: (batch, oldDb) {
+          batch.insert(
+            oldDb.appSettings,
+            v9.AppSettingsCompanion(
+              id: const Value(1),
+              vibrationEnabled: Value(enabled),
+              hrThreshold: const Value(170),
+            ),
+          );
+        },
+        validateItems: (newDb) async {
+          final s = (await newDb.select(newDb.appSettings).get()).single;
+          expect(
+            (s.vibrationEnabled, s.vibrationStrength, s.hrThreshold),
+            (enabled, strength, 170),
+          );
+        },
+      );
+    }
+  });
 
   test('after the upgrade the app reads the old data and can group', () async {
     final schema = await verifier.schemaAt(1);

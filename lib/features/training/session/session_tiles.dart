@@ -93,6 +93,52 @@ class RecordLabel extends StatelessWidget {
   }
 }
 
+/// The exercise record (1.6.3): "Rekord 1.800 kg · noch 150 kg" while
+/// below, "Neuer Rekord: 1.850 kg (vorher 1.800 kg)" above.
+class ExerciseRecordLine extends StatelessWidget {
+  const ExerciseRecordLine({
+    required this.exercise,
+    required this.record,
+    super.key,
+  });
+
+  final Exercise exercise;
+  final ExerciseRecordStatus record;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final gym = GymColors.of(context);
+    String f(double v) => formatExerciseTotal(exercise, v);
+    final reached = record.isRecord;
+    return Row(
+      key: const ValueKey('exercise-record'),
+      children: [
+        if (reached)
+          const RecordLabel()
+        else
+          Icon(
+            Icons.emoji_events_outlined,
+            size: 18,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            reached
+                ? S.exerciseRecordNew(f(record.total), f(record.best!))
+                : S.exerciseRecordProgress(f(record.best!), f(record.missing)),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: reached ? gym.record : theme.colorScheme.onSurfaceVariant,
+              fontWeight: reached ? FontWeight.w600 : null,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 Widget _dragHandle(int index) => ReorderableDragStartListener(
   index: index,
   child: const Padding(
@@ -105,15 +151,10 @@ Widget _dragHandle(int index) => ReorderableDragStartListener(
 /// change/delete. The heart rate: stored with the set after the training,
 /// while it runs computed from the buffer (1.5.1).
 class _SetRows extends ConsumerWidget {
-  const _SetRows({
-    required this.detail,
-    required this.actions,
-    required this.records,
-  });
+  const _SetRows({required this.detail, required this.actions});
 
   final SessionExerciseDetail detail;
   final SessionTileActions actions;
-  final Map<int, List<RecordKind>> records;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -177,10 +218,6 @@ class _SetRows extends ConsumerWidget {
                     SetHeartRateLabel(peak: peak),
                     const SizedBox(width: 8),
                   ],
-                  if (records.containsKey(set.id)) ...[
-                    const RecordLabel(),
-                    const SizedBox(width: 8),
-                  ],
                   Icon(Icons.edit_outlined, size: 18, color: muted),
                 ],
               ),
@@ -200,7 +237,7 @@ class ActiveExerciseCard extends StatefulWidget {
     required this.last,
     required this.actions,
     required this.step,
-    this.records = const {},
+    this.record,
     this.highlight = false,
     this.scrollIntoView = false,
     this.onScrolledIntoView,
@@ -218,7 +255,9 @@ class ActiveExerciseCard extends StatefulWidget {
 
   /// Weight step of the exercise with the settings (1.1.0).
   final WeightStep step;
-  final Map<int, List<RecordKind>> records;
+
+  /// The exercise record so far (1.6.3).
+  final ExerciseRecordStatus? record;
 
   /// Red flash after a record.
   final bool highlight;
@@ -234,7 +273,7 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
   /// The suggestion chip was applied or dismissed (SPEC §7.2).
   bool _suggestionDone = false;
 
-  ProgressionSuggestion? get _suggestion {
+  Progression? get _suggestion {
     final d = widget.detail;
     if (_suggestionDone || d.sets.isNotEmpty) return null;
     final se = d.sessionExercise;
@@ -246,6 +285,30 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
       targetDurationSec: se.targetDurationSec,
       lastSessionSets: widget.last?.sets ?? const [],
     );
+  }
+
+  /// "Letztes Mal 3 × 10 mit 60 kg geschafft" (1.6.3).
+  String _reasonText(ProgressionReason r) {
+    final e = widget.detail.exercise;
+    return switch (r) {
+      SameSets(:final sets, :final durationSec?) => S.suggestionBecauseSame(
+        sets,
+        formatDuration(durationSec),
+        null,
+      ),
+      SameSets(:final sets, :final reps, :final weightKg) =>
+        S.suggestionBecauseSame(sets, '${reps ?? 0}', switch (e.type) {
+          ExerciseType.weightReps => formatLoad(weightKg ?? 0, levelsOf(e)),
+          _ when (weightKg ?? 0) != 0 => formatSignedKg(weightKg!),
+          _ => null,
+        }),
+      TargetReached(:final sets, :final target) => S.suggestionBecauseTarget(
+        sets,
+        e.type == ExerciseType.timed
+            ? formatDuration(target)
+            : '$target ${S.repsUnit}',
+      ),
+    };
   }
 
   String _suggestionText(ProgressionSuggestion s) => switch (s) {
@@ -467,11 +530,12 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                     ],
                     if (d.sets.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      _SetRows(
-                        detail: d,
-                        actions: widget.actions,
-                        records: widget.records,
-                      ),
+                      _SetRows(detail: d, actions: widget.actions),
+                    ],
+                    if (widget.record case final record?
+                        when record.best != null) ...[
+                      const SizedBox(height: 6),
+                      ExerciseRecordLine(exercise: d.exercise, record: record),
                     ],
                     if (suggestion != null) ...[
                       const SizedBox(height: 8),
@@ -480,15 +544,25 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                         child: InputChip(
                           avatar: const Icon(Icons.trending_up),
                           label: Text(
-                            S.suggestion(_suggestionText(suggestion)),
+                            S.suggestion(
+                              _suggestionText(suggestion.suggestion),
+                            ),
                           ),
                           onPressed: () => setState(() {
-                            _values = suggestion.applyTo(_values);
+                            _values = suggestion.suggestion.applyTo(_values);
                             _suggestionDone = true;
                           }),
                           deleteButtonTooltipMessage: S.dismissSuggestion,
                           onDeleted: () =>
                               setState(() => _suggestionDone = true),
+                        ),
+                      ),
+                      // 1.6.3: why, so the rule is clear.
+                      Text(
+                        _reasonText(suggestion.reason),
+                        key: const ValueKey('suggestion-reason'),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -657,7 +731,7 @@ class CompletedExerciseTile extends StatelessWidget {
     required this.expanded,
     required this.onToggle,
     required this.actions,
-    this.records = const {},
+    this.record,
     this.highlight = false,
     super.key,
   });
@@ -666,7 +740,7 @@ class CompletedExerciseTile extends StatelessWidget {
   final bool expanded;
   final VoidCallback onToggle;
   final SessionTileActions actions;
-  final Map<int, List<RecordKind>> records;
+  final ExerciseRecordStatus? record;
   final bool highlight;
 
   @override
@@ -686,7 +760,7 @@ class CompletedExerciseTile extends StatelessWidget {
             formatSingleSet(e.type, best, levels: levelsOf(e)),
           );
 
-    final hasRecord = detail.sets.any((s) => records.containsKey(s.id));
+    final hasRecord = record?.isRecord ?? false;
     return _RecordHighlight(
       active: highlight,
       child: Opacity(
@@ -735,11 +809,11 @@ class CompletedExerciseTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _SetRows(
-                        detail: detail,
-                        actions: actions,
-                        records: records,
-                      ),
+                      _SetRows(detail: detail, actions: actions),
+                      if (record case final r? when r.isRecord) ...[
+                        const SizedBox(height: 6),
+                        ExerciseRecordLine(exercise: e, record: r),
+                      ],
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
                         icon: const Icon(Icons.replay),

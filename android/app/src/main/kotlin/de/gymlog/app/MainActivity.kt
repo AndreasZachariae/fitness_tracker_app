@@ -1,13 +1,43 @@
 package de.gymlog.app
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    /** The open request for "Geräte in der Nähe" (1.6.3). */
+    private var bluetoothResult: MethodChannel.Result? = null
+
+    private val bluetoothPermissions =
+        arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+
+    private fun bluetoothGranted(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            bluetoothPermissions.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != BLUETOOTH_REQUEST) return
+        val result = bluetoothResult ?: return
+        bluetoothResult = null
+        result.success(
+            when {
+                bluetoothGranted() -> "granted"
+                // Denied and Android will not ask again: only the app settings help.
+                bluetoothPermissions.none { shouldShowRequestPermissionRationale(it) } -> "blocked"
+                else -> "denied"
+            },
+        )
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         // Rest-over vibration while the app is in the background (1.0.1).
@@ -19,7 +49,8 @@ class MainActivity : FlutterActivity() {
                         if (atMillis == null) {
                             result.error("args", "atMillis missing", null)
                         } else {
-                            RestAlarm.schedule(applicationContext, atMillis.toLong())
+                            val amplitude = call.argument<Number>("amplitude")?.toInt() ?: 255
+                            RestAlarm.schedule(applicationContext, atMillis.toLong(), amplitude)
                             result.success(null)
                         }
                     }
@@ -35,6 +66,25 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "sdkInt" -> result.success(Build.VERSION.SDK_INT)
+                    // 1.6.3: "Geräte in der Nähe" asked by GymLog itself; in the shrunk release app the plugin's
+                    // request never showed a dialog.
+                    "bluetoothGranted" -> result.success(bluetoothGranted())
+                    "requestBluetooth" -> when {
+                        Build.VERSION.SDK_INT < Build.VERSION_CODES.S -> result.success("denied")
+                        bluetoothGranted() -> result.success("granted")
+                        bluetoothResult != null -> result.error("busy", "request in progress", null)
+                        else -> {
+                            bluetoothResult = result
+                            requestPermissions(bluetoothPermissions, BLUETOOTH_REQUEST)
+                        }
+                    }
+                    "openAppSettings" -> {
+                        startActivity(
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -97,5 +147,9 @@ class MainActivity : FlutterActivity() {
                     }
                 }.start()
             }
+    }
+
+    private companion object {
+        const val BLUETOOTH_REQUEST = 4711
     }
 }

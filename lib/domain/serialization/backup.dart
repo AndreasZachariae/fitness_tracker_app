@@ -15,7 +15,9 @@ const backupFormat = 'gymlog-backup';
 /// 7 (1.5.1): `sessionHeartRates`, heart rate of sets and session exercises.
 /// 8 (1.6.0): heart rate profile, pause by heart rate, warm-up targets,
 /// time in target, heart rate recovery. 9 (1.6.1): `settings.hrThreshold`.
-const backupFormatVersion = 9;
+/// 10 (1.6.3): `settings.vibrationStrength` (`vibrationEnabled` stays for
+/// older versions).
+const backupFormatVersion = 10;
 
 final class BackupData {
   const BackupData({
@@ -288,6 +290,7 @@ String encodeBackup(BackupData b) {
         // state and not part of a backup.
         'hrMax': s.hrMax,
         'hrThreshold': s.hrThreshold,
+        'vibrationStrength': s.vibrationStrength,
         'birthYear': s.birthYear,
         'sex': s.sex?.code,
         'hrWarnBpm': s.hrWarnBpm,
@@ -436,6 +439,7 @@ BackupData decodeBackup(String text) {
   final v7 = version >= 7;
   final v8 = version >= 8;
   final v9 = version >= 9;
+  final v10 = version >= 10;
   final dataset = Dataset(
     exercises: _list(
       data,
@@ -637,6 +641,10 @@ BackupData decodeBackup(String text) {
     defaultRestSec: r.integer('defaultRestSec'),
     restTimerEnabled: r.boolean('restTimerEnabled'),
     vibrationEnabled: r.boolean('vibrationEnabled'),
+    // Before format 10 only on/off.
+    vibrationStrength: v10
+        ? r.integer('vibrationStrength')
+        : (r.boolean('vibrationEnabled') ? 100 : 0),
     keepScreenOn: r.boolean('keepScreenOn'),
     autoActivateNext: r.boolean('autoActivateNext'),
     themeMode: r.coded('themeMode', ThemePreference.values),

@@ -52,7 +52,8 @@ void main() {
   test('history: newest first with sets, volume and record mark', () async {
     final a = await session([(60, 10), (60, 10)], plankSec: 60);
     final b = await session([(60, 10)]);
-    final c = await session([(65, 8)]);
+    // 1.6.3: the record is the volume of the exercise (1.300 > 1.200).
+    final c = await session([(65, 10), (65, 10)]);
     final active = await repo.start(exercises: const []);
     expect(active, isPositive);
 

@@ -12,17 +12,22 @@ import '../db/storage_time.dart';
 import '../heart_rate/heart_rate_summarizer.dart';
 import 'repository_exceptions.dart';
 
-/// A record set in a session, for the summary (SPEC §6.3, §7.7).
+/// An exercise record of a session, for the summary (SPEC §6.3, §7.7;
+/// 1.6.3: the whole exercise, not one set).
 final class SessionRecord {
   const SessionRecord({
     required this.exercise,
-    required this.kind,
-    required this.value,
+    required this.total,
+    required this.previous,
   });
 
   final Exercise exercise;
-  final RecordKind kind;
-  final double value;
+
+  /// Volume, reps or seconds of the exercise in this session.
+  final double total;
+
+  /// The best of the sessions before.
+  final double previous;
 }
 
 /// Result of [SessionRepository.saveSet], needed for "Rückgängig".
@@ -31,13 +36,14 @@ final class SetSaved {
     required this.set,
     required this.previousStatuses,
     required this.completedExercise,
-    this.records = const [],
+    this.exerciseRecord = false,
   });
 
   final SetEntry set;
 
-  /// Records set by this set (empty in the first session of the exercise).
-  final List<RecordKind> records;
+  /// Whether this set lifted the exercise above its record (1.6.3; never
+  /// in the first session of the exercise).
+  final bool exerciseRecord;
 
   /// Status and completion time of every exercise of the session before
   /// the set was saved.
@@ -243,14 +249,20 @@ class SessionRepository {
           await _activate(se);
         }
         final exercise = (await _db.exercisesDao.findById(se.exerciseId))!;
-        final records = await _recordsOfExercise(exercise);
+        final after = exerciseRecordStatus(
+          exercise.type,
+          await _db.sessionsDao.historySets(exercise.id),
+          se.sessionId,
+        );
+        final totalBefore = after.total - exerciseTotal(exercise.type, [set]);
         return SetSaved(
           set: set,
           previousStatuses: {
             for (final e in before) e.id: (e.status, e.completedAt),
           },
           completedExercise: completed,
-          records: records[set.id] ?? const [],
+          // Only the set that crosses the record.
+          exerciseRecord: after.isRecord && totalBefore <= after.best!,
         );
       });
 
@@ -560,13 +572,10 @@ class SessionRepository {
       ));
       types[x.exerciseId] = x.type;
     }
-    final withRecords = <int>{};
-    for (final MapEntry(key: exerciseId, value: sets) in byExercise.entries) {
-      final flagged = detectRecords(types[exerciseId]!, sets).keys.toSet();
-      for (final h in sets) {
-        if (flagged.contains(h.set.id)) withRecords.add(h.sessionId);
-      }
-    }
+    final withRecords = <int>{
+      for (final MapEntry(key: exerciseId, value: sets) in byExercise.entries)
+        ...exerciseRecordSessions(types[exerciseId]!, sets),
+    };
     final changes = planVolumeChanges(sessions, volume);
     return [
       for (final s in sessions)
@@ -611,57 +620,47 @@ class SessionRepository {
         }
       });
 
-  /// Record sets of a session by set id, updated live (label "Rekord").
-  Stream<Map<int, List<RecordKind>>> watchSessionRecords(int sessionId) => _db
-      .sessionsDao
-      .watchSetChanges()
-      .asyncMap((_) => _sessionRecordSets(sessionId));
+  /// The exercise record of every exercise of a session by session
+  /// exercise id, updated live (1.6.3): total so far and the best before.
+  Stream<Map<int, ExerciseRecordStatus>> watchSessionRecords(int sessionId) =>
+      _db.sessionsDao.watchSetChanges().asyncMap(
+        (_) => _sessionRecordStatus(sessionId),
+      );
 
-  /// New records of a session: the best value per exercise and record kind
-  /// among the sets that set a record.
+  /// New exercise records of a session (summary, 1.6.3).
   Future<List<SessionRecord>> sessionRecords(int sessionId) async {
     final details = await getDetails(sessionId);
-    final flagged = await _sessionRecordSets(sessionId);
-    final result = <SessionRecord>[];
-    for (final d in details) {
-      for (final kind in recordKindsFor(d.exercise.type)) {
-        double? best;
-        for (final set in d.sets) {
-          if (!(flagged[set.id]?.contains(kind) ?? false)) continue;
-          final value = recordValue(kind, set)!;
-          if (best == null || value > best) best = value;
-        }
-        if (best != null) {
-          result.add(
-            SessionRecord(exercise: d.exercise, kind: kind, value: best),
-          );
-        }
-      }
-    }
-    return result;
+    final status = await _sessionRecordStatus(sessionId, details);
+    final seen = <int>{};
+    return [
+      for (final d in details)
+        if (status[d.sessionExercise.id] case final s?
+            when s.isRecord && seen.add(d.exercise.id))
+          SessionRecord(
+            exercise: d.exercise,
+            total: s.total,
+            previous: s.best!,
+          ),
+    ];
   }
 
-  Future<Map<int, List<RecordKind>>> _sessionRecordSets(int sessionId) async {
-    final details = await getDetails(sessionId);
-    final setIds = {for (final d in details) ...d.sets.map((s) => s.id)};
-    final result = <int, List<RecordKind>>{};
+  Future<Map<int, ExerciseRecordStatus>> _sessionRecordStatus(
+    int sessionId, [
+    List<SessionExerciseDetail>? known,
+  ]) async {
+    final details = known ?? await getDetails(sessionId);
+    final byExercise = <int, ExerciseRecordStatus>{};
     for (final d in details) {
-      if (d.sets.isEmpty) continue;
-      for (final MapEntry(key: id, value: kinds) in (await _recordsOfExercise(
-        d.exercise,
-      )).entries) {
-        if (setIds.contains(id)) result[id] = kinds;
-      }
+      byExercise[d.exercise.id] ??= exerciseRecordStatus(
+        d.exercise.type,
+        await _db.sessionsDao.historySets(d.exercise.id),
+        sessionId,
+      );
     }
-    return result;
+    return {
+      for (final d in details) d.sessionExercise.id: byExercise[d.exercise.id]!,
+    };
   }
-
-  Future<Map<int, List<RecordKind>>> _recordsOfExercise(
-    Exercise exercise,
-  ) async => detectRecords(
-    exercise.type,
-    await _db.sessionsDao.historySets(exercise.id),
-  );
 
   Future<List<SessionExercise>> _exercisesOfSessionOf(
     int sessionExerciseId,

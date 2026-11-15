@@ -151,3 +151,14 @@ String formatRecordValue(RecordKind kind, double value, {LevelStep? levels}) =>
       RecordKind.addedWeight => formatSignedKg(value),
       RecordKind.duration => formatDuration(value.round()),
     };
+
+/// Total of an exercise in one training (1.6.3): `1.850 kg` volume,
+/// `42 Wdh`, `4:30 min`; levels without kg `1.200 Stufe × Wdh`.
+String formatExerciseTotal(Exercise exercise, double value) =>
+    switch (exerciseTotalKind(exercise.type)) {
+      ExerciseTotalKind.volume when !storesKg(exercise) =>
+        '${formatWeight(value.roundToDouble())} ${S.levelTimesReps}',
+      ExerciseTotalKind.volume => formatKg(value.roundToDouble()),
+      ExerciseTotalKind.reps => '${value.round()} ${S.repsUnit}',
+      ExerciseTotalKind.duration => formatDuration(value.round()),
+    };

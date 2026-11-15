@@ -255,7 +255,40 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         eigene „Update geladen“-Benachrichtigung, die den Ordner öffnet (nicht mehr den Installer über den Medienspeicher)
   - [x] Tests, CHANGELOG, Testliste
 
+- [x] 1.6.3 Bugfixes: Berechtigung, Übungs-Rekord, Steigerung, Vibrationsstärke (`docs/ROADMAP.md`, 1.6.3+26)
+  - [x] „Geräte in der Nähe“ in der echten App: Anfrage über eigenen Kanal in `MainActivity` statt nur über das Plugin,
+        dauerhaft abgelehnt → Knopf zu den App-Einstellungen; Keep-Regeln für universal_ble (R8 nur im Release)
+  - [x] Garmin-Benachrichtigungen beim Puls-Übertragen: prüfen/erklären (keine App-Lösung erwartet)
+  - [x] Rekord je Übung (Entscheidung: live): Volumen (Gewicht × Wdh), Gesamt-Wdh bzw. Gesamtdauer; „noch X bis zum
+        Rekord“, „Neuer Rekord!“ mit Vibration; Satz-Abzeichen im Training entfallen, Tab Rekorde bleibt
+  - [x] Steigerung (Entscheidung: Idee + Ziel): alle Arbeitssätze gleich (Gewicht und Wdh) oder alle Ziel-Wdh erreicht →
+        ein Schritt mehr; Begründung im Vorschlag
+  - [x] Vibrationsstärke als Regler in Einstellungen → Training (0 = aus), Testpuls beim Loslassen; Schema 10 (additiv)
+  - [x] Tests, CHANGELOG, Testliste
 ## Annahmen
+- **1.6.3 Berechtigung „Geräte in der Nähe“:** Die DEV-App (nicht geschrumpft) fragte, die echte App (vom Flutter-Plugin
+  für „release“ mit R8 geschrumpft) nicht. Den Release-Build kann ich im Container nicht bauen (Regel 2), die genaue
+  Ursache im Plugin ist daher nicht belegt. Lösung unabhängig davon: GymLog prüft und fragt selbst über
+  `MainActivity` (`bluetoothGranted`, `requestBluetooth`, Ergebnis granted/denied/blocked); „blocked“ (dauerhaft
+  abgelehnt, Android fragt nicht mehr) → Hinweis mit „Einstellungen öffnen“ (App-Details). Zusätzlich
+  `android/app/proguard-rules.pro` mit Keep-Regel für universal_ble (wirkt nur im Release).
+- **1.6.3 Garmin-Benachrichtigungen beim Puls-Übertragen:** Keine App-Lösung – ob die Uhr Benachrichtigungen zeigt,
+  entscheidet Garmin. Hinweis an den Menschen (nicht verifiziert): Statt des Modus „Herzfrequenz übertragen“ eine
+  Aktivität (z. B. Krafttraining) mit „HF während Aktivität übertragen“ starten; dann gilt die Einstellung
+  „Benachrichtigungen während der Aktivität“ in Garmin Connect.
+- **1.6.3 Übungs-Rekord (Entscheidung des Menschen: live):** Maß Volumen / Gesamt-Wdh / Gesamtzeit der Übung je
+  Training (Arbeitssätze); strikt größer als jedes frühere Training, das erste zählt nie. Taucht eine Übung zweimal in
+  einem Training auf, zählt die Summe. Bei Stufen-Geräten ohne kg heißt das Maß „Stufe × Wdh“. Die Satz-Rekorde
+  (Label am Satz) entfallen im Training, im Verlauf und in der Zusammenfassung; der Tab Rekorde zeigt weiter die
+  Bestwerte je Satz. Vibration einmal 400 ms beim Satz, der den Rekord überschreitet (Ausnahme zur Regel „nur Timer
+  vibrieren“ aus 1.3.1, so gewählt).
+- **1.6.3 Steigerung (Entscheidung des Menschen):** Alle Arbeitssätze gleich (Gewicht und Wdh bzw. Dauer, > 0) →
+  ein Schritt mehr, auch ohne Ziel und auch unter dem Ziel; sonst wie bisher „alle Ziel-Wdh erreicht“. Mindestens so
+  viele Sätze wie geplant. Die Begründung steht unter dem Vorschlag.
+- **1.6.3 Vibrationsstärke:** 0–100 % in 10er-Schritten, Standard 100 %; alle Vibrationen (Pausenende, Zeit um,
+  Warnung, Rekord, Alarm im Hintergrund) nutzen die Amplitude 255 × Stärke. Handys ohne Amplitudensteuerung
+  vibrieren immer gleich stark (nur 0 = aus wirkt). Schema 10 fügt `app_settings.vibration_strength` hinzu (aus →
+  0 %, an → 100 %); `vibration_enabled` wird mitgeführt (für ältere Backups/Versionen). Backup-Format 10.
 - **1.6.2 Installieren der Update-APK (Entscheidung des Menschen):** Android fragt die App, die die Installation
   startet. Die System-Benachrichtigung „Download abgeschlossen“ startete sie über den Medienspeicher
   (`com.android.providers.media`), dem man das nicht erlauben kann. Deshalb zeigt der Download-Manager nur noch den
@@ -943,6 +976,14 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.6.3 Bugfixes: Berechtigung, Übungs-Rekord, Steigerung, Vibrationsstärke
+Nur, was live ausprobiert werden muss; Rekord-, Steigerungs- und Vibrationslogik sind automatisch getestet.
+- [ ] **Echte App** (nach dem Release): Einstellungen → Pulsmesser → „Pulsmesser suchen“ fragt nach „Geräte in der Nähe“. Falls früher abgelehnt: Hinweis mit „Einstellungen öffnen“ führt zu den Berechtigungen von GymLog.
+- [ ] Training: In der aktiven Übung steht „Rekord … · noch …“; der Satz, der den Rekord überschreitet, leuchtet rot und vibriert einmal; danach „Neuer Rekord: … (vorher …)“. Zusammenfassung: „Neue Rekorde – Volumen: …“.
+- [ ] Steigerungsvorschlag mit Begründung darunter, z. B. bei einer Übung, die letztes Mal 3 × gleich war (auch ohne Ziel im Plan).
+- [ ] Einstellungen → Training → Vibration: Schieber bewegen, beim Loslassen ein kurzer Puls in der gewählten Stärke; 0 = aus. Pausenende (auch bei gesperrtem Display) vibriert spürbar schwächer bei z. B. 30 %.
+- [ ] Garmin (optional): Krafttraining-Aktivität mit „HF während Aktivität übertragen“ statt „Herzfrequenz übertragen“ – kommen „Pause vorbei“-Benachrichtigungen dann auf der Uhr an?
 
 ### 1.6.2 Boxplot, Geschlecht, APK installieren
 Am Handy bestätigt (2026-11-12). Nur, was live ausprobiert werden muss; Boxplot-Werte, Farben und die Download-Seite sind automatisch getestet.
