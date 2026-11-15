@@ -277,7 +277,26 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
   - [x] Update: Knopf „Zur APK“ statt „Ordner GymLog öffnen“
   - [x] Körper: graues Feld über der Tastatur bei den weiteren Werten (Android-Autofill aus)
   - [x] Tests, CHANGELOG, Testliste
+- [x] 1.8.0 Feedback aus der App über ein Google-Formular (`docs/ROADMAP.md`, 1.8.0+29)
+  - [x] Domain: Formularfelder (Art, Beschreibung, App-Version, Kanal, Android-Version), Link zum Vorausfüllen
+  - [x] Senden per HTTPS-POST an `docs.google.com/…/formResponse` (Regel 6 vom Menschen freigegeben), Erfolg = 200;
+        Entwurf bleibt gespeichert, bis er angekommen ist; Rückfall „Im Browser öffnen“
+  - [x] Einstellungen → „Feedback geben“: Bug / Funktionswunsch, Text, Hinweis „keine persönlichen Daten“,
+        mitgesendete Angaben sichtbar
+  - [x] `scripts/feedback-pull.sh` (Container, `.local/feedback-csv-url` → `docs/feedback/inbox.csv`, ignoriert),
+        Ablauf „Werte das Feedback aus“ in CLAUDE.md
+  - [x] CLAUDE.md Regel 6, Architekturtest, SPEC, Tests, CHANGELOG, Testliste
 ## Annahmen
+- **1.8.0 Feedback:** Regel 6 vom Menschen freigegeben (15.11.2026): die App sendet nach „Senden“ per HTTPS-POST an
+  `docs.google.com/forms/d/e/<ID>/formResponse` (öffentliches Formular „GymLog Feedback“, Felder im Code in
+  `lib/domain/feedback.dart`; nicht geheim). Angekommen = HTTP 200 (fehlendes Pflichtfeld oder geändertes Formular gibt
+  400). Inoffizieller, aber stabiler Weg; Rückfall „Im Browser öffnen“ (vorausgefüllt, Text auf 1.200 Zeichen gekürzt).
+  Entscheidungen: eigener Eintrag „Feedback geben“ in den Einstellungen (nicht unter Über, leichter zu finden); in der
+  echten und der DEV-App; App-Version, Kanal und Android-Version gehen immer mit und stehen sichtbar darüber (keine
+  persönlichen Daten, für die Auswertung nötig). Entwurf als kleine JSON-Datei im App-Dokumentenordner (keine
+  Datenbank-Migration), gelöscht nach Ankommen. Text höchstens 2.000 Zeichen. Abholen: `scripts/feedback-pull.sh`
+  (Adresse in `.local/feedback-csv-url`, Ausgabe in `docs/feedback/`, beides in `.gitignore`); Auswertung nach
+  CLAUDE.md, Arbeitsweise 6.
 - **1.7.1 Graues Feld über der Tastatur (Ursache gefunden mit den Screenshots des Menschen):** Kein Autofill, sondern
   ein Layoutfehler: `HomeShell` legte `MediaQuery.removePadding` mit dem Kontext *außerhalb* seines Scaffolds um die
   Tabs. Das brachte die Tastaturhöhe (`viewInsets`) zurück, die der Scaffold schon abgezogen hatte; jede Seite darin
@@ -1007,6 +1026,12 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.8.0 Feedback aus der App
+Nur, was live ausprobiert werden muss; Felder, Senden, Fehlerfall und Entwurf sind automatisch getestet.
+- [ ] Einstellungen → „Feedback geben“: Bug bzw. Funktionswunsch eintippen und senden → „Danke!“; ein paar Sekunden später steht die Antwort in der Google-Tabelle (Version, Kanal, Android richtig). Danach mir Bescheid geben, dann teste ich „Werte das Feedback aus“.
+- [ ] Flugmodus an, senden → Hinweis „hat nicht geklappt“, Text bleibt; App schließen und wieder öffnen → Text ist noch da; „Im Browser öffnen“ zeigt das ausgefüllte Formular.
+- [ ] Danach die Test-Antworten in Formular und Tabelle löschen.
 
 ### 1.7.1 Bugfixes
 - [ ] Körper → „Weitere Werte“ → z. B. Körperfett antippen: die Seite reicht bis direkt an die Tastatur, kein leerer Streifen darüber; scrollen über die ganze Höhe.

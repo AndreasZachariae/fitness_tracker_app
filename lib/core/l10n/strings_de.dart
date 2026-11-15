@@ -1,4 +1,5 @@
 import '../../domain/body_weight.dart';
+import '../../domain/feedback.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/records.dart';
 import '../../domain/statistics.dart';
@@ -1030,6 +1031,38 @@ abstract final class S {
   static const settingsAppearanceSubtitle = 'System, hell oder dunkel';
   static const settingsDataSubtitle = 'Backup, Wiederherstellen, CSV-Export';
   static const settingsAboutSubtitle = 'Version, nach Updates suchen';
+  // Feedback (1.8.0)
+  static const feedbackTitle = 'Feedback geben';
+  static const settingsFeedbackSubtitle = 'Bug melden oder Funktion wünschen';
+  static String feedbackKind(FeedbackKind k) => switch (k) {
+    FeedbackKind.bug => 'Bug',
+    FeedbackKind.feature => 'Funktionswunsch',
+  };
+  static String feedbackTextLabel(FeedbackKind k) => switch (k) {
+    FeedbackKind.bug => 'Was ist passiert?',
+    FeedbackKind.feature => 'Was wünschst du dir?',
+  };
+  static String feedbackTextHint(FeedbackKind k) => switch (k) {
+    FeedbackKind.bug =>
+      'Wo in der App, was hast du getan, was ist passiert, was hättest du '
+          'erwartet?',
+    FeedbackKind.feature => 'Was soll GymLog können, und wofür brauchst du es?',
+  };
+  static const feedbackNoPersonalData = 'Bitte keine persönlichen Daten.';
+  static String feedbackSentAlong(
+    String version,
+    String channel,
+    String android,
+  ) =>
+      'Wird an das GymLog-Feedback-Formular (Google) gesendet, mit '
+      'App-Version $version ($channel)${android.isEmpty ? '' : ', $android'}.';
+  static const feedbackSend = 'Senden';
+  static const feedbackSending = 'Wird gesendet …';
+  static const feedbackThanks = 'Danke! Dein Feedback ist angekommen.';
+  static const feedbackFailed =
+      'Senden hat nicht geklappt (kein Netz?). Der Text bleibt gespeichert – '
+      'später erneut senden oder im Browser öffnen.';
+  static const feedbackInBrowser = 'Im Browser öffnen';
   static const sectionReminders = 'Erinnerungen';
   static const sectionDuringTraining = 'Während des Trainings';
   static const sectionUpdates = 'Updates';

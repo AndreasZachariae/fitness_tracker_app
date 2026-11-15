@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:gymlog/core/device.dart';
 import 'package:gymlog/core/heart_rate_monitor.dart';
 import 'package:gymlog/core/notifications.dart';
+import 'package:gymlog/data/feedback/feedback_sender.dart';
 import 'package:gymlog/data/notifications/apk_downloader.dart';
 import 'package:gymlog/data/notifications/update_checker.dart';
+import 'package:gymlog/domain/feedback.dart';
 import 'package:gymlog/domain/heart_rate.dart';
 
 /// Records calls instead of vibrating.
@@ -211,6 +213,34 @@ final class FakeApkDownloader implements ApkDownloader {
 
   @override
   Future<void> openFolder() async => opened++;
+}
+
+/// The feedback form under the test's control (1.8.0).
+final class FakeFeedbackSender implements FeedbackSender {
+  final sent = <FeedbackMessage>[];
+  bool accept = true;
+
+  @override
+  Future<bool> send(FeedbackMessage message) async {
+    if (!accept) return false;
+    sent.add(message);
+    return true;
+  }
+}
+
+/// The feedback draft in memory (1.8.0).
+final class FakeFeedbackDraftStore implements FeedbackDraftStore {
+  ({FeedbackKind kind, String text})? draft;
+
+  @override
+  Future<({FeedbackKind kind, String text})?> load() async => draft;
+
+  @override
+  Future<void> save(FeedbackKind kind, String text) async =>
+      draft = (kind: kind, text: text);
+
+  @override
+  Future<void> clear() async => draft = null;
 }
 
 /// A heart rate monitor under the test's control (1.5.0).

@@ -27,6 +27,8 @@ Future<AppDatabase> pumpApp(
   FakeReleases? releases,
   FakeHeartRateMonitor? heartRate,
   FakeApkDownloader? downloader,
+  FakeFeedbackSender? feedbackSender,
+  FakeFeedbackDraftStore? feedbackDraft,
   bool reminderSync = false,
 }) async {
   final database = db ?? newTestDatabase();
@@ -48,6 +50,13 @@ Future<AppDatabase> pumpApp(
         apkDownloaderProvider.overrideWithValue(
           downloader ?? FakeApkDownloader(),
         ),
+        feedbackSenderProvider.overrideWithValue(
+          feedbackSender ?? FakeFeedbackSender(),
+        ),
+        feedbackDraftStoreProvider.overrideWithValue(
+          feedbackDraft ?? FakeFeedbackDraftStore(),
+        ),
+        androidSdkProvider.overrideWith((ref) async => 34),
         reminderSyncEnabledProvider.overrideWithValue(reminderSync),
         appInfoProvider.overrideWith(
           (ref) async => (version: '0.9.0', buildNumber: '9'),

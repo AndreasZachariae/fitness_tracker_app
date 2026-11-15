@@ -4,6 +4,11 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
+## [1.8.0] – unveröffentlicht
+
+### Neu
+- **Feedback geben:** In den Einstellungen kannst du jetzt direkt einen Bug melden oder dir eine Funktion wünschen – Text eintippen, „Senden“, fertig. Ohne Konto und ohne Anmeldung; mitgeschickt werden nur App-Version und Android-Version. Ohne Netz bleibt der Text gespeichert, bis er angekommen ist.
+
 ## [1.7.1] – 2026-11-15
 
 Enthält die nie einzeln veröffentlichten Versionen 1.6.3 und 1.7.0.

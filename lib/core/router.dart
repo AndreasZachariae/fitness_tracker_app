@@ -12,6 +12,7 @@ import '../features/settings/booking_settings_page.dart';
 import '../features/settings/data/data_settings_page.dart';
 import '../features/settings/exercises/exercise_archive_page.dart';
 import '../features/settings/exercises/exercise_list_page.dart';
+import '../features/settings/feedback_page.dart';
 import '../features/settings/heart_rate_settings_page.dart';
 import '../features/settings/notification_settings.dart';
 import '../features/settings/plans/plan_list_page.dart';
@@ -45,6 +46,7 @@ abstract final class AppRoutes {
   static const dataSettings = '/settings/data';
   static const about = '/settings/about';
   static const heartRateSettings = '/settings/heart-rate';
+  static const feedback = '/settings/feedback';
 
   /// One plan: name, active, training days, duplicate, delete (1.2.1).
   static String plan(int planId) => '/plan/$planId';
@@ -165,6 +167,10 @@ GoRouter createRouter({String initialLocation = AppRoutes.training}) {
           GoRoute(
             path: 'about',
             builder: (context, state) => const AboutPage(),
+          ),
+          GoRoute(
+            path: 'feedback',
+            builder: (context, state) => const FeedbackPage(),
           ),
           GoRoute(
             path: 'heart-rate',

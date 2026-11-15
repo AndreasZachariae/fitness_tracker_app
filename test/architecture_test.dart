@@ -85,8 +85,12 @@ void main() {
     );
   });
 
-  test('network only for the update check on GitHub (1.2.0)', () {
-    const allowed = {'lib/data/notifications/update_checker.dart'};
+  test('network only for the update check on GitHub (1.2.0) and the '
+      'feedback form (1.8.0)', () {
+    const allowed = {
+      'lib/data/notifications/update_checker.dart',
+      'lib/data/feedback/feedback_sender.dart',
+    };
     final users = [
       for (final file in Directory('lib').listSync(recursive: true))
         if (file is File &&
@@ -96,6 +100,18 @@ void main() {
           file.path,
     ];
     expect(users.toSet(), allowed);
+    // 1.8.0 (approved by the human): the feedback goes to the Google form
+    // only, nowhere else.
+    final feedback = File('lib/domain/feedback.dart').readAsStringSync();
+    expect(
+      RegExp(r'https://([^/\s]+)/')
+          .allMatches(feedback)
+          .map((m) => m.group(1))
+          .toSet(),
+      {'docs.google.com'},
+    );
+    final sender = File(allowed.last).readAsStringSync();
+    expect(sender, contains('FeedbackForm.submitUri'));
     final checker = File(allowed.first).readAsStringSync();
     expect(
       RegExp(r'https://([^/\s]+)/')

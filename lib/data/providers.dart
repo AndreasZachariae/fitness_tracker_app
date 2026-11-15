@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -12,6 +13,7 @@ import '../domain/statistics.dart';
 import '../domain/updates.dart';
 import 'db/database.dart';
 import 'demo/dev_tools.dart';
+import 'feedback/feedback_sender.dart';
 import 'io/data_transfer_service.dart';
 import 'io/file_gateway.dart';
 import 'io/fitnotes_import_service.dart';
@@ -182,6 +184,28 @@ final fileGatewayProvider = Provider<FileGateway>(
 final apkDownloaderProvider = Provider<ApkDownloader>(
   (ref) => const PlatformApkDownloader(),
 );
+
+/// Feedback to the Google form (1.8.0).
+final feedbackSenderProvider = Provider<FeedbackSender>(
+  (ref) => GoogleFormFeedbackSender(),
+);
+
+/// The unsent feedback text (1.8.0), next to the safety copies.
+final feedbackDraftStoreProvider = Provider<FeedbackDraftStore>(
+  (ref) => FileFeedbackDraftStore(
+    () => ref.read(fileGatewayProvider).documentsDirectory(),
+  ),
+);
+
+/// Android API level, for the feedback (1.8.0); null when unknown.
+final androidSdkProvider = FutureProvider<int?>((ref) async {
+  try {
+    return await const MethodChannel('de.gymlog.app/device')
+        .invokeMethod<int>('sdkInt');
+  } on Object {
+    return null;
+  }
+});
 
 final heartRateRepositoryProvider = Provider<HeartRateRepository>(
   (ref) => HeartRateRepository(ref.watch(databaseProvider)),

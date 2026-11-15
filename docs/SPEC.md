@@ -49,7 +49,8 @@ Version 1.0 der Spezifikation. Verbindlich für die Umsetzung. Abschnittsnummern
 - Manifest: Permission `VIBRATE`; ab 1.0.1 zusätzlich `USE_EXACT_ALARM` und `SCHEDULE_EXACT_ALARM` (nur Android 12) für die
   Pausen-Vibration im Hintergrund (§6.2.1); ab 1.2.0 `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED` (Erinnerungen, nach
   Neustart neu geplant) und `INTERNET` nur für die Abfrage der neuesten GitHub-Release (abschaltbar) und ab 1.6.1 den
-  angetippten APK-Download von github.com über Androids Download-Manager. Kein `REQUEST_INSTALL_PACKAGES` und kein
+  angetippten APK-Download von github.com über Androids Download-Manager, ab 1.8.0 das Absenden des Feedbacks an das
+  öffentliche GymLog-Google-Formular (`docs.google.com`, nur nach „Senden“). Kein `REQUEST_INSTALL_PACKAGES` und kein
   Speicher-Recht: Eine App, die selbst APKs installiert, blockiert Play Protect als schädlich.
 - Benachrichtigungen (ab 1.2.0, alle einzeln abschaltbar unter Einstellungen → Benachrichtigungen): Abend vorher (Standard
   20:00) mit Knopf „Slot buchen“ (öffnet die Buchungsseite im Browser), vor dem Training (Standard 60 min) mit
@@ -382,6 +383,13 @@ der Startseite (nur wenn es Trainings gibt).
   Ort), „Backup teilen oder anderswo speichern“ (Teilen, „Speichern unter …“), „Backup wiederherstellen“, „Letztes Backup: 3.11.2026, 18:20“,
   Backup-Erinnerung (Tage, 0 = aus). Ab 1.0.1 steht hier unter „Daten“ der gelbe Hinweis „Letztes Backup vor … Tagen“
   mit „Backup erstellen“, sobald die Erinnerung fällig ist.
+- **Feedback geben (ab 1.8.0):** Auswahl „Bug“ / „Funktionswunsch“, Textfeld (höchstens 2.000 Zeichen, Hinweis „Bitte
+  keine persönlichen Daten“), darunter sichtbar, was mitgeht: App-Version, Kanal (DEV/Release), Android-Version.
+  „Senden“ schickt die Felder per HTTPS-POST an das öffentliche Google-Formular „GymLog Feedback“ (kein Konto, keine
+  Anmeldung, kein Token); angekommen = HTTP 200 → „Danke!“, Entwurf gelöscht, zurück. Sonst Hinweis, der Text bleibt (auch
+  nach dem Schließen gespeichert, Datei im App-Ordner), dazu „Im Browser öffnen“ mit vorausgefülltem Formular. Die
+  Antworten landen in einer Google-Tabelle; `scripts/feedback-pull.sh` holt sie für die Auswertung (CLAUDE.md,
+  Arbeitsweise 6).
 - **Über:** „Nach Updates suchen“ (ab 1.2.1, Antippen sucht sofort; neue Version → Hinweis und „Update ansehen“),
   „Neuerungen der neuesten Version“ zum Aufklappen (1.2.2; in der DEV-App „Testliste und Änderungen“), App-Version,
   Build-Nummer, Datenbank-Schemaversion, Lizenzen.

@@ -29,6 +29,7 @@ aus dem Gedächtnis an: Bei Unsicherheit im lokalen SDK (`/home/flutter/sdks/flu
 | DEV-App aufs Handy + starten | `./scripts/install-dev.sh` |
 | Screenshot vom Handy | `./scripts/screenshot.sh <name>` → gibt Pfad zur PNG aus, die du dir ansehen kannst |
 | Vorschau Release-Text (nur lesen) | `./scripts/release-notes.sh notes <version>`, Prüfung: `./scripts/release-notes.sh check <version>` |
+| Feedback der Nutzer abholen (1.8.0) | `./scripts/feedback-pull.sh` → `docs/feedback/inbox.csv` (nicht im Repo) |
 
 `flutter run` ist interaktiv und blockiert – das startet nur der Mensch.
 
@@ -52,6 +53,14 @@ aus dem Gedächtnis an: Bei Unsicherheit im lokalen SDK (`/home/flutter/sdks/flu
    Veröffentlichen (`scripts/release.sh`, auf dem PC) macht nur der Mensch.
 5. Unklarheiten in der Spezifikation: Triff die Annahme, die Daten sicherer und die Bedienung einfacher macht, und dokumentiere
    sie unter „Annahmen“ in `docs/PROGRESS.md`. Nur bei grundlegenden Zielkonflikten nachfragen.
+6. **Feedback der Nutzer (ab 1.8.0)** auf „Werte das Feedback aus“: `./scripts/feedback-pull.sh` ausführen, nur die neuen
+   Zeilen aus `docs/feedback/inbox.csv` lesen (seit dem Zeitstempel in `docs/feedback/last-processed.txt`), Doppeltes
+   zusammenfassen, Tests/Spam verwerfen. In `docs/feedback/FEEDBACK.md` je Punkt: Nummer, Datum, Art, Kurzfassung in
+   eigenen Worten ohne persönliche Angaben, Version, Einschätzung (machbar / teilweise / nicht – mit Grund, z. B. harte
+   Regeln) und zwei bis drei Optionen (Umfang, betroffene Bereiche, Migration/Berechtigungen, Aufwand S/M/L, Risiken),
+   darunter „[ ] A  [ ] B  [ ] C  [ ] nicht umsetzen“. Erst nach der Entscheidung des Menschen eine neue Version in
+   `docs/ROADMAP.md` anlegen (STATUS: PLANNED) und `last-processed.txt` fortschreiben. `docs/feedback/` und
+   `.local/` nie committen (öffentliches Repo; Nutzertexte und die halb geheime Adresse der Antworttabelle).
 
 ## Harte Regeln (Datensicherheit – keine Ausnahmen)
 
@@ -74,7 +83,8 @@ Auf dem Handy liegen echte Trainingsdaten in der Release-App `de.gymlog.app`. De
    (jeweils vom Menschen freigegeben): `VIBRATE`; `USE_EXACT_ALARM` und `SCHEDULE_EXACT_ALARM` mit `maxSdkVersion="32"`
    (Pausen-Vibration, 1.0.1); `POST_NOTIFICATIONS` und `RECEIVE_BOOT_COMPLETED` (Erinnerungen, 1.2.0); `INTERNET`
    **ausschließlich** für die Update-Abfrage der GitHub-Releases (1.2.0, abschaltbar) und den angetippten APK-Download von
-   GitHub (Release-Datei bzw. Asset der GitHub-API) über Androids Download-Manager (1.6.1); `BLUETOOTH_SCAN` mit
+   GitHub (Release-Datei bzw. Asset der GitHub-API) über Androids Download-Manager (1.6.1) sowie das Absenden des
+   Feedbacks an das öffentliche GymLog-Google-Formular (`docs.google.com`, nur nach Tippen auf „Senden“, 1.8.0); `BLUETOOTH_SCAN` mit
    `usesPermissionFlags="neverForLocation"` und `BLUETOOTH_CONNECT` (Pulsmesser, 1.5.0, nur Android 12+, keine
    Standort-Rechte; die Alt-Rechte `BLUETOOTH`/`BLUETOOTH_ADMIN` des Plugins werden per `tools:node="remove"` entfernt). Kein anderer
    Netzzugriff, keine weiteren Permissions. Insbesondere **kein** `REQUEST_INSTALL_PACKAGES`, kein Speicher-Recht und kein Installieren von

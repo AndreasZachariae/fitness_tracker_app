@@ -152,7 +152,7 @@ STATUS: FINISHED
     - Statt Beim Update "Ordner GymLog öffnen" sowas wie "Zur .apk"
     - Beim eintragen der weiteren Werte zB Körperfett kommt die tastatur hoch, das ist richtig, aber es kommt auch eine graues panel noch höher, dass alles etwas nach oben verschiebt und den großteil des bildschirms verdeckt. Please fix
 Version 1.8.0 (Feedback über Google-Formular, Vorschlag von Claude)
-STATUS: PLANNED
+STATUS: FINISHED
     - Ziel: Nutzer melden Bugs und wünschen Funktionen direkt aus der App, ohne GitHub-Konto. Nichts geht automatisch in die Entwicklung: Claude bereitet die Meldungen mit Optionen auf, der Mensch entscheidet je Punkt, erst dann kommt er auf die Roadmap.
     - Grundsätze: Die App selbst geht dafür nicht ins Netz (der Browser sendet, CLAUDE.md Regel 6 bleibt unverändert). Kein Token, keine Secrets in der App. Rohdaten der Nutzer werden nie committet (das Repo ist öffentlich).
     - Teil 1 – Google-Formular (einmalig, der Mensch in seinem Google-Konto):
@@ -169,7 +169,7 @@ STATUS: PLANNED
         - Erfolg prüfen: Statuscode 200 und Bestätigungstext; sonst „Hat nicht geklappt – erneut versuchen“, der Text bleibt erhalten. Offline: Entwurf bleibt gespeichert, Senden später erneut (kein automatisches Hintergrund-Senden).
         - Risiko: Google kann das Verhalten von `formResponse` ändern (inoffizieller Weg). Rückfallebene: Knopf „Im Browser öffnen“ mit dem vorausgefüllten Link.
         - Kein Token, keine Anmeldung, kein Geheimnis in der App (Formular und Feldnummern sind öffentlich).
-    - Vereinfachung (Vorschlag, 15.11.2026): Die App braucht kein eigenes Textfeld. Zwei Knöpfe „Bug melden“ / „Funktion wünschen“ öffnen das Formular mit vorausgefüllter Art, App-Version, Kanal und Android-Version; die Beschreibung tippt der Nutzer direkt im Formular. Vorteile: keine Längengrenze der Adresse, kein Entwurf in der App, weniger Code. Nachteil: Schreiben im Browser statt in der App. Entscheidung bei der Umsetzung; sonst gilt Teil 2 wie folgt.
+    - Vereinfachung (Vorschlag, 15.11.2026): Die App braucht kein eigenes Textfeld. Zwei Knöpfe „Bug melden“ / „Funktion wünschen“ öffnen das Formular mit vorausgefüllter Art, App-Version, Kanal und Android-Version; die Beschreibung tippt der Nutzer direkt im Formular. Vorteile: keine Längengrenze der Adresse, kein Entwurf in der App, weniger Code. Nachteil: Schreiben im Browser statt in der App. Bei der Umsetzung nicht gewählt: Der Mensch wollte das Textfeld in der App und das Senden ohne Formular (siehe oben).
     - Teil 2 – In der App: Einstellungen → Über → „Feedback geben“:
         - Eigene Seite: Auswahl Bug / Funktionswunsch (SegmentedButton), mehrzeiliges Textfeld (höchstens ca. 1.500 Zeichen, weil die Adresse eine Längengrenze hat), kurzer Hinweis „Bitte keine persönlichen Daten“.
         - Version, Kanal (DEV/Release) und Android-Version werden automatisch eingetragen und vor dem Absenden angezeigt; ein Schalter erlaubt, Version und Android-Version wegzulassen.

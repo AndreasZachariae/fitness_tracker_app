@@ -4,6 +4,8 @@
 # Lokale Adressen, die Claude im Container nutzen darf (z. B. Feedback-CSV, 1.8.0); nicht geheim genug für .secrets,
 # aber nicht fürs öffentliche Repo.
 .local/
+# Rohtexte der Nutzer aus dem Feedback-Formular (1.8.0)
+docs/feedback/
 
 # Build-Ausgaben
 build/
