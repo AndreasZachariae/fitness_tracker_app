@@ -50,7 +50,7 @@ class AppDatabase extends _$AppDatabase {
   final Clock? libraryClock;
 
   /// Current schema version. Changes only via migration (CLAUDE.md, rule 4).
-  static const currentSchemaVersion = 10;
+  static const currentSchemaVersion = 11;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -194,6 +194,22 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           'UPDATE app_settings SET vibration_strength = '
           'CASE WHEN vibration_enabled = 1 THEN 100 ELSE 0 END',
+        );
+      },
+      // 1.7.0: more body values (optional) and the training view.
+      from10To11: (m, schema) async {
+        final body = schema.bodyWeightEntries;
+        for (final column in [
+          body.musclePct,
+          body.fatPct,
+          body.waterPct,
+          body.boneKg,
+        ]) {
+          await m.addColumn(body, column);
+        }
+        await m.addColumn(
+          schema.appSettings,
+          schema.appSettings.trainingLayout,
         );
       },
     ),

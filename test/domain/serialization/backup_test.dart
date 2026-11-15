@@ -27,7 +27,7 @@ void main() {
   test('header fields (SPEC §8.2)', () {
     final json = jsonDecode(encodeBackup(backup)) as Map<String, Object?>;
     expect(json['format'], 'gymlog-backup');
-    expect(json['formatVersion'], 10);
+    expect(json['formatVersion'], 11);
     expect(json['schemaVersion'], 1);
     expect(json['appVersion'], '1.0.0+12');
     expect(json['exportedAt'], isA<String>());
@@ -446,6 +446,59 @@ void main() {
     expect(decodeBackup(jsonEncode(j)).settings.vibrationStrength, 0);
   });
 
+  test('1.7.0: scale values and training view; format 10 has none', () {
+    final w = demo.bodyWeights.first;
+    final data = BackupData(
+      dataset: Dataset(
+        exercises: demo.exercises,
+        plans: demo.plans,
+        planExercises: demo.planExercises,
+        planGroups: demo.planGroups,
+        planSchedules: demo.planSchedules,
+        sessions: demo.sessions,
+        sessionExercises: demo.sessionExercises,
+        sessionSupersets: demo.sessionSupersets,
+        sets: demo.sets,
+        bodyWeights: [
+          BodyWeightEntry(
+            id: w.id,
+            date: w.date,
+            weightKg: w.weightKg,
+            createdAt: w.createdAt,
+            musclePct: 41.2,
+            fatPct: 18.5,
+            waterPct: 55.1,
+            boneKg: 3.4,
+          ),
+          ...demo.bodyWeights.skip(1),
+        ],
+        sessionHeartRates: demo.sessionHeartRates,
+      ),
+      settings: settings.copyWith(trainingLayout: TrainingLayout.mount),
+      schemaVersion: 11,
+      appVersion: '1.7.0+27',
+      exportedAt: testNow,
+    );
+    final text = encodeBackup(data);
+    final decoded = decodeBackup(text);
+    final first = decoded.dataset.bodyWeights.firstWhere((b) => b.id == w.id);
+    expect(first.composition, (
+      musclePct: 41.2,
+      fatPct: 18.5,
+      waterPct: 55.1,
+      boneKg: 3.4,
+    ));
+    expect(decoded.settings.trainingLayout, TrainingLayout.mount);
+    final j = jsonDecode(text) as Map<String, Object?>;
+    j['formatVersion'] = 10;
+    final old = decodeBackup(jsonEncode(j));
+    expect(
+      old.dataset.bodyWeights.firstWhere((b) => b.id == w.id).composition,
+      noComposition,
+    );
+    expect(old.settings.trainingLayout, TrainingLayout.standard);
+  });
+
   test('training days: round trip and validation (1.2.0)', () {
     final planId = demo.plans.first.id;
     final withDays = BackupData(
@@ -528,7 +581,7 @@ void main() {
       (
         'newer version',
         () {
-          final j = json()..['formatVersion'] = 11;
+          final j = json()..['formatVersion'] = 12;
           return jsonEncode(j);
         },
         BackupError.newerVersion,
@@ -705,7 +758,10 @@ void main() {
         'session_id,plan_name,started_at,ended_at,duration_s,n_exercises,'
         'n_sets,volume_kg,notes,hr_avg_bpm,hr_max_bpm',
       );
-      expect(lines('body_weight.csv').first, 'date,weight_kg');
+      expect(
+        lines('body_weight.csv').first,
+        'date,weight_kg,muscle_pct,fat_pct,water_pct,bone_kg',
+      );
       expect(
         lines('exercises.csv').first,
         'exercise_id,name,type,category,increment_kg,'

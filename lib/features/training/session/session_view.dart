@@ -25,6 +25,7 @@ import '../../../widgets/ticker.dart';
 import '../../settings/exercises/exercise_form_page.dart';
 import '../exercise_picker_sheet.dart';
 import 'background_timer.dart';
+import 'rest_bar_placement.dart';
 import 'rest_timer_bar.dart';
 import 'session_tiles.dart';
 import 'set_edit_dialog.dart';
@@ -471,7 +472,16 @@ class _SessionViewState extends ConsumerState<SessionView>
           ),
         ],
       ),
-      body: _buildList(details, last, records, supersets, nextId),
+      // 1.7.0: in the view for a device mount the rest bar sits under the
+      // timer (the bottom of the screen is covered by the holder).
+      body: Column(
+        children: [
+          if (RestBarAtTop.of(context)) RestTimerBar(key: restTimerBarKey),
+          Expanded(
+            child: _buildList(details, last, records, supersets, nextId),
+          ),
+        ],
+      ),
     );
   }
 
@@ -492,6 +502,9 @@ class _SessionViewState extends ConsumerState<SessionView>
         actions: this,
         step: _stepOf(d.exercise),
         record: records[d.sessionExercise.id],
+        mountLayout:
+            ref.watch(settingsProvider).value?.trainingLayout ==
+            TrainingLayout.mount,
         highlight: _flashId == d.sessionExercise.id,
         scrollIntoView: _scrollToId == d.sessionExercise.id,
         onScrolledIntoView: () => _scrollToId = null,

@@ -39,6 +39,7 @@ final class AppSettings {
     this.hrWarnBpm,
     this.hrPauseBpm,
     this.vibrationStrength = 100,
+    this.trainingLayout = TrainingLayout.standard,
   });
 
   /// Booking page of the user's gym (1.2.0); changeable in the settings.
@@ -66,6 +67,9 @@ final class AppSettings {
 
   /// Whether GymLog vibrates at all.
   bool get vibrates => vibrationStrength > 0;
+
+  /// View of the running training (1.7.0).
+  final TrainingLayout trainingLayout;
   final bool keepScreenOn;
   final bool autoActivateNext;
   final ThemePreference themeMode;
@@ -161,6 +165,7 @@ final class AppSettings {
     int? defaultRestSec,
     bool? restTimerEnabled,
     int? vibrationStrength,
+    TrainingLayout? trainingLayout,
     bool? keepScreenOn,
     bool? autoActivateNext,
     ThemePreference? themeMode,
@@ -200,6 +205,7 @@ final class AppSettings {
           ? vibrationEnabled
           : vibrationStrength > 0,
       vibrationStrength: vibrationStrength ?? this.vibrationStrength,
+      trainingLayout: trainingLayout ?? this.trainingLayout,
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       autoActivateNext: autoActivateNext ?? this.autoActivateNext,
       themeMode: themeMode ?? this.themeMode,
@@ -275,7 +281,8 @@ final class AppSettings {
       other.sex == sex &&
       other.hrWarnBpm == hrWarnBpm &&
       other.hrPauseBpm == hrPauseBpm &&
-      other.vibrationStrength == vibrationStrength;
+      other.vibrationStrength == vibrationStrength &&
+      other.trainingLayout == trainingLayout;
 
   @override
   int get hashCode => Object.hashAll([
@@ -313,6 +320,7 @@ final class AppSettings {
     sex,
     hrWarnBpm,
     vibrationStrength,
+    trainingLayout,
     hrPauseBpm,
   ]);
 }

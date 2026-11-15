@@ -277,6 +277,10 @@ Läuft eine Session und ist ein anderer Tab offen, trägt das Training-Icon eine
 #### 6.2.1 Pausentimer
 
 - Leiste am unteren Rand über der NavigationBar: „Pause 1:12“, Fortschrittsbalken, Buttons „−15 s“, „+15 s“, „Überspringen“.
+  In der Ansicht „Optimiert für Trainingsgerätehalterung“ (ab 1.7.0, Einstellungen → Training → Übungsansicht) steht
+  sie im Training oben unter der Zeit (auf den anderen Tabs unten); in der aktiven Übung folgen dann direkt auf den Namen
+  Eingabe und „Satz speichern“, darunter „Letztes Mal“, Sätze, Rekord, „+1 Satz“/„Überspringen“ und die Notiz. Die
+  Standard-Ansicht bleibt unverändert.
 - Dauer: `restSec` der Session-Übung → der Übung → `defaultRestSec`. Ende = `completedAt` des letzten Satzes + Dauer
   (+/− Anpassungen im State). Dadurch nach App-Neustart korrekt rekonstruierbar.
 - Bei 0: Vibrationsmuster (wenn `vibrationEnabled`; ab 1.3.1: 3 × 300 ms bei voller Stärke, vorher 3 × 150 ms und in 1.3.0
@@ -344,6 +348,11 @@ Der Zeitraum schneidet nur die Anzeige zu; Berechnungen nutzen immer die gesamte
   (Tap → DatePicker, keine Zukunft), Button „Speichern“. Existiert für das Datum ein Eintrag: „Eintrag vom 3.11. überschreiben?“
 - Diagramm: Messpunkte + Linie gleitender 7-Tage-Durchschnitt (§7.8), Zeitraum wie in 6.5.
   Kennzahlen: aktuell (Ø 7 Tage), Veränderung über 30 Tage, Minimum/Maximum im Zeitraum.
+- **Weitere Werte (ab 1.7.0):** Unter dem Gewicht „Weitere Werte“ klappt vier optionale Felder einer Körperwaage auf:
+  Muskelanteil, Körperfett, Körperwasser (je %, 1–99) und Knochenmasse (kg, 0,1–20), vorbefüllt mit dem letzten Eintrag.
+  Zugeklappt bleiben gespeicherte Werte des Tages erhalten; aufgeklappt ersetzen die Felder sie (leer = nicht gemessen).
+  Über dem Diagramm wählen Chips den angezeigten Wert (nur Werte mit Messungen; Gewicht immer); Kennzahlen dazu ohne
+  7-Tage-Durchschnitt. Die Einträge-Seite zeigt die Werte unter dem Datum.
 - Ab 1.6.1 Kachel „N Einträge“ unter den Kennzahlen → eigene Seite mit der Liste der Einträge (neueste zuerst).
   Wisch → löschen mit „Rückgängig“, Tap → bearbeiten. (Später kommen hier weitere Werte einer Körperwaage dazu.)
 
@@ -455,7 +464,8 @@ Kopfzeile, Quoting nach RFC 4180, leeres Feld für null, Zeitpunkte ISO 8601 mit
   exercise_position, set_index, weight_kg, reps, duration_s, is_warmup, e1rm_kg, completed_at, weight_unit` (ab 1.1.0:
   `kg` oder `level`, wenn `weight_kg` eine Stufennummer enthält)
 - `sessions.csv`: `session_id, plan_name, started_at, ended_at, duration_s, n_exercises, n_sets, volume_kg, notes`
-- `body_weight.csv`: `date, weight_kg`
+- `body_weight.csv`: `date, weight_kg` (ab 1.7.0 zusätzlich `muscle_pct, fat_pct, water_pct, bone_kg`, leer wenn nicht
+  gemessen)
 - `exercises.csv`: `exercise_id, name, type, category, increment_kg, include_in_strength_index, archived, notes` (ab 1.1.0
   zusätzlich `step_mode, increment_lbs, level_kg`)
 

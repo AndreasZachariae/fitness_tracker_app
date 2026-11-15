@@ -4,9 +4,13 @@ Alle Änderungen an GymLog, neueste Version oben. Format nach [Keep a Changelog]
 
 Ablauf: Ist eine Version aus `docs/ROADMAP.md` umgesetzt, schreibt Claude Code hier einen Abschnitt `## [X.Y.Z] – unveröffentlicht` in Alltagssprache. `scripts/release.sh` ersetzt beim Veröffentlichen „unveröffentlicht“ durch das Datum, hängt die Liste der Commits an und übernimmt den Abschnitt als Text der GitHub-Release. Ein Eintrag pro Zeile, ohne Zeilenumbruch im Satz (GitHub zeigt jeden Umbruch an).
 
-## [1.6.3] – unveröffentlicht
+## [1.7.0] – unveröffentlicht
+
+Enthält die nie einzeln veröffentlichte Version 1.6.3.
 
 ### Neu
+- **Mehr Körperdaten:** Neben dem Gewicht lassen sich über „Weitere Werte“ Muskelanteil, Körperfett, Körperwasser und Knochenmasse von einer Körperwaage eintragen – alles freiwillig. Über dem Diagramm wählst du, welcher Wert angezeigt wird.
+- **Ansicht für die Gerätehalterung:** In Einstellungen → Training → Übungsansicht gibt es „Gerätehalterung“: Die Pause steht oben unter der Zeit und „Satz speichern“ direkt unter dem Übungsnamen – praktisch, wenn der untere Rand des Handys in der Halterung verdeckt ist. Die Standard-Ansicht bleibt wie bisher.
 - **Rekord für die ganze Übung:** Statt einzelner Sätze zählt jetzt die ganze Übung – das Volumen (Gewicht × Wdh), bei Körpergewicht die Wiederholungen, bei Zeitübungen die Gesamtzeit. Während des Trainings steht da, wie viel noch bis zum Rekord fehlt; der Satz, der ihn knackt, leuchtet rot und vibriert einmal.
 - **Vibrationsstärke:** In Einstellungen → Training regelt ein Schieber die Stärke aller Vibrationen (0 = aus); beim Loslassen kommt ein kurzer Testpuls.
 

@@ -68,6 +68,22 @@ enum SessionExerciseStatus implements Coded {
 }
 
 /// Theme preference stored in the settings.
+/// How the running training is laid out (1.7.0). [mount]: "Optimiert für
+/// Trainingsgerätehalterung" – the phone sits in a holder whose lower edge
+/// covers the bottom of the screen, so the rest bar goes to the top and
+/// "Satz speichern" right under the exercise name.
+enum TrainingLayout implements Coded {
+  standard('standard'),
+  mount('mount');
+
+  const TrainingLayout(this.code);
+
+  @override
+  final String code;
+
+  static TrainingLayout fromCode(String code) => byCode(values, code);
+}
+
 enum ThemePreference implements Coded {
   system('system'),
   light('light'),

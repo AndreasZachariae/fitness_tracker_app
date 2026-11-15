@@ -1,3 +1,4 @@
+import '../../domain/body_weight.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/records.dart';
 import '../../domain/statistics.dart';
@@ -608,6 +609,28 @@ abstract final class S {
   static String bodyEntriesCount(int n) => n == 1 ? '1 Eintrag' : '$n Einträge';
   static const bodyEntriesEmpty = 'Noch keine Einträge.';
   static const bodyCurrent = 'Aktuell (Ø 7 Tage)';
+  static const bodyCurrentPlain = 'Aktuell';
+  // More body values (1.7.0)
+  static String bodyMetric(BodyMetric m) => switch (m) {
+    BodyMetric.weight => 'Gewicht',
+    BodyMetric.fat => 'Körperfett',
+    BodyMetric.muscle => 'Muskelanteil',
+    BodyMetric.water => 'Körperwasser',
+    BodyMetric.bone => 'Knochenmasse',
+  };
+  static String bodyMetricShort(BodyMetric m) => switch (m) {
+    BodyMetric.weight => 'Gewicht',
+    BodyMetric.fat => 'Fett',
+    BodyMetric.muscle => 'Muskeln',
+    BodyMetric.water => 'Wasser',
+    BodyMetric.bone => 'Knochen',
+  };
+  static const bodyMoreValues = 'Weitere Werte';
+  static const bodyMoreValuesHint =
+      'Von einer Körperwaage, alle freiwillig. Leer = nicht gemessen.';
+  static const errorBodyPercent = 'Ein Wert zwischen 1 und 99 %.';
+  static const errorBoneKg = 'Ein Wert zwischen 0,1 und 20 kg.';
+  static const unitPercent = '%';
   static const bodyChange30 = '30 Tage';
   static const bodyMinMax = 'Min / Max';
   static const bodyChartEmpty =
@@ -783,6 +806,20 @@ abstract final class S {
       '15-lbs-Scheiben. Angezeigt wird immer kg.';
   static const settingRestTimer = 'Pausentimer';
   static const settingVibration = 'Vibration';
+  // Training view (1.7.0)
+  static const sectionTrainingLayout = 'Übungsansicht';
+  static String trainingLayout(TrainingLayout l) => switch (l) {
+    TrainingLayout.standard => 'Standard',
+    TrainingLayout.mount => 'Gerätehalterung',
+  };
+  static String trainingLayoutHint(TrainingLayout l) => switch (l) {
+    TrainingLayout.standard =>
+      'Pause unten, „Satz speichern“ unter der Eingabe.',
+    TrainingLayout.mount =>
+      'Optimiert für Trainingsgerätehalterung: Pause oben unter der Zeit, '
+          '„Satz speichern“ direkt unter der Übung – der untere Rand darf '
+          'verdeckt sein.',
+  };
   static String vibrationStrength(int percent) =>
       percent == 0 ? 'aus' : '$percent %';
   static const settingKeepScreenOn = 'Display anlassen';

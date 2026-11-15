@@ -45,6 +45,10 @@ class SexConverter extends CodedConverter<Sex> {
   const SexConverter() : super(Sex.values);
 }
 
+class TrainingLayoutConverter extends CodedConverter<TrainingLayout> {
+  const TrainingLayoutConverter() : super(TrainingLayout.values);
+}
+
 class ThemePreferenceConverter extends CodedConverter<ThemePreference> {
   const ThemePreferenceConverter() : super(ThemePreference.values);
 }

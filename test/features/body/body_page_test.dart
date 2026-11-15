@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gymlog/core/l10n/strings_de.dart';
 import 'package:gymlog/data/db/database.dart';
 import 'package:gymlog/data/repositories/body_weight_repository.dart';
+import 'package:gymlog/domain/body_weight.dart';
 import 'package:gymlog/domain/models/models.dart';
 
 import '../../helpers/pump_app.dart';
@@ -157,6 +158,48 @@ void main() {
     await tester.tap(find.text(S.ok));
     await settle(tester);
     expect((await entries(tester)).first.weightKg, 79.9);
+    await disposeApp(tester, db);
+  });
+
+  testWidgets('1.7.0: more values on demand, switch the chart, entries show '
+      'them', (tester) async {
+    await dbWork(tester, () => repo.save(today.addDays(-3), 81));
+    await openBody(tester);
+    // Only the weight by default; no metric switch without other values.
+    expect(find.byKey(const ValueKey('body-fat')), findsNothing);
+    expect(find.byKey(const ValueKey('body-metric-fat')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('body-more')));
+    await tester.pumpAndSettle();
+    await tester.enterText(weightField(), '80,4');
+    await tester.enterText(find.byKey(const ValueKey('body-fat')), '18,5');
+    await tester.enterText(find.byKey(const ValueKey('body-bone')), '25');
+    await tester.tap(find.widgetWithText(FilledButton, S.save));
+    await settle(tester);
+    expect(find.text(S.errorBoneKg), findsOneWidget);
+    expect(await entries(tester), hasLength(1), reason: 'nothing saved');
+
+    await tester.enterText(find.byKey(const ValueKey('body-bone')), '3,4');
+    await tester.tap(find.widgetWithText(FilledButton, S.save));
+    await settle(tester);
+    final saved = (await entries(tester)).first;
+    expect(
+      (saved.weightKg, saved.fatPct, saved.boneKg, saved.musclePct),
+      (80.4, 18.5, 3.4, null),
+    );
+
+    // Measured values can be shown instead of the weight.
+    final fat = find.byKey(const ValueKey('body-metric-fat'));
+    await tester.ensureVisible(fat);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('body-metric-water')), findsNothing);
+    await tester.tap(fat);
+    await settle(tester);
+    expect(find.text(S.bodyMetric(BodyMetric.fat)), findsWidgets);
+    expect(find.text('18,5 %'), findsWidgets, reason: 'current value');
+
+    await openEntries(tester, 2);
+    expect(find.textContaining('Fett 18,5 % · Knochen 3,4 kg'), findsOneWidget);
     await disposeApp(tester, db);
   });
 }

@@ -16,8 +16,9 @@ const backupFormat = 'gymlog-backup';
 /// 8 (1.6.0): heart rate profile, pause by heart rate, warm-up targets,
 /// time in target, heart rate recovery. 9 (1.6.1): `settings.hrThreshold`.
 /// 10 (1.6.3): `settings.vibrationStrength` (`vibrationEnabled` stays for
-/// older versions).
-const backupFormatVersion = 10;
+/// older versions). 11 (1.7.0): body values of a smart scale
+/// (`musclePct`, `fatPct`, `waterPct`, `boneKg`), `settings.trainingLayout`.
+const backupFormatVersion = 11;
 
 final class BackupData {
   const BackupData({
@@ -237,6 +238,10 @@ String encodeBackup(BackupData b) {
             'date': w.date.toIsoString(),
             'weightKg': w.weightKg,
             'createdAt': _t(w.createdAt),
+            'musclePct': w.musclePct,
+            'fatPct': w.fatPct,
+            'waterPct': w.waterPct,
+            'boneKg': w.boneKg,
           },
       ],
       'sessionHeartRates': [
@@ -291,6 +296,7 @@ String encodeBackup(BackupData b) {
         'hrMax': s.hrMax,
         'hrThreshold': s.hrThreshold,
         'vibrationStrength': s.vibrationStrength,
+        'trainingLayout': s.trainingLayout.code,
         'birthYear': s.birthYear,
         'sex': s.sex?.code,
         'hrWarnBpm': s.hrWarnBpm,
@@ -440,6 +446,7 @@ BackupData decodeBackup(String text) {
   final v8 = version >= 8;
   final v9 = version >= 9;
   final v10 = version >= 10;
+  final v11 = version >= 11;
   final dataset = Dataset(
     exercises: _list(
       data,
@@ -601,6 +608,10 @@ BackupData decodeBackup(String text) {
         date: r.date('date'),
         weightKg: r.number('weightKg'),
         createdAt: r.time('createdAt'),
+        musclePct: v11 ? r.numberOrNull('musclePct') : null,
+        fatPct: v11 ? r.numberOrNull('fatPct') : null,
+        waterPct: v11 ? r.numberOrNull('waterPct') : null,
+        boneKg: v11 ? r.numberOrNull('boneKg') : null,
       ),
     ),
     sessionHeartRates: !v7
@@ -645,6 +656,9 @@ BackupData decodeBackup(String text) {
     vibrationStrength: v10
         ? r.integer('vibrationStrength')
         : (r.boolean('vibrationEnabled') ? 100 : 0),
+    trainingLayout: v11
+        ? r.coded('trainingLayout', TrainingLayout.values)
+        : TrainingLayout.standard,
     keepScreenOn: r.boolean('keepScreenOn'),
     autoActivateNext: r.boolean('autoActivateNext'),
     themeMode: r.coded('themeMode', ThemePreference.values),

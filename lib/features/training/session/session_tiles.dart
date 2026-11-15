@@ -239,6 +239,7 @@ class ActiveExerciseCard extends StatefulWidget {
     required this.step,
     this.record,
     this.highlight = false,
+    this.mountLayout = false,
     this.scrollIntoView = false,
     this.onScrolledIntoView,
     super.key,
@@ -261,6 +262,10 @@ class ActiveExerciseCard extends StatefulWidget {
 
   /// Red flash after a record.
   final bool highlight;
+
+  /// "Optimiert für Trainingsgerätehalterung" (1.7.0): input and save
+  /// button right under the header, last time and sets below.
+  final bool mountLayout;
 
   @override
   State<ActiveExerciseCard> createState() => _ActiveExerciseCardState();
@@ -418,6 +423,49 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
     final suggestion = _suggestion;
     final notes = d.exercise.notes;
 
+    final noteRow = Padding(
+      padding: const EdgeInsets.only(right: 16, top: 4),
+      child: notes.isEmpty
+          ? Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
+                icon: const Icon(Icons.note_add_outlined, size: 18),
+                label: const Text(S.addNote),
+                onPressed: () => widget.actions.editNote(d),
+              ),
+            )
+          : InkWell(
+              onTap: () => widget.actions.editNote(d),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: AppTheme.minTouchTarget,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.sticky_note_2_outlined,
+                      size: 18,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        notes,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
+
     return _RecordHighlight(
       active: widget.highlight,
       child: Container(
@@ -465,77 +513,43 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                   _dragHandle(widget.index),
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.only(right: 16, top: 4),
-                child: notes.isEmpty
-                    ? Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            visualDensity: VisualDensity.compact,
-                          ),
-                          icon: const Icon(Icons.note_add_outlined, size: 18),
-                          label: const Text(S.addNote),
-                          onPressed: () => widget.actions.editNote(d),
-                        ),
-                      )
-                    : InkWell(
-                        onTap: () => widget.actions.editNote(d),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            minHeight: AppTheme.minTouchTarget,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.sticky_note_2_outlined,
-                                size: 18,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  notes,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.bodyMedium,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-              ),
+              if (!widget.mountLayout) noteRow,
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (last != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        S.lastTimeOn(
-                          formatShortDate(last.sessionStartedAt),
-                          formatSetsDetailed(
-                            d.exercise.type,
-                            last.sets,
-                            levels: levelsOf(d.exercise),
+                    // 1.7.0: in the view for a device mount the input and
+                    // "Satz speichern" come first (the bottom is covered).
+                    if (!widget.mountLayout) ...[
+                      if (last != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          S.lastTimeOn(
+                            formatShortDate(last.sessionStartedAt),
+                            formatSetsDetailed(
+                              d.exercise.type,
+                              last.sets,
+                              levels: levelsOf(d.exercise),
+                            ),
+                          ),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                      ],
+                      if (d.sets.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        _SetRows(detail: d, actions: widget.actions),
+                      ],
+                      if (widget.record case final record?
+                          when record.best != null) ...[
+                        const SizedBox(height: 6),
+                        ExerciseRecordLine(
+                          exercise: d.exercise,
+                          record: record,
                         ),
-                      ),
-                    ],
-                    if (d.sets.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      _SetRows(detail: d, actions: widget.actions),
-                    ],
-                    if (widget.record case final record?
-                        when record.best != null) ...[
-                      const SizedBox(height: 6),
-                      ExerciseRecordLine(exercise: d.exercise, record: record),
+                      ],
                     ],
                     if (suggestion != null) ...[
                       const SizedBox(height: 8),
@@ -587,6 +601,36 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                       label: const Text(S.saveSet),
                       onPressed: _saving ? null : _save,
                     ),
+                    if (widget.mountLayout) ...[
+                      if (last != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          S.lastTimeOn(
+                            formatShortDate(last.sessionStartedAt),
+                            formatSetsDetailed(
+                              d.exercise.type,
+                              last.sets,
+                              levels: levelsOf(d.exercise),
+                            ),
+                          ),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                      if (d.sets.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        _SetRows(detail: d, actions: widget.actions),
+                      ],
+                      if (widget.record case final record?
+                          when record.best != null) ...[
+                        const SizedBox(height: 6),
+                        ExerciseRecordLine(
+                          exercise: d.exercise,
+                          record: record,
+                        ),
+                      ],
+                    ],
                     const SizedBox(height: 4),
                     Wrap(
                       alignment: WrapAlignment.spaceBetween,
@@ -609,6 +653,8 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                   ],
                 ),
               ),
+              // 1.7.0: the note is less important at the mount.
+              if (widget.mountLayout) noteRow,
             ],
           ),
         ),

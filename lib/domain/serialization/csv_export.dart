@@ -136,9 +136,25 @@ Map<String, String> buildCsvExport(Dataset data) {
       'hr_max_bpm',
     ], sessionRows),
     'body_weight.csv': toCsv(
-      const ['date', 'weight_kg'],
+      // 1.7.0: values of a smart scale, empty when not measured.
+      const [
+        'date',
+        'weight_kg',
+        'muscle_pct',
+        'fat_pct',
+        'water_pct',
+        'bone_kg',
+      ],
       [
-        for (final w in weights) [w.date.toIsoString(), w.weightKg],
+        for (final w in weights)
+          [
+            w.date.toIsoString(),
+            w.weightKg,
+            w.musclePct,
+            w.fatPct,
+            w.waterPct,
+            w.boneKg,
+          ],
       ],
     ),
     'exercises.csv': toCsv(

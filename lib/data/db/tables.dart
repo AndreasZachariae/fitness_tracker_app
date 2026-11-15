@@ -272,6 +272,15 @@ class BodyWeightEntries extends Table {
       .map(const LocalDateConverter())();
   RealColumn get weightKg => real().check(weightKg.isBiggerThanValue(0))();
   DateTimeColumn get createdAt => dateTime()();
+  // Schema 11 (1.7.0): more values of a smart scale, all optional.
+  RealColumn get musclePct =>
+      real().nullable().check(musclePct.isBetweenValues(1, 99))();
+  RealColumn get fatPct =>
+      real().nullable().check(fatPct.isBetweenValues(1, 99))();
+  RealColumn get waterPct =>
+      real().nullable().check(waterPct.isBetweenValues(1, 99))();
+  RealColumn get boneKg =>
+      real().nullable().check(boneKg.isBetweenValues(0.1, 20))();
 }
 
 /// What is kept of a training's heart rate (schema 7, 1.5.1).
@@ -392,6 +401,11 @@ class AppSettingsTable extends Table {
   IntColumn get vibrationStrength => integer()
       .withDefault(const Constant(100))
       .check(vibrationStrength.isBetweenValues(0, 100))();
+  // Schema 11 (1.7.0): view of the running training.
+  TextColumn get trainingLayout => text()
+      .withDefault(const Constant('standard'))
+      .check(trainingLayout.isIn(const ['standard', 'mount']))
+      .map(const TrainingLayoutConverter())();
 
   @override
   Set<Column> get primaryKey => {id};

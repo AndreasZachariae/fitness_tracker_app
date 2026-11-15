@@ -265,7 +265,27 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
         ein Schritt mehr; Begründung im Vorschlag
   - [x] Vibrationsstärke als Regler in Einstellungen → Training (0 = aus), Testpuls beim Loslassen; Schema 10 (additiv)
   - [x] Tests, CHANGELOG, Testliste
+- [x] 1.7.0 Mehr Körperdaten, Ansicht für die Gerätehalterung (`docs/ROADMAP.md`, 1.7.0+27)
+  - [x] Körper: Muskelanteil, Körperfettanteil, Körperwasseranteil (%) und Knochenmasse (kg) je Eintrag, optional;
+        Eingabe über „Weitere Werte“ neben dem Gewicht; Diagramm und Kennzahlen umschaltbar; Einträge zeigen die Werte
+  - [x] Schema 11 (additiv): vier Spalten in `body_weight_entries`, `app_settings.training_layout`; Backup-Format 11,
+        CSV-Spalten
+  - [x] Training: zweite Ansicht „Optimiert für Trainingsgerätehalterung“ (Pause oben, „Satz speichern“ oben in der
+        Übung), Standard bleibt unverändert; Umschalter in Einstellungen → Training
+  - [x] Tests, CHANGELOG, Testliste
 ## Annahmen
+- **1.7.0 Körperwerte:** Muskelanteil, Körperfett und Körperwasser in % (wie die Waage sie zeigt, „Anteil“), Knochenmasse
+  in kg; je Tag am Gewichtseintrag (Gewicht bleibt Pflicht, eine Waage misst es immer mit). Plausibel: 1–99 % bzw.
+  0,1–20 kg, eine Nachkommastelle. „Weitere Werte“ ist zugeklappt (Standard nur Gewicht); zugeklappt speichern lässt
+  vorhandene Werte des Tages stehen, aufgeklappt ersetzen die Felder sie. Bearbeiten in der Liste ändert nur das
+  Gewicht. Diagramm-Chips nur für Werte mit mindestens einer Messung; Kennzahlen dieser Werte ohne 7-Tage-Mittel
+  (seltener gemessen). Schema 11 (vier Spalten), Backup-Format 11, CSV-Spalten `muscle_pct, fat_pct, water_pct,
+  bone_kg`.
+- **1.7.0 Ansicht Gerätehalterung:** Einstellung `training_layout` (Standard/Gerätehalterung). Die Pausenleiste ist ein
+  einziges Widget, das per GlobalKey zwischen unten (Standard, andere Tabs) und oben im Training (Gerätehalterung)
+  wandert – so bleibt der an Android übergebene Pausen-Alarm erhalten und es gibt nie zwei Leisten. In der aktiven
+  Übung: Name, Vorschlag, Eingabe, „Satz speichern“, dann Letztes Mal, Sätze, Rekord, „+1 Satz“/„Überspringen“,
+  Notiz. Navigationsleiste und „Beenden“ bleiben, wo sie sind.
 - **1.6.3 Berechtigung „Geräte in der Nähe“:** Die DEV-App (nicht geschrumpft) fragte, die echte App (vom Flutter-Plugin
   für „release“ mit R8 geschrumpft) nicht. Den Release-Build kann ich im Container nicht bauen (Regel 2), die genaue
   Ursache im Plugin ist daher nicht belegt. Lösung unabhängig davon: GymLog prüft und fragt selbst über
@@ -976,6 +996,12 @@ Wird von Claude Code gepflegt. Vor jedem Meilenstein den Plan als Unterpunkte ei
 ## Manuelle Tests am Handy
 
 <!-- Pro Meilenstein eine kurze Checkliste, was der Mensch in der DEV-App ausprobieren soll. -->
+
+### 1.7.0 Mehr Körperdaten, Ansicht für die Gerätehalterung
+Nur, was live ausprobiert werden muss; Speichern, Umschalten, Reihenfolge und Backup sind automatisch getestet.
+- [ ] Körper: „Weitere Werte“ aufklappen, Werte der Waage eintragen und speichern; Tastatur und Felder bequem (auch mit Komma). Die Chips über dem Diagramm zeigen Körperfett usw., Kennzahlen passen.
+- [ ] Einstellungen → Training → Übungsansicht „Gerätehalterung“: Handy in die Halterung am Gerät – sind „Satz speichern“ und die Pause oben gut erreichbar, während der untere Rand verdeckt ist? Pausenende vibriert wie gewohnt (auch gesperrt).
+- [ ] Zurück auf „Standard“: alles wie vorher.
 
 ### 1.6.3 Bugfixes: Berechtigung, Übungs-Rekord, Steigerung, Vibrationsstärke
 Nur, was live ausprobiert werden muss; Rekord-, Steigerungs- und Vibrationslogik sind automatisch getestet.

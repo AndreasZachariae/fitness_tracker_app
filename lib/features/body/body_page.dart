@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/clock.dart';
+import '../../core/format/body_format.dart';
 import '../../core/format/formatters.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../core/router.dart';
@@ -31,6 +32,9 @@ class BodyPage extends ConsumerStatefulWidget {
 class _BodyPageState extends ConsumerState<BodyPage> {
   StatsPeriod _period = StatsPeriod.threeMonths;
 
+  /// What the chart and the key figures show (1.7.0).
+  BodyMetric _metric = BodyMetric.weight;
+
   LocalDate get _today => LocalDate.fromDateTime(ref.read(clockProvider).now());
 
   @override
@@ -38,11 +42,12 @@ class _BodyPageState extends ConsumerState<BodyPage> {
     final all = ref.watch(bodyWeightsProvider).value;
     final today = LocalDate.fromDateTime(ref.watch(clockProvider).now());
     final entries = all ?? const <BodyWeightEntry>[];
-    final smoothed = movingAverage7(entries);
-    final stats = bodyWeightStats(smoothed, _period, today);
+    final metrics = bodyMetricsWithData(entries);
+    final metric = metrics.contains(_metric) ? _metric : BodyMetric.weight;
+    final stats = bodyMetricStats(entries, metric, _period, today);
     final inPeriod = [
-      for (final s in smoothed)
-        if (_period.contains(s.entry.date, today)) s,
+      for (final p in bodyMetricSeries(entries, metric))
+        if (_period.contains(p.date, today)) p,
     ];
 
     return TabPage(
@@ -53,7 +58,7 @@ class _BodyPageState extends ConsumerState<BodyPage> {
               padding: const EdgeInsets.only(bottom: 24),
               children: [
                 _InputCard(
-                  lastWeight: entries.isEmpty ? null : entries.first.weightKg,
+                  last: entries.isEmpty ? null : entries.first,
                   today: _today,
                 ),
                 Padding(
@@ -63,9 +68,31 @@ class _BodyPageState extends ConsumerState<BodyPage> {
                     onChanged: (p) => setState(() => _period = p),
                   ),
                 ),
-                _WeightChart(data: inPeriod, hasAny: entries.isNotEmpty),
+                // 1.7.0: switch between the measured values.
+                if (metrics.length > 1)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        for (final m in metrics)
+                          ChoiceChip(
+                            key: ValueKey('body-metric-${m.name}'),
+                            label: Text(S.bodyMetric(m)),
+                            selected: m == metric,
+                            onSelected: (_) => setState(() => _metric = m),
+                          ),
+                      ],
+                    ),
+                  ),
+                _BodyChart(
+                  metric: metric,
+                  data: inPeriod,
+                  hasAny: entries.isNotEmpty,
+                ),
                 if (entries.isNotEmpty) ...[
-                  _StatsRow(stats: stats),
+                  _StatsRow(stats: stats, metric: metric),
                   // 1.6.1: the entries on their own page.
                   Card(
                     margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -98,9 +125,10 @@ double? parseBodyWeight(String text) {
 
 /// "Gewicht in kg", date chip, "Speichern" (SPEC §6.6).
 class _InputCard extends ConsumerStatefulWidget {
-  const _InputCard({required this.lastWeight, required this.today});
+  const _InputCard({required this.last, required this.today});
 
-  final double? lastWeight;
+  /// The newest entry: its weight and scale values are prefilled.
+  final BodyWeightEntry? last;
   final LocalDate today;
 
   @override
@@ -109,8 +137,25 @@ class _InputCard extends ConsumerStatefulWidget {
 
 class _InputCardState extends ConsumerState<_InputCard> {
   late final _controller = TextEditingController(
-    text: widget.lastWeight == null ? '' : formatDecimal1(widget.lastWeight!),
+    text: widget.last == null ? '' : formatDecimal1(widget.last!.weightKg),
   );
+
+  /// 1.7.0: values of a smart scale, behind "Weitere Werte".
+  late final _more = {
+    for (final m in BodyMetric.values)
+      if (m != BodyMetric.weight) m: TextEditingController(text: _lastText(m)),
+  };
+  bool _showMore = false;
+  final _moreErrors = <BodyMetric, String>{};
+
+  String _lastText(BodyMetric m) => switch (widget.last) {
+    final e? => switch (bodyMetricValue(m, e)) {
+      final v? => formatDecimal1(v),
+      null => '',
+    },
+    null => '',
+  };
+
   LocalDate? _date;
   String? _error;
   bool _busy = false;
@@ -120,17 +165,49 @@ class _InputCardState extends ConsumerState<_InputCard> {
   @override
   void didUpdateWidget(_InputCard old) {
     super.didUpdateWidget(old);
-    if (old.lastWeight == null &&
-        widget.lastWeight != null &&
-        _controller.text.isEmpty) {
-      _controller.text = formatDecimal1(widget.lastWeight!);
+    if (old.last == null && widget.last != null && _controller.text.isEmpty) {
+      _controller.text = formatDecimal1(widget.last!.weightKg);
+      for (final MapEntry(key: m, value: c) in _more.entries) {
+        if (c.text.isEmpty) c.text = _lastText(m);
+      }
     }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    for (final c in _more.values) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  /// The scale values, or null when hidden (then the stored ones stay).
+  /// Errors go to [_moreErrors].
+  BodyComposition? _composition() {
+    _moreErrors.clear();
+    if (!_showMore) return null;
+    double? read(BodyMetric m) {
+      final text = _more[m]!.text.trim();
+      if (text.isEmpty) return null;
+      final v = parseDecimal(text);
+      final bone = m == BodyMetric.bone;
+      final (min, max) = bone
+          ? (BodyWeightRepository.minBoneKg, BodyWeightRepository.maxBoneKg)
+          : (BodyWeightRepository.minPct, BodyWeightRepository.maxPct);
+      if (v == null || v < min || v > max) {
+        _moreErrors[m] = bone ? S.errorBoneKg : S.errorBodyPercent;
+        return null;
+      }
+      return v;
+    }
+
+    return (
+      musclePct: read(BodyMetric.muscle),
+      fatPct: read(BodyMetric.fat),
+      waterPct: read(BodyMetric.water),
+      boneKg: read(BodyMetric.bone),
+    );
   }
 
   Future<void> _pickDate() async {
@@ -147,7 +224,10 @@ class _InputCardState extends ConsumerState<_InputCard> {
 
   Future<void> _save() async {
     final kg = parseBodyWeight(_controller.text);
-    if (kg == null) return setState(() => _error = S.errorBodyWeight);
+    final composition = _composition();
+    if (kg == null || _moreErrors.isNotEmpty) {
+      return setState(() => _error = kg == null ? S.errorBodyWeight : null);
+    }
     setState(() {
       _error = null;
       _busy = true;
@@ -163,7 +243,7 @@ class _InputCardState extends ConsumerState<_InputCard> {
         );
         if (!ok) return;
       }
-      await repo.save(_day, kg);
+      await repo.save(_day, kg, composition: composition);
       if (!mounted) return;
       FocusScope.of(context).unfocus();
       setState(() => _date = null);
@@ -220,6 +300,46 @@ class _InputCardState extends ConsumerState<_InputCard> {
                 ),
               ],
             ),
+            // 1.7.0: only the weight by default; the rest on demand.
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const ValueKey('body-more'),
+                icon: Icon(_showMore ? Icons.expand_less : Icons.add),
+                label: const Text(S.bodyMoreValues),
+                onPressed: () => setState(() => _showMore = !_showMore),
+              ),
+            ),
+            if (_showMore) ...[
+              Text(
+                S.bodyMoreValuesHint,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  for (final MapEntry(key: m, value: c) in _more.entries)
+                    SizedBox(
+                      width: 150,
+                      child: TextField(
+                        key: ValueKey('body-${m.name}'),
+                        controller: c,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: S.bodyMetric(m),
+                          suffixText: bodyMetricUnit(m),
+                          errorText: _moreErrors[m],
+                          errorMaxLines: 2,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: 12),
             FilledButton(
               onPressed: _busy ? null : _save,
@@ -232,10 +352,16 @@ class _InputCardState extends ConsumerState<_InputCard> {
   }
 }
 
-class _WeightChart extends StatelessWidget {
-  const _WeightChart({required this.data, required this.hasAny});
+/// The chosen body value over time (1.7.0; before only the weight).
+class _BodyChart extends StatelessWidget {
+  const _BodyChart({
+    required this.metric,
+    required this.data,
+    required this.hasAny,
+  });
 
-  final List<SmoothedWeight> data;
+  final BodyMetric metric;
+  final List<BodyPoint> data;
   final bool hasAny;
 
   @override
@@ -244,16 +370,16 @@ class _WeightChart extends StatelessWidget {
     final gym = GymColors.of(context);
     if (data.length < 2) {
       return ChartCard(
-        title: S.weight,
+        title: S.bodyMetric(metric),
         height: 120,
         child: ChartEmpty(hasAny ? S.bodyChartEmpty : S.bodyFirstHint),
       );
     }
-    final points = [
-      for (final s in data) FlSpot(dayX(s.entry.date), s.entry.weightKg),
-    ];
+    final points = [for (final p in data) FlSpot(dayX(p.date), p.value)];
+    // Only the weight has the 7-day average.
     final average = [
-      for (final s in data) FlSpot(dayX(s.entry.date), s.average),
+      for (final p in data)
+        if (p.average case final a?) FlSpot(dayX(p.date), a),
     ];
     final ys = [...points.map((p) => p.y), ...average.map((p) => p.y)];
     final minY = (ys.reduce((a, b) => a < b ? a : b) - 0.5).floorToDouble();
@@ -262,8 +388,10 @@ class _WeightChart extends StatelessWidget {
     final maxX = points.last.x;
 
     return ChartCard(
-      title: S.weight,
-      subtitle: '${S.measurement} · ${S.average7}',
+      title: S.bodyMetric(metric),
+      subtitle: average.isEmpty
+          ? S.measurement
+          : '${S.measurement} · ${S.average7}',
       child: LineChart(
         LineChartData(
           minX: minX,
@@ -286,8 +414,8 @@ class _WeightChart extends StatelessWidget {
                   LineTooltipItem(
                     s.barIndex == 0
                         ? '${formatShortDate(dayFromX(s.x).toLocalDateTime())}\n'
-                              '${formatKg1(s.y)}'
-                        : '${S.average7}: ${formatKg1(s.y)}',
+                              '${formatBodyValue(metric, s.y)}'
+                        : '${S.average7}: ${formatBodyValue(metric, s.y)}',
                     TextStyle(color: theme.colorScheme.onInverseSurface),
                   ),
               ],
@@ -307,14 +435,15 @@ class _WeightChart extends StatelessWidget {
                     ),
               ),
             ),
-            LineChartBarData(
-              spots: average,
-              barWidth: 3,
-              isCurved: true,
-              preventCurveOverShooting: true,
-              color: gym.activeEdge,
-              dotData: const FlDotData(show: false),
-            ),
+            if (average.isNotEmpty)
+              LineChartBarData(
+                spots: average,
+                barWidth: 3,
+                isCurved: true,
+                preventCurveOverShooting: true,
+                color: gym.activeEdge,
+                dotData: const FlDotData(show: false),
+              ),
           ],
         ),
       ),
@@ -323,13 +452,14 @@ class _WeightChart extends StatelessWidget {
 }
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.stats});
+  const _StatsRow({required this.stats, required this.metric});
 
   final BodyWeightStats stats;
+  final BodyMetric metric;
 
   @override
   Widget build(BuildContext context) {
-    String kg(double? v) => v == null ? '–' : formatKg1(v);
+    String kg(double? v) => v == null ? '–' : formatBodyValue(metric, v);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: IntrinsicHeight(
@@ -337,7 +467,12 @@ class _StatsRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: _Stat(label: S.bodyCurrent, value: kg(stats.current)),
+              child: _Stat(
+                label: metric == BodyMetric.weight
+                    ? S.bodyCurrent
+                    : S.bodyCurrentPlain,
+                value: kg(stats.current),
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -345,7 +480,7 @@ class _StatsRow extends StatelessWidget {
                 label: S.bodyChange30,
                 value: stats.change30Days == null
                     ? '–'
-                    : formatSignedKg1(stats.change30Days!),
+                    : formatBodyChange(metric, stats.change30Days!),
               ),
             ),
             const SizedBox(width: 8),

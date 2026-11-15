@@ -75,3 +75,84 @@ BodyWeightStats bodyWeightStats(
     max: inPeriod.isEmpty ? null : inPeriod.reduce((a, b) => a > b ? a : b),
   );
 }
+
+// More body values (1.7.0).
+
+/// What the body chart shows; weight always, the others when measured.
+enum BodyMetric { weight, fat, muscle, water, bone }
+
+double? bodyMetricValue(BodyMetric metric, BodyWeightEntry e) =>
+    switch (metric) {
+      BodyMetric.weight => e.weightKg,
+      BodyMetric.fat => e.fatPct,
+      BodyMetric.muscle => e.musclePct,
+      BodyMetric.water => e.waterPct,
+      BodyMetric.bone => e.boneKg,
+    };
+
+/// Metrics with at least one value, in [BodyMetric] order (weight always).
+List<BodyMetric> bodyMetricsWithData(List<BodyWeightEntry> entries) => [
+  for (final m in BodyMetric.values)
+    if (m == BodyMetric.weight ||
+        entries.any((e) => bodyMetricValue(m, e) != null))
+      m,
+];
+
+/// One point of the body chart; [average] only for the weight (7 days).
+typedef BodyPoint = ({LocalDate date, double value, double? average});
+
+/// The entries with a value of [metric], oldest first.
+List<BodyPoint> bodyMetricSeries(
+  List<BodyWeightEntry> entries,
+  BodyMetric metric,
+) {
+  if (metric == BodyMetric.weight) {
+    return [
+      for (final s in movingAverage7(entries))
+        (date: s.entry.date, value: s.entry.weightKg, average: s.average),
+    ];
+  }
+  final sorted = [...entries]..sort((a, b) => a.date.compareTo(b.date));
+  return [
+    for (final e in sorted)
+      if (bodyMetricValue(metric, e) case final v?)
+        (date: e.date, value: v, average: null),
+  ];
+}
+
+/// Key figures of [metric]: the weight as in SPEC §6.6 (7-day average);
+/// the other values from the measurements themselves.
+BodyWeightStats bodyMetricStats(
+  List<BodyWeightEntry> entries,
+  BodyMetric metric,
+  StatsPeriod period,
+  LocalDate today,
+) {
+  final points = bodyMetricSeries(entries, metric);
+  if (points.isEmpty) {
+    return const BodyWeightStats(
+      current: null,
+      change30Days: null,
+      min: null,
+      max: null,
+    );
+  }
+  double valueOf(BodyPoint p) => p.average ?? p.value;
+  final latest = points.last;
+  final cutoff = latest.date.addDays(-30);
+  BodyPoint? before;
+  for (final p in points) {
+    if (p.date.isAfter(cutoff)) break;
+    before = p;
+  }
+  final inPeriod = [
+    for (final p in points)
+      if (period.contains(p.date, today)) p.value,
+  ];
+  return BodyWeightStats(
+    current: valueOf(latest),
+    change30Days: before == null ? null : valueOf(latest) - valueOf(before),
+    min: inPeriod.isEmpty ? null : inPeriod.reduce((a, b) => a < b ? a : b),
+    max: inPeriod.isEmpty ? null : inPeriod.reduce((a, b) => a > b ? a : b),
+  );
+}

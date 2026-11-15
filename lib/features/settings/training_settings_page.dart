@@ -94,6 +94,32 @@ class TrainingSettingsPage extends ConsumerWidget {
                   onChanged: (v) =>
                       update((s) => s.copyWith(autoActivateNext: v)),
                 ),
+                // 1.7.0: a second view for a phone in a device mount.
+                const SettingsSectionHeader(S.sectionTrainingLayout),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                  child: SegmentedButton<TrainingLayout>(
+                    key: const ValueKey('training-layout'),
+                    segments: [
+                      for (final l in TrainingLayout.values)
+                        ButtonSegment(
+                          value: l,
+                          label: Text(S.trainingLayout(l)),
+                        ),
+                    ],
+                    selected: {settings.trainingLayout},
+                    showSelectedIcon: false,
+                    onSelectionChanged: (v) =>
+                        update((s) => s.copyWith(trainingLayout: v.first)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Text(
+                    S.trainingLayoutHint(settings.trainingLayout),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
               ],
             ),
     );

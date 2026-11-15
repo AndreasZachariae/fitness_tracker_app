@@ -85,4 +85,63 @@ void main() {
       );
     });
   });
+
+  group('1.7.0 more body values', () {
+    BodyWeightEntry m(String date, double kg, {double? fat, double? bone}) =>
+        BodyWeightEntry(
+          id: 0,
+          date: LocalDate.parse(date),
+          weightKg: kg,
+          createdAt: DateTime.utc(2026),
+          fatPct: fat,
+          boneKg: bone,
+        );
+    final today = LocalDate(2026, 11, 3);
+    final data = [
+      m('2026-09-20', 82, fat: 20),
+      m('2026-10-10', 81),
+      m('2026-11-01', 80, fat: 18.5, bone: 3.4),
+    ];
+
+    test('only measured values are offered; weight always', () {
+      expect(bodyMetricsWithData(data), [
+        BodyMetric.weight,
+        BodyMetric.fat,
+        BodyMetric.bone,
+      ]);
+      expect(bodyMetricsWithData(const []), [BodyMetric.weight]);
+    });
+
+    test('series: weight with 7-day average, the rest as measured', () {
+      final fat = bodyMetricSeries(data, BodyMetric.fat);
+      expect(fat.map((p) => (p.date.day, p.value, p.average)), [
+        (20, 20.0, null),
+        (1, 18.5, null),
+      ]);
+      final weight = bodyMetricSeries(data, BodyMetric.weight);
+      expect(weight, hasLength(3));
+      expect(weight.last.average, 80);
+    });
+
+    test('key figures of a scale value', () {
+      final s = bodyMetricStats(data, BodyMetric.fat, StatsPeriod.all, today);
+      expect(s.current, 18.5);
+      expect(s.change30Days, closeTo(-1.5, 1e-9));
+      expect((s.min, s.max), (18.5, 20));
+      final four = bodyMetricStats(
+        data,
+        BodyMetric.fat,
+        StatsPeriod.fourWeeks,
+        today,
+      );
+      expect((four.min, four.max), (18.5, 18.5));
+      final none = bodyMetricStats(
+        data,
+        BodyMetric.water,
+        StatsPeriod.all,
+        today,
+      );
+      expect(none.current, isNull);
+    });
+  });
 }

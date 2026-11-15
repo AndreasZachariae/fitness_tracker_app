@@ -7,6 +7,7 @@ import 'package:gymlog/data/db/database.dart';
 import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v10.dart' as v10;
+import 'generated/schema_v11.dart' as v11;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v4.dart' as v4;
@@ -840,6 +841,46 @@ void main() {
         },
       );
     }
+  });
+
+  test('migration from v10 to v11: weights kept without scale values, '
+      'standard view (1.7.0)', () async {
+    const t = '2026-11-09T17:00:00.000Z';
+    await verifier.testWithDataIntegrity(
+      oldVersion: 10,
+      newVersion: 11,
+      createOld: v10.DatabaseAtV10.new,
+      createNew: v11.DatabaseAtV11.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch
+          ..insert(
+            oldDb.bodyWeightEntries,
+            const v10.BodyWeightEntriesData(
+              id: 1,
+              date: '2026-11-09',
+              weightKg: 80.5,
+              createdAt: t,
+            ),
+          )
+          ..insert(
+            oldDb.appSettings,
+            const v10.AppSettingsCompanion(
+              id: Value(1),
+              vibrationStrength: Value(60),
+            ),
+          );
+      },
+      validateItems: (newDb) async {
+        final w = (await newDb.select(newDb.bodyWeightEntries).get()).single;
+        expect(
+          (w.weightKg, w.musclePct, w.fatPct, w.waterPct, w.boneKg),
+          (80.5, null, null, null, null),
+        );
+        final s = (await newDb.select(newDb.appSettings).get()).single;
+        expect((s.vibrationStrength, s.trainingLayout), (60, 'standard'));
+      },
+    );
   });
 
   test('after the upgrade the app reads the old data and can group', () async {

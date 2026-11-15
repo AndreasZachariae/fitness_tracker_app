@@ -3601,8 +3601,61 @@ class $BodyWeightEntriesTable extends BodyWeightEntries
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _musclePctMeta = const VerificationMeta(
+    'musclePct',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, date, weightKg, createdAt];
+  late final GeneratedColumn<double> musclePct = GeneratedColumn<double>(
+    'muscle_pct',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(musclePct).isBetweenValues(1, 99),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fatPctMeta = const VerificationMeta('fatPct');
+  @override
+  late final GeneratedColumn<double> fatPct = GeneratedColumn<double>(
+    'fat_pct',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(fatPct).isBetweenValues(1, 99),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _waterPctMeta = const VerificationMeta(
+    'waterPct',
+  );
+  @override
+  late final GeneratedColumn<double> waterPct = GeneratedColumn<double>(
+    'water_pct',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(waterPct).isBetweenValues(1, 99),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _boneKgMeta = const VerificationMeta('boneKg');
+  @override
+  late final GeneratedColumn<double> boneKg = GeneratedColumn<double>(
+    'bone_kg',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(boneKg).isBetweenValues(0.1, 20),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    date,
+    weightKg,
+    createdAt,
+    musclePct,
+    fatPct,
+    waterPct,
+    boneKg,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3634,6 +3687,30 @@ class $BodyWeightEntriesTable extends BodyWeightEntries
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('muscle_pct')) {
+      context.handle(
+        _musclePctMeta,
+        musclePct.isAcceptableOrUnknown(data['muscle_pct']!, _musclePctMeta),
+      );
+    }
+    if (data.containsKey('fat_pct')) {
+      context.handle(
+        _fatPctMeta,
+        fatPct.isAcceptableOrUnknown(data['fat_pct']!, _fatPctMeta),
+      );
+    }
+    if (data.containsKey('water_pct')) {
+      context.handle(
+        _waterPctMeta,
+        waterPct.isAcceptableOrUnknown(data['water_pct']!, _waterPctMeta),
+      );
+    }
+    if (data.containsKey('bone_kg')) {
+      context.handle(
+        _boneKgMeta,
+        boneKg.isAcceptableOrUnknown(data['bone_kg']!, _boneKgMeta),
+      );
+    }
     return context;
   }
 
@@ -3661,6 +3738,22 @@ class $BodyWeightEntriesTable extends BodyWeightEntries
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      musclePct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}muscle_pct'],
+      ),
+      fatPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fat_pct'],
+      ),
+      waterPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}water_pct'],
+      ),
+      boneKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bone_kg'],
+      ),
     );
   }
 
@@ -3678,17 +3771,29 @@ class BodyWeightEntriesCompanion extends UpdateCompanion<BodyWeightEntry> {
   final Value<LocalDate> date;
   final Value<double> weightKg;
   final Value<DateTime> createdAt;
+  final Value<double?> musclePct;
+  final Value<double?> fatPct;
+  final Value<double?> waterPct;
+  final Value<double?> boneKg;
   const BodyWeightEntriesCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
     this.weightKg = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.musclePct = const Value.absent(),
+    this.fatPct = const Value.absent(),
+    this.waterPct = const Value.absent(),
+    this.boneKg = const Value.absent(),
   });
   BodyWeightEntriesCompanion.insert({
     this.id = const Value.absent(),
     required LocalDate date,
     required double weightKg,
     required DateTime createdAt,
+    this.musclePct = const Value.absent(),
+    this.fatPct = const Value.absent(),
+    this.waterPct = const Value.absent(),
+    this.boneKg = const Value.absent(),
   }) : date = Value(date),
        weightKg = Value(weightKg),
        createdAt = Value(createdAt);
@@ -3697,12 +3802,20 @@ class BodyWeightEntriesCompanion extends UpdateCompanion<BodyWeightEntry> {
     Expression<String>? date,
     Expression<double>? weightKg,
     Expression<DateTime>? createdAt,
+    Expression<double>? musclePct,
+    Expression<double>? fatPct,
+    Expression<double>? waterPct,
+    Expression<double>? boneKg,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (date != null) 'date': date,
       if (weightKg != null) 'weight_kg': weightKg,
       if (createdAt != null) 'created_at': createdAt,
+      if (musclePct != null) 'muscle_pct': musclePct,
+      if (fatPct != null) 'fat_pct': fatPct,
+      if (waterPct != null) 'water_pct': waterPct,
+      if (boneKg != null) 'bone_kg': boneKg,
     });
   }
 
@@ -3711,12 +3824,20 @@ class BodyWeightEntriesCompanion extends UpdateCompanion<BodyWeightEntry> {
     Value<LocalDate>? date,
     Value<double>? weightKg,
     Value<DateTime>? createdAt,
+    Value<double?>? musclePct,
+    Value<double?>? fatPct,
+    Value<double?>? waterPct,
+    Value<double?>? boneKg,
   }) {
     return BodyWeightEntriesCompanion(
       id: id ?? this.id,
       date: date ?? this.date,
       weightKg: weightKg ?? this.weightKg,
       createdAt: createdAt ?? this.createdAt,
+      musclePct: musclePct ?? this.musclePct,
+      fatPct: fatPct ?? this.fatPct,
+      waterPct: waterPct ?? this.waterPct,
+      boneKg: boneKg ?? this.boneKg,
     );
   }
 
@@ -3737,6 +3858,18 @@ class BodyWeightEntriesCompanion extends UpdateCompanion<BodyWeightEntry> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (musclePct.present) {
+      map['muscle_pct'] = Variable<double>(musclePct.value);
+    }
+    if (fatPct.present) {
+      map['fat_pct'] = Variable<double>(fatPct.value);
+    }
+    if (waterPct.present) {
+      map['water_pct'] = Variable<double>(waterPct.value);
+    }
+    if (boneKg.present) {
+      map['bone_kg'] = Variable<double>(boneKg.value);
+    }
     return map;
   }
 
@@ -3746,7 +3879,11 @@ class BodyWeightEntriesCompanion extends UpdateCompanion<BodyWeightEntry> {
           ..write('id: $id, ')
           ..write('date: $date, ')
           ..write('weightKg: $weightKg, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('musclePct: $musclePct, ')
+          ..write('fatPct: $fatPct, ')
+          ..write('waterPct: $waterPct, ')
+          ..write('boneKg: $boneKg')
           ..write(')'))
         .toString();
   }
@@ -3762,6 +3899,10 @@ class _$BodyWeightEntryInsertable implements Insertable<BodyWeightEntry> {
       date: Value(_object.date),
       weightKg: Value(_object.weightKg),
       createdAt: Value(_object.createdAt),
+      musclePct: Value(_object.musclePct),
+      fatPct: Value(_object.fatPct),
+      waterPct: Value(_object.waterPct),
+      boneKg: Value(_object.boneKg),
     ).toColumns(false);
   }
 }
@@ -4229,6 +4370,20 @@ class $AppSettingsTableTable extends AppSettingsTable
     defaultValue: const Constant(100),
   );
   @override
+  late final GeneratedColumnWithTypeConverter<TrainingLayout, String>
+  trainingLayout =
+      GeneratedColumn<String>(
+        'training_layout',
+        aliasedName,
+        false,
+        check: () => trainingLayout.isIn(const ['standard', 'mount']),
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('standard'),
+      ).withConverter<TrainingLayout>(
+        $AppSettingsTableTable.$convertertrainingLayout,
+      );
+  @override
   List<GeneratedColumn> get $columns => [
     id,
     defaultSets,
@@ -4265,6 +4420,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     hrPauseBpm,
     hrThreshold,
     vibrationStrength,
+    trainingLayout,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4700,6 +4856,12 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.int,
         data['${effectivePrefix}vibration_strength'],
       )!,
+      trainingLayout: $AppSettingsTableTable.$convertertrainingLayout.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}training_layout'],
+        )!,
+      ),
     );
   }
 
@@ -4715,6 +4877,8 @@ class $AppSettingsTableTable extends AppSettingsTable
   static TypeConverter<Sex, String> $convertersex = const SexConverter();
   static TypeConverter<Sex?, String?> $convertersexn =
       NullAwareTypeConverter.wrap($convertersex);
+  static TypeConverter<TrainingLayout, String> $convertertrainingLayout =
+      const TrainingLayoutConverter();
 }
 
 class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
@@ -4753,6 +4917,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
   final Value<int?> hrPauseBpm;
   final Value<int?> hrThreshold;
   final Value<int> vibrationStrength;
+  final Value<TrainingLayout> trainingLayout;
   const AppSettingsTableCompanion({
     this.id = const Value.absent(),
     this.defaultSets = const Value.absent(),
@@ -4789,6 +4954,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     this.hrPauseBpm = const Value.absent(),
     this.hrThreshold = const Value.absent(),
     this.vibrationStrength = const Value.absent(),
+    this.trainingLayout = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
     this.id = const Value.absent(),
@@ -4826,6 +4992,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     this.hrPauseBpm = const Value.absent(),
     this.hrThreshold = const Value.absent(),
     this.vibrationStrength = const Value.absent(),
+    this.trainingLayout = const Value.absent(),
   });
   static Insertable<AppSettings> custom({
     Expression<int>? id,
@@ -4863,6 +5030,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     Expression<int>? hrPauseBpm,
     Expression<int>? hrThreshold,
     Expression<int>? vibrationStrength,
+    Expression<String>? trainingLayout,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -4902,6 +5070,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
       if (hrPauseBpm != null) 'hr_pause_bpm': hrPauseBpm,
       if (hrThreshold != null) 'hr_threshold': hrThreshold,
       if (vibrationStrength != null) 'vibration_strength': vibrationStrength,
+      if (trainingLayout != null) 'training_layout': trainingLayout,
     });
   }
 
@@ -4941,6 +5110,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     Value<int?>? hrPauseBpm,
     Value<int?>? hrThreshold,
     Value<int>? vibrationStrength,
+    Value<TrainingLayout>? trainingLayout,
   }) {
     return AppSettingsTableCompanion(
       id: id ?? this.id,
@@ -4978,6 +5148,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
       hrPauseBpm: hrPauseBpm ?? this.hrPauseBpm,
       hrThreshold: hrThreshold ?? this.hrThreshold,
       vibrationStrength: vibrationStrength ?? this.vibrationStrength,
+      trainingLayout: trainingLayout ?? this.trainingLayout,
     );
   }
 
@@ -5097,6 +5268,13 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
     if (vibrationStrength.present) {
       map['vibration_strength'] = Variable<int>(vibrationStrength.value);
     }
+    if (trainingLayout.present) {
+      map['training_layout'] = Variable<String>(
+        $AppSettingsTableTable.$convertertrainingLayout.toSql(
+          trainingLayout.value,
+        ),
+      );
+    }
     return map;
   }
 
@@ -5137,7 +5315,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettings> {
           ..write('hrWarnBpm: $hrWarnBpm, ')
           ..write('hrPauseBpm: $hrPauseBpm, ')
           ..write('hrThreshold: $hrThreshold, ')
-          ..write('vibrationStrength: $vibrationStrength')
+          ..write('vibrationStrength: $vibrationStrength, ')
+          ..write('trainingLayout: $trainingLayout')
           ..write(')'))
         .toString();
   }
@@ -5184,6 +5363,7 @@ class _$AppSettingsInsertable implements Insertable<AppSettings> {
       hrPauseBpm: Value(_object.hrPauseBpm),
       hrThreshold: Value(_object.hrThreshold),
       vibrationStrength: Value(_object.vibrationStrength),
+      trainingLayout: Value(_object.trainingLayout),
     ).toColumns(false);
   }
 }
@@ -10913,6 +11093,10 @@ typedef $$BodyWeightEntriesTableCreateCompanionBuilder =
       required LocalDate date,
       required double weightKg,
       required DateTime createdAt,
+      Value<double?> musclePct,
+      Value<double?> fatPct,
+      Value<double?> waterPct,
+      Value<double?> boneKg,
     });
 typedef $$BodyWeightEntriesTableUpdateCompanionBuilder =
     BodyWeightEntriesCompanion Function({
@@ -10920,6 +11104,10 @@ typedef $$BodyWeightEntriesTableUpdateCompanionBuilder =
       Value<LocalDate> date,
       Value<double> weightKg,
       Value<DateTime> createdAt,
+      Value<double?> musclePct,
+      Value<double?> fatPct,
+      Value<double?> waterPct,
+      Value<double?> boneKg,
     });
 
 class $$BodyWeightEntriesTableFilterComposer
@@ -10949,6 +11137,26 @@ class $$BodyWeightEntriesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get musclePct => $composableBuilder(
+    column: $table.musclePct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fatPct => $composableBuilder(
+    column: $table.fatPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get waterPct => $composableBuilder(
+    column: $table.waterPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get boneKg => $composableBuilder(
+    column: $table.boneKg,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -10981,6 +11189,26 @@ class $$BodyWeightEntriesTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get musclePct => $composableBuilder(
+    column: $table.musclePct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fatPct => $composableBuilder(
+    column: $table.fatPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get waterPct => $composableBuilder(
+    column: $table.waterPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get boneKg => $composableBuilder(
+    column: $table.boneKg,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BodyWeightEntriesTableAnnotationComposer
@@ -11003,6 +11231,18 @@ class $$BodyWeightEntriesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<double> get musclePct =>
+      $composableBuilder(column: $table.musclePct, builder: (column) => column);
+
+  GeneratedColumn<double> get fatPct =>
+      $composableBuilder(column: $table.fatPct, builder: (column) => column);
+
+  GeneratedColumn<double> get waterPct =>
+      $composableBuilder(column: $table.waterPct, builder: (column) => column);
+
+  GeneratedColumn<double> get boneKg =>
+      $composableBuilder(column: $table.boneKg, builder: (column) => column);
 }
 
 class $$BodyWeightEntriesTableTableManager
@@ -11049,11 +11289,19 @@ class $$BodyWeightEntriesTableTableManager
                 Value<LocalDate> date = const Value.absent(),
                 Value<double> weightKg = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<double?> musclePct = const Value.absent(),
+                Value<double?> fatPct = const Value.absent(),
+                Value<double?> waterPct = const Value.absent(),
+                Value<double?> boneKg = const Value.absent(),
               }) => BodyWeightEntriesCompanion(
                 id: id,
                 date: date,
                 weightKg: weightKg,
                 createdAt: createdAt,
+                musclePct: musclePct,
+                fatPct: fatPct,
+                waterPct: waterPct,
+                boneKg: boneKg,
               ),
           createCompanionCallback:
               ({
@@ -11061,11 +11309,19 @@ class $$BodyWeightEntriesTableTableManager
                 required LocalDate date,
                 required double weightKg,
                 required DateTime createdAt,
+                Value<double?> musclePct = const Value.absent(),
+                Value<double?> fatPct = const Value.absent(),
+                Value<double?> waterPct = const Value.absent(),
+                Value<double?> boneKg = const Value.absent(),
               }) => BodyWeightEntriesCompanion.insert(
                 id: id,
                 date: date,
                 weightKg: weightKg,
                 createdAt: createdAt,
+                musclePct: musclePct,
+                fatPct: fatPct,
+                waterPct: waterPct,
+                boneKg: boneKg,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -11138,6 +11394,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<int?> hrPauseBpm,
       Value<int?> hrThreshold,
       Value<int> vibrationStrength,
+      Value<TrainingLayout> trainingLayout,
     });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder =
     AppSettingsTableCompanion Function({
@@ -11176,6 +11433,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<int?> hrPauseBpm,
       Value<int?> hrThreshold,
       Value<int> vibrationStrength,
+      Value<TrainingLayout> trainingLayout,
     });
 
 final class $$AppSettingsTableTableReferences
@@ -11386,6 +11644,12 @@ class $$AppSettingsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnWithTypeConverterFilters<TrainingLayout, TrainingLayout, String>
+  get trainingLayout => $composableBuilder(
+    column: $table.trainingLayout,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
   $$PlansTableFilterComposer get lastSelectedPlanId {
     final $$PlansTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -11589,6 +11853,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get trainingLayout => $composableBuilder(
+    column: $table.trainingLayout,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PlansTableOrderingComposer get lastSelectedPlanId {
     final $$PlansTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -11781,6 +12050,12 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumnWithTypeConverter<TrainingLayout, String> get trainingLayout =>
+      $composableBuilder(
+        column: $table.trainingLayout,
+        builder: (column) => column,
+      );
+
   $$PlansTableAnnotationComposer get lastSelectedPlanId {
     final $$PlansTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -11870,6 +12145,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int?> hrPauseBpm = const Value.absent(),
                 Value<int?> hrThreshold = const Value.absent(),
                 Value<int> vibrationStrength = const Value.absent(),
+                Value<TrainingLayout> trainingLayout = const Value.absent(),
               }) => AppSettingsTableCompanion(
                 id: id,
                 defaultSets: defaultSets,
@@ -11906,6 +12182,7 @@ class $$AppSettingsTableTableTableManager
                 hrPauseBpm: hrPauseBpm,
                 hrThreshold: hrThreshold,
                 vibrationStrength: vibrationStrength,
+                trainingLayout: trainingLayout,
               ),
           createCompanionCallback:
               ({
@@ -11944,6 +12221,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int?> hrPauseBpm = const Value.absent(),
                 Value<int?> hrThreshold = const Value.absent(),
                 Value<int> vibrationStrength = const Value.absent(),
+                Value<TrainingLayout> trainingLayout = const Value.absent(),
               }) => AppSettingsTableCompanion.insert(
                 id: id,
                 defaultSets: defaultSets,
@@ -11980,6 +12258,7 @@ class $$AppSettingsTableTableTableManager
                 hrPauseBpm: hrPauseBpm,
                 hrThreshold: hrThreshold,
                 vibrationStrength: vibrationStrength,
+                trainingLayout: trainingLayout,
               ),
           withReferenceMapper: (p0) => p0
               .map(

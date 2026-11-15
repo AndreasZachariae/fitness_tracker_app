@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/format/body_format.dart';
 import '../../core/format/formatters.dart';
 import '../../core/l10n/strings_de.dart';
 import '../../core/theme/typography.dart';
@@ -120,7 +121,14 @@ class _EntryTile extends StatelessWidget {
             color: theme.colorScheme.onSurface,
           ),
         ),
-        subtitle: Text(formatWeekdayDate(entry.date.toLocalDateTime())),
+        // 1.7.0: the scale values below the date.
+        subtitle: Text(
+          [
+            formatWeekdayDate(entry.date.toLocalDateTime()),
+            if (formatComposition(entry) case final c when c.isNotEmpty) c,
+          ].join('\n'),
+        ),
+        isThreeLine: formatComposition(entry).isNotEmpty,
         trailing: const Icon(Icons.edit_outlined, size: 20),
         onTap: () => onTap(entry),
       ),

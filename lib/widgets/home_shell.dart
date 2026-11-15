@@ -9,6 +9,7 @@ import '../data/providers.dart';
 import '../domain/models/models.dart';
 import '../features/training/session/forgotten_session_guard.dart';
 import '../features/training/session/keep_screen_on.dart';
+import '../features/training/session/rest_bar_placement.dart';
 import '../features/training/session/rest_timer_bar.dart';
 import 'ticker.dart';
 
@@ -33,6 +34,13 @@ class HomeShell extends ConsumerWidget {
     final active = ref.watch(activeSessionProvider).value;
     final showBar =
         active != null && navigationShell.currentIndex != _trainingBranch;
+    // 1.7.0: in the view for a device mount the training shows the rest
+    // bar at the top.
+    final restAtTop =
+        active != null &&
+        navigationShell.currentIndex == _trainingBranch &&
+        ref.watch(settingsProvider).value?.trainingLayout ==
+            TrainingLayout.mount;
 
     return ForgottenSessionGuard(
       child: KeepScreenOn(
@@ -48,7 +56,7 @@ class HomeShell extends ConsumerWidget {
                 child: MediaQuery.removePadding(
                   context: context,
                   removeTop: showBar,
-                  child: navigationShell,
+                  child: RestBarAtTop(top: restAtTop, child: navigationShell),
                 ),
               ),
             ],
@@ -56,7 +64,7 @@ class HomeShell extends ConsumerWidget {
           bottomNavigationBar: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const RestTimerBar(),
+              if (!restAtTop) RestTimerBar(key: restTimerBarKey),
               NavigationBar(
                 selectedIndex: navigationShell.currentIndex,
                 onDestinationSelected: _goTo,
